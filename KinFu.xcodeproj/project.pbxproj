@@ -1,0 +1,611 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		554FE7741CDD527C008C287B /* MarchingCubes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554FE7721CDD527C008C287B /* MarchingCubes.cpp */; };
+		555C4E451CE679E100D92070 /* Cubic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */; };
+		555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55EB4DBB1CE43BCF00E35EA0 /* gtest_main.cc */; };
+		555C4E481CE6AAC600D92070 /* TestRayCast.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C4E471CE6AAC600D92070 /* TestRayCast.cpp */; };
+		555C4E491CE6B19100D92070 /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
+		555C4E4C1CE7FE5B00D92070 /* TestTSDFMetrics.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C4E4A1CE7FE5B00D92070 /* TestTSDFMetrics.cpp */; };
+		555C4E4F1CE9372700D92070 /* TestHelpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C4E4E1CE9372700D92070 /* TestHelpers.cpp */; };
+		555C61FA1CD6B8BA0071FBF3 /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */; };
+		555C62011CD6BA0A0071FBF3 /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
+		555C62031CD6BC080071FBF3 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
+		555C620B1CD6E9030071FBF3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C620A1CD6E9030071FBF3 /* main.cpp */; };
+		555C620F1CD6EC7D0071FBF3 /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
+		555C62101CD6EDF20071FBF3 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
+		5589173E1CED288600DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
+		558917411CED4B2300DD5452 /* TestCamera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558917401CED4B2300DD5452 /* TestCamera.cpp */; };
+		558917421CED4B5A00DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
+		5595348F1CE5A3E8007E5EF2 /* Cubic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */; };
+		559CF1491CD8107F00EE563B /* libpcl_io.1.8.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */; };
+		55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
+		55D02C911CD5EF53005561CE /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C901CD5EF53005561CE /* main.cpp */; };
+		55D02C9A1CD5EF8C005561CE /* TSDFVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */; };
+		55EB4DC91CE43BCF00E35EA0 /* gtest-all.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55EB4DBC1CE43BCF00E35EA0 /* gtest-all.cc */; };
+		55EB4DD11CE43BCF00E35EA0 /* TestExtractISOSurface.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55EB4DC51CE43BCF00E35EA0 /* TestExtractISOSurface.cpp */; };
+		55EB4DD21CE43BCF00E35EA0 /* TestTSDF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55EB4DC61CE43BCF00E35EA0 /* TestTSDF.cpp */; };
+		55EB4DD41CE43DE100E35EA0 /* libpcl_io.1.8.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */; };
+		55EB4DD51CE43DE300E35EA0 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
+		55EB4DD61CE43DE600E35EA0 /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */; };
+		55EB4DD71CE43DFC00E35EA0 /* TSDFVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */; };
+		55EB4DD81CE43E1B00E35EA0 /* MarchingCubes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554FE7721CDD527C008C287B /* MarchingCubes.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		555C62061CD6E9030071FBF3 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		55D02C8B1CD5EF53005561CE /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+		55EB4DB21CE43BAE00E35EA0 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		554FE7721CDD527C008C287B /* MarchingCubes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MarchingCubes.cpp; sourceTree = "<group>"; };
+		554FE7731CDD527C008C287B /* MarchingCubes.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MarchingCubes.hpp; sourceTree = "<group>"; };
+		555C4E471CE6AAC600D92070 /* TestRayCast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestRayCast.cpp; sourceTree = "<group>"; };
+		555C4E4A1CE7FE5B00D92070 /* TestTSDFMetrics.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestTSDFMetrics.cpp; sourceTree = "<group>"; };
+		555C4E4D1CE9357B00D92070 /* TestHelpers.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TestHelpers.hpp; sourceTree = "<group>"; };
+		555C4E4E1CE9372700D92070 /* TestHelpers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestHelpers.cpp; sourceTree = "<group>"; };
+		555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libboost_system.dylib; path = ../../../../../../../../../usr/local/Cellar/boost/1.58.0/lib/libboost_system.dylib; sourceTree = "<group>"; };
+		555C61FF1CD6BA0A0071FBF3 /* PngUtilities.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PngUtilities.hpp; sourceTree = "<group>"; };
+		555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PngUtilities.cpp; sourceTree = "<group>"; };
+		555C62021CD6BC080071FBF3 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../../../../usr/local/Cellar/libpng/1.6.21/lib/libpng16.16.dylib; sourceTree = "<group>"; };
+		555C62081CD6E9030071FBF3 /* SphereBuilder */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SphereBuilder; sourceTree = BUILT_PRODUCTS_DIR; };
+		555C620A1CD6E9030071FBF3 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		5589173C1CED288600DD5452 /* Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Camera.cpp; path = Camera/Camera.cpp; sourceTree = "<group>"; };
+		5589173D1CED288600DD5452 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = Camera/Camera.hpp; sourceTree = "<group>"; };
+		558917401CED4B2300DD5452 /* TestCamera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestCamera.cpp; sourceTree = "<group>"; };
+		5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Cubic.cpp; sourceTree = "<group>"; };
+		5595348E1CE5A3E8007E5EF2 /* Cubic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Cubic.hpp; sourceTree = "<group>"; };
+		559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpcl_io.1.8.0.dylib; path = ../../../../../../../../../usr/local/Cellar/pcl/HEAD/lib/libpcl_io.1.8.0.dylib; sourceTree = "<group>"; };
+		55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PgmUtilities.cpp; sourceTree = "<group>"; };
+		55A51F401CDB1B3400E87D4A /* PgmUtilities.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PgmUtilities.hpp; sourceTree = "<group>"; };
+		55D02C8D1CD5EF53005561CE /* KinFu */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = KinFu; sourceTree = BUILT_PRODUCTS_DIR; };
+		55D02C901CD5EF53005561CE /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TSDFVolume.cpp; sourceTree = "<group>"; };
+		55D02C991CD5EF8C005561CE /* TSDFVolume.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = TSDFVolume.hpp; sourceTree = "<group>"; };
+		55EB4DB41CE43BAE00E35EA0 /* TestTSDF */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = TestTSDF; sourceTree = BUILT_PRODUCTS_DIR; };
+		55EB4DBB1CE43BCF00E35EA0 /* gtest_main.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gtest_main.cc; path = ../../../DynamicFusion/TSDF/TestTSDF/gtest_main.cc; sourceTree = "<group>"; };
+		55EB4DBC1CE43BCF00E35EA0 /* gtest-all.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gtest-all.cc"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-all.cc"; sourceTree = "<group>"; };
+		55EB4DBD1CE43BCF00E35EA0 /* gtest-death-test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gtest-death-test.cc"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-death-test.cc"; sourceTree = "<group>"; };
+		55EB4DBE1CE43BCF00E35EA0 /* gtest-filepath.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gtest-filepath.cc"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-filepath.cc"; sourceTree = "<group>"; };
+		55EB4DBF1CE43BCF00E35EA0 /* gtest-internal-inl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "gtest-internal-inl.h"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-internal-inl.h"; sourceTree = "<group>"; };
+		55EB4DC01CE43BCF00E35EA0 /* gtest-port.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gtest-port.cc"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-port.cc"; sourceTree = "<group>"; };
+		55EB4DC11CE43BCF00E35EA0 /* gtest-printers.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gtest-printers.cc"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-printers.cc"; sourceTree = "<group>"; };
+		55EB4DC21CE43BCF00E35EA0 /* gtest-test-part.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gtest-test-part.cc"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-test-part.cc"; sourceTree = "<group>"; };
+		55EB4DC31CE43BCF00E35EA0 /* gtest-typed-test.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = "gtest-typed-test.cc"; path = "../../../DynamicFusion/TSDF/TestTSDF/gtest-typed-test.cc"; sourceTree = "<group>"; };
+		55EB4DC41CE43BCF00E35EA0 /* gtest.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = gtest.cc; path = ../../../DynamicFusion/TSDF/TestTSDF/gtest.cc; sourceTree = "<group>"; };
+		55EB4DC51CE43BCF00E35EA0 /* TestExtractISOSurface.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TestExtractISOSurface.cpp; path = ../../../DynamicFusion/TSDF/TestTSDF/TestExtractISOSurface.cpp; sourceTree = "<group>"; };
+		55EB4DC61CE43BCF00E35EA0 /* TestTSDF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = TestTSDF.cpp; path = ../../../DynamicFusion/TSDF/TestTSDF/TestTSDF.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		555C62051CD6E9030071FBF3 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				555C62101CD6EDF20071FBF3 /* libpng16.16.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		55D02C8A1CD5EF53005561CE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				559CF1491CD8107F00EE563B /* libpcl_io.1.8.0.dylib in Frameworks */,
+				555C62031CD6BC080071FBF3 /* libpng16.16.dylib in Frameworks */,
+				555C61FA1CD6B8BA0071FBF3 /* libboost_system.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		55EB4DB11CE43BAE00E35EA0 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				55EB4DD41CE43DE100E35EA0 /* libpcl_io.1.8.0.dylib in Frameworks */,
+				55EB4DD51CE43DE300E35EA0 /* libpng16.16.dylib in Frameworks */,
+				55EB4DD61CE43DE600E35EA0 /* libboost_system.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		555C61FB1CD6B98E0071FBF3 /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				555C61FF1CD6BA0A0071FBF3 /* PngUtilities.hpp */,
+				555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */,
+				55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */,
+				55A51F401CDB1B3400E87D4A /* PgmUtilities.hpp */,
+				554FE7721CDD527C008C287B /* MarchingCubes.cpp */,
+				554FE7731CDD527C008C287B /* MarchingCubes.hpp */,
+				5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */,
+				5595348E1CE5A3E8007E5EF2 /* Cubic.hpp */,
+			);
+			name = Utility;
+			sourceTree = "<group>";
+		};
+		555C62091CD6E9030071FBF3 /* SphereBuilder */ = {
+			isa = PBXGroup;
+			children = (
+				555C620A1CD6E9030071FBF3 /* main.cpp */,
+			);
+			path = SphereBuilder;
+			sourceTree = "<group>";
+		};
+		5589173B1CED286700DD5452 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				5589173C1CED288600DD5452 /* Camera.cpp */,
+				5589173D1CED288600DD5452 /* Camera.hpp */,
+			);
+			name = Camera;
+			sourceTree = "<group>";
+		};
+		5589173F1CED484600DD5452 /* GTest */ = {
+			isa = PBXGroup;
+			children = (
+				55EB4DBB1CE43BCF00E35EA0 /* gtest_main.cc */,
+				55EB4DBC1CE43BCF00E35EA0 /* gtest-all.cc */,
+				55EB4DBD1CE43BCF00E35EA0 /* gtest-death-test.cc */,
+				55EB4DBE1CE43BCF00E35EA0 /* gtest-filepath.cc */,
+				55EB4DBF1CE43BCF00E35EA0 /* gtest-internal-inl.h */,
+				55EB4DC01CE43BCF00E35EA0 /* gtest-port.cc */,
+				55EB4DC11CE43BCF00E35EA0 /* gtest-printers.cc */,
+				55EB4DC21CE43BCF00E35EA0 /* gtest-test-part.cc */,
+				55EB4DC31CE43BCF00E35EA0 /* gtest-typed-test.cc */,
+				55EB4DC41CE43BCF00E35EA0 /* gtest.cc */,
+			);
+			name = GTest;
+			sourceTree = "<group>";
+		};
+		55D02C841CD5EF53005561CE = {
+			isa = PBXGroup;
+			children = (
+				559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */,
+				555C62021CD6BC080071FBF3 /* libpng16.16.dylib */,
+				555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */,
+				55D02C8F1CD5EF53005561CE /* KinFu */,
+				555C62091CD6E9030071FBF3 /* SphereBuilder */,
+				55EB4DB51CE43BAE00E35EA0 /* TestTSDF */,
+				55D02C8E1CD5EF53005561CE /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		55D02C8E1CD5EF53005561CE /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				55D02C8D1CD5EF53005561CE /* KinFu */,
+				555C62081CD6E9030071FBF3 /* SphereBuilder */,
+				55EB4DB41CE43BAE00E35EA0 /* TestTSDF */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		55D02C8F1CD5EF53005561CE /* KinFu */ = {
+			isa = PBXGroup;
+			children = (
+				5589173B1CED286700DD5452 /* Camera */,
+				555C61FB1CD6B98E0071FBF3 /* Utility */,
+				55D02C971CD5EF67005561CE /* TSDF */,
+				55D02C901CD5EF53005561CE /* main.cpp */,
+			);
+			path = KinFu;
+			sourceTree = "<group>";
+		};
+		55D02C971CD5EF67005561CE /* TSDF */ = {
+			isa = PBXGroup;
+			children = (
+				55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */,
+				55D02C991CD5EF8C005561CE /* TSDFVolume.hpp */,
+			);
+			name = TSDF;
+			sourceTree = "<group>";
+		};
+		55EB4DB51CE43BAE00E35EA0 /* TestTSDF */ = {
+			isa = PBXGroup;
+			children = (
+				5589173F1CED484600DD5452 /* GTest */,
+				55EB4DC51CE43BCF00E35EA0 /* TestExtractISOSurface.cpp */,
+				55EB4DC61CE43BCF00E35EA0 /* TestTSDF.cpp */,
+				555C4E471CE6AAC600D92070 /* TestRayCast.cpp */,
+				558917401CED4B2300DD5452 /* TestCamera.cpp */,
+				555C4E4A1CE7FE5B00D92070 /* TestTSDFMetrics.cpp */,
+				555C4E4D1CE9357B00D92070 /* TestHelpers.hpp */,
+				555C4E4E1CE9372700D92070 /* TestHelpers.cpp */,
+			);
+			path = TestTSDF;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		555C62071CD6E9030071FBF3 /* SphereBuilder */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 555C620C1CD6E9030071FBF3 /* Build configuration list for PBXNativeTarget "SphereBuilder" */;
+			buildPhases = (
+				555C62041CD6E9030071FBF3 /* Sources */,
+				555C62051CD6E9030071FBF3 /* Frameworks */,
+				555C62061CD6E9030071FBF3 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SphereBuilder;
+			productName = SphereBuilder;
+			productReference = 555C62081CD6E9030071FBF3 /* SphereBuilder */;
+			productType = "com.apple.product-type.tool";
+		};
+		55D02C8C1CD5EF53005561CE /* KinFu */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 55D02C941CD5EF53005561CE /* Build configuration list for PBXNativeTarget "KinFu" */;
+			buildPhases = (
+				55D02C891CD5EF53005561CE /* Sources */,
+				55D02C8A1CD5EF53005561CE /* Frameworks */,
+				55D02C8B1CD5EF53005561CE /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KinFu;
+			productName = KinFu;
+			productReference = 55D02C8D1CD5EF53005561CE /* KinFu */;
+			productType = "com.apple.product-type.tool";
+		};
+		55EB4DB31CE43BAE00E35EA0 /* TestTSDF */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 55EB4DBA1CE43BAE00E35EA0 /* Build configuration list for PBXNativeTarget "TestTSDF" */;
+			buildPhases = (
+				55EB4DB01CE43BAE00E35EA0 /* Sources */,
+				55EB4DB11CE43BAE00E35EA0 /* Frameworks */,
+				55EB4DB21CE43BAE00E35EA0 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TestTSDF;
+			productName = TestTSDF;
+			productReference = 55EB4DB41CE43BAE00E35EA0 /* TestTSDF */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		55D02C851CD5EF53005561CE /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0730;
+				ORGANIZATIONNAME = Sindesso;
+				TargetAttributes = {
+					555C62071CD6E9030071FBF3 = {
+						CreatedOnToolsVersion = 7.3;
+					};
+					55D02C8C1CD5EF53005561CE = {
+						CreatedOnToolsVersion = 7.3;
+					};
+					55EB4DB31CE43BAE00E35EA0 = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
+				};
+			};
+			buildConfigurationList = 55D02C881CD5EF53005561CE /* Build configuration list for PBXProject "KinFu" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 55D02C841CD5EF53005561CE;
+			productRefGroup = 55D02C8E1CD5EF53005561CE /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				55D02C8C1CD5EF53005561CE /* KinFu */,
+				555C62071CD6E9030071FBF3 /* SphereBuilder */,
+				55EB4DB31CE43BAE00E35EA0 /* TestTSDF */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		555C62041CD6E9030071FBF3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				555C620F1CD6EC7D0071FBF3 /* PngUtilities.cpp in Sources */,
+				555C620B1CD6E9030071FBF3 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		55D02C891CD5EF53005561CE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				554FE7741CDD527C008C287B /* MarchingCubes.cpp in Sources */,
+				555C62011CD6BA0A0071FBF3 /* PngUtilities.cpp in Sources */,
+				5589173E1CED288600DD5452 /* Camera.cpp in Sources */,
+				55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */,
+				55D02C9A1CD5EF8C005561CE /* TSDFVolume.cpp in Sources */,
+				5595348F1CE5A3E8007E5EF2 /* Cubic.cpp in Sources */,
+				55D02C911CD5EF53005561CE /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		55EB4DB01CE43BAE00E35EA0 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				55EB4DC91CE43BCF00E35EA0 /* gtest-all.cc in Sources */,
+				555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */,
+				558917421CED4B5A00DD5452 /* Camera.cpp in Sources */,
+				555C4E491CE6B19100D92070 /* PngUtilities.cpp in Sources */,
+				555C4E451CE679E100D92070 /* Cubic.cpp in Sources */,
+				55EB4DD81CE43E1B00E35EA0 /* MarchingCubes.cpp in Sources */,
+				55EB4DD71CE43DFC00E35EA0 /* TSDFVolume.cpp in Sources */,
+				558917411CED4B2300DD5452 /* TestCamera.cpp in Sources */,
+				55EB4DD11CE43BCF00E35EA0 /* TestExtractISOSurface.cpp in Sources */,
+				55EB4DD21CE43BCF00E35EA0 /* TestTSDF.cpp in Sources */,
+				555C4E4C1CE7FE5B00D92070 /* TestTSDFMetrics.cpp in Sources */,
+				555C4E4F1CE9372700D92070 /* TestHelpers.cpp in Sources */,
+				555C4E481CE6AAC600D92070 /* TestRayCast.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		555C620D1CD6E9030071FBF3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/libpng/1.6.21/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		555C620E1CD6E9030071FBF3 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/libpng/1.6.21/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		55D02C921CD5EF53005561CE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include/eigen3,
+					"/usr/local/include/pcl-1.8",
+					/usr/local/include,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		55D02C931CD5EF53005561CE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include/eigen3,
+					"/usr/local/include/pcl-1.8",
+					/usr/local/include,
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.11;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		55D02C951CD5EF53005561CE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/boost/1.58.0/lib,
+					/usr/local/Cellar/libpng/1.6.21/lib,
+					/usr/local/Cellar/pcl/HEAD/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		55D02C961CD5EF53005561CE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/boost/1.58.0/lib,
+					/usr/local/Cellar/libpng/1.6.21/lib,
+					/usr/local/Cellar/pcl/HEAD/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		55EB4DB81CE43BAE00E35EA0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include/eigen3,
+					"/usr/local/include/pcl-1.8",
+					/usr/local/include,
+					/Users/Dave/Software_Development/Frameworks/GoogleTest/googletest,
+					/Users/Dave/Software_Development/Frameworks/GoogleTest/googletest/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/pcl/HEAD/lib,
+					/usr/local/Cellar/libpng/1.6.21/lib,
+					/usr/local/Cellar/boost/1.58.0/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		55EB4DB91CE43BAE00E35EA0 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				HEADER_SEARCH_PATHS = (
+					/usr/local/include/eigen3,
+					"/usr/local/include/pcl-1.8",
+					/usr/local/include,
+					/Users/Dave/Software_Development/Frameworks/GoogleTest/googletest,
+					/Users/Dave/Software_Development/Frameworks/GoogleTest/googletest/include,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/pcl/HEAD/lib,
+					/usr/local/Cellar/libpng/1.6.21/lib,
+					/usr/local/Cellar/boost/1.58.0/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		555C620C1CD6E9030071FBF3 /* Build configuration list for PBXNativeTarget "SphereBuilder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				555C620D1CD6E9030071FBF3 /* Debug */,
+				555C620E1CD6E9030071FBF3 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		55D02C881CD5EF53005561CE /* Build configuration list for PBXProject "KinFu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				55D02C921CD5EF53005561CE /* Debug */,
+				55D02C931CD5EF53005561CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		55D02C941CD5EF53005561CE /* Build configuration list for PBXNativeTarget "KinFu" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				55D02C951CD5EF53005561CE /* Debug */,
+				55D02C961CD5EF53005561CE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		55EB4DBA1CE43BAE00E35EA0 /* Build configuration list for PBXNativeTarget "TestTSDF" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				55EB4DB81CE43BAE00E35EA0 /* Debug */,
+				55EB4DB91CE43BAE00E35EA0 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 55D02C851CD5EF53005561CE /* Project object */;
+}
