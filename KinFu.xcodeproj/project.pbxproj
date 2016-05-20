@@ -17,12 +17,12 @@
 		555C61FA1CD6B8BA0071FBF3 /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */; };
 		555C62011CD6BA0A0071FBF3 /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
 		555C62031CD6BC080071FBF3 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
-		555C620B1CD6E9030071FBF3 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C620A1CD6E9030071FBF3 /* main.cpp */; };
 		555C620F1CD6EC7D0071FBF3 /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
 		555C62101CD6EDF20071FBF3 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
 		5589173E1CED288600DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
 		558917411CED4B2300DD5452 /* TestCamera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558917401CED4B2300DD5452 /* TestCamera.cpp */; };
 		558917421CED4B5A00DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
+		558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
 		5595348F1CE5A3E8007E5EF2 /* Cubic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */; };
 		559CF1491CD8107F00EE563B /* libpcl_io.1.8.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */; };
 		55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
@@ -80,7 +80,6 @@
 		555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PngUtilities.cpp; sourceTree = "<group>"; };
 		555C62021CD6BC080071FBF3 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../../../../usr/local/Cellar/libpng/1.6.21/lib/libpng16.16.dylib; sourceTree = "<group>"; };
 		555C62081CD6E9030071FBF3 /* SphereBuilder */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = SphereBuilder; sourceTree = BUILT_PRODUCTS_DIR; };
-		555C620A1CD6E9030071FBF3 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		5589173C1CED288600DD5452 /* Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Camera.cpp; path = Camera/Camera.cpp; sourceTree = "<group>"; };
 		5589173D1CED288600DD5452 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = Camera/Camera.hpp; sourceTree = "<group>"; };
 		558917401CED4B2300DD5452 /* TestCamera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestCamera.cpp; sourceTree = "<group>"; };
@@ -155,14 +154,6 @@
 			name = Utility;
 			sourceTree = "<group>";
 		};
-		555C62091CD6E9030071FBF3 /* SphereBuilder */ = {
-			isa = PBXGroup;
-			children = (
-				555C620A1CD6E9030071FBF3 /* main.cpp */,
-			);
-			path = SphereBuilder;
-			sourceTree = "<group>";
-		};
 		5589173B1CED286700DD5452 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
@@ -196,7 +187,6 @@
 				555C62021CD6BC080071FBF3 /* libpng16.16.dylib */,
 				555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */,
 				55D02C8F1CD5EF53005561CE /* KinFu */,
-				555C62091CD6E9030071FBF3 /* SphereBuilder */,
 				55EB4DB51CE43BAE00E35EA0 /* TestTSDF */,
 				55D02C8E1CD5EF53005561CE /* Products */,
 			);
@@ -346,7 +336,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				555C620F1CD6EC7D0071FBF3 /* PngUtilities.cpp in Sources */,
-				555C620B1CD6E9030071FBF3 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -368,6 +357,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */,
 				55EB4DC91CE43BCF00E35EA0 /* gtest-all.cc in Sources */,
 				555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */,
 				558917421CED4B5A00DD5452 /* Camera.cpp in Sources */,

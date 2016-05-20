@@ -10,6 +10,8 @@
 #define Camera_hpp
 
 #include <Eigen/Dense>
+#include <deque>
+
 namespace phd {
     
     class Camera {
@@ -57,12 +59,27 @@ namespace phd {
         void image_to_camera( const Eigen::Vector2i & image_coordinate, Eigen::Vector2f & camera_coordinate ) const;
         
         /**
+         * Convert from image plane coordinates to camera space coordinates
+         * @param image_x The x coordinate in the image space
+         * @param image_y The y coordinate in the image space
+         * @param camera_coordinate The 2D coordinate in camera image plane
+         */
+        void image_to_camera( const int x, const int y, Eigen::Vector2f & camera_coordinate ) const;
+
+        /**
          * Convert from a depth image to 3D camera space coordinates
          * @param depth_image A width x height array of uint16_t depth values
          * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
          * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
          */
-        void depth_image_to_vertices_and_normals( const Eigen::Array<uint16_t, Eigen::Dynamic, Eigen::Dynamic> & depth_image, Eigen::ArrayBase<Eigen::Vector3f> & vertices, Eigen::ArrayBase<Eigen::Vector3f> & normals ) const;
+        void depth_image_to_vertices_and_normals(const uint16_t * depth_image, const uint32_t width, const uint32_t height,std::deque<Eigen::Vector3f> & vertices,std::deque<Eigen::Vector3f> & normals ) const;
+        /**
+         * Convert from a depth image to 3D camera space coordinates
+         * @param depth_image A width x height array of uint16_t depth values
+         * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
+         * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
+         */
+        void depth_image_to_vertices_and_normals( const Eigen::Array<uint16_t, Eigen::Dynamic, Eigen::Dynamic> & depth_image, std::deque<Eigen::Vector3f> & vertices, std::deque<Eigen::Vector3f> & normals ) const;
     };
 }
 #endif /* Camera_hpp */

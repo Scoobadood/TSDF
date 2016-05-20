@@ -9,6 +9,12 @@
 #include "Camera.hpp"
 
 namespace phd {
+    
+    /**
+     * Predefined bad vertex
+     */
+    Eigen::Vector3f BAD_VERTEX{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
+    
     /**
      * Construct a camera with the given intrinsic parameters
      * @param focal_x The focal length in the x direction in pixels
@@ -44,7 +50,7 @@ namespace phd {
     Camera::Camera( const int image_width, const int image_height, const float fov_x, const float fov_y ) {
         float focal_x = -image_width / ( 2 * std::tanf(fov_x / 2.0f ) );
         float focal_y = -image_height / ( 2 * std::tanf(fov_y / 2.0f ) );
-        m_k << -focal_x, 0.0f, (image_width / 2.0f), 0.0f, -focal_y, (image_height / 2.0f), 0.0f, 0.0f, 0.0f, 1.0f;
+        m_k << -focal_x, 0.0f, (image_width / 2.0f), 0.0f, -focal_y, (image_height / 2.0f), 0.0f, 0.0f, 1.0f;
         m_k_inverse = m_k.inverse();
     }
     
@@ -81,14 +87,117 @@ namespace phd {
      * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
      * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
      */
-    void Camera::depth_image_to_vertices_and_normals( const Eigen::Array<uint16_t, Eigen::Dynamic, Eigen::Dynamic> & depth_image, Eigen::ArrayBase<Eigen::Vector3f> & vertices, Eigen::ArrayBase<Eigen::Vector3f> & normals ) const {
+    void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image,const uint32_t width,const uint32_t height,  std::deque<Eigen::Vector3f> & vertices,  std::deque<Eigen::Vector3f> & normals ) const {
+        using namespace Eigen;
+        
+        // Run from bottom right corner so we can create normal sin the same pass
+        int32_t src_idx = (width * height) - 1;
+        for( int16_t y=height-1; y>=0; y-- ) {
+            for( int16_t x=width-1; x >= 0; x-- ) {
+                
+                // Vertex and normal for this pixel
+                Vector3f vertex;
+                Vector3f normal{ 0, 0, 0 };
+                
+                // If this is a valid depth
+                uint16_t depth = depth_image[src_idx];
+                if( depth != 0 ) {
+                    
+                    // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
+                    Vector2f cam_point;
+                    image_to_camera( x, y, cam_point );
+                    
+                    // Create the actual vertex
+                    vertex = Vector3f{ cam_point.x() * depth, cam_point.y() * depth, depth };
+                    
+                    // Compute normal as v(y,x+1)-v(y,x) cross v(y+1, x)-v(y, x )
+                    if( (y < height - 1 ) && ( x < width - 1 ) ) {
+                        // We have adjacent vertex to right and below that we can extract
+                        // Vector[0] is the element to the right of this one
+                        // Vector[width] is the element below
+                        Vector3f right_neighbour = vertices[0];
+                        Vector3f below_neighbour = vertices[width];
+                        
+                        // If they are both not BAD
+                        if( ( right_neighbour != BAD_VERTEX) && ( below_neighbour != BAD_VERTEX ) ){
+                            right_neighbour -= vertex;
+                            below_neighbour -= vertex;
+                            
+                            // Compute cros product for normal
+                            normal = right_neighbour.cross( below_neighbour ).normalized();
+                        }
+                    }
+                } else {
+                    vertex = BAD_VERTEX;
+                }
+                
+                // Store
+                vertices.push_front( vertex );
+                normals.push_front( normal );
+                
+                src_idx--;
+            }
+        }
+    }
+    
+    /**
+     * Convert from a depth image to 3D camera space coordinates
+     * @param depth_image A width x height array of uint16_t depth values
+     * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
+     * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
+     */
+    void Camera::depth_image_to_vertices_and_normals(
+                                                     const Eigen::Array<uint16_t, Eigen::Dynamic, Eigen::Dynamic> & depth_image,
+                                                     std::deque<Eigen::Vector3f> & vertices,
+                                                     std::deque<Eigen::Vector3f> & normals ) const {
+        using namespace Eigen;
+        
         uint16_t width = depth_image.cols();
         uint16_t height = depth_image.rows();
         
-        for( uint16_t y=0; y<height; y++ ) {
-            for( uint16_t x=0; x<width; x++ ) {
-                // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
-                imagee_to_camera(Vector2i{ x, y }
+        // Run from bottom right corner so we can create normal sin the same pass
+        for( int16_t y=height-1; y>=0; y-- ) {
+            for( int16_t x=width; x >= 0; x-- ) {
+                
+                // Vertex and normal for this pixel
+                Vector3f vertex;
+                Vector3f normal{ 0, 0, 0 };
+                
+                // If this is a valid depth
+                uint16_t depth = depth_image( y, x );
+                if( depth != 0 ) {
+                    
+                    // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
+                    Vector2f cam_point;
+                    image_to_camera( x, y, cam_point );
+                    
+                    // Create the actual vertex
+                    vertex = Vector3f{ cam_point.x() * depth, cam_point.y() * depth, depth };
+                    
+                    // Compute normal as v(y,x+1)-v(y,x) cross v(y+1, x)-v(y, x )
+                    if( (y < height - 1 ) && ( x < width - 1 ) ) {
+                        // We have adjacent vertex to right and below that we can extract
+                        // Vector[0] is the element to the right of this one
+                        // Vector[width] is the element below
+                        Vector3f right_neighbour = vertices[0];
+                        Vector3f below_neighbour = vertices[width];
+                        
+                        // If they are both not BAD
+                        if( ( right_neighbour != BAD_VERTEX) && ( below_neighbour != BAD_VERTEX ) ){
+                            right_neighbour -= vertex;
+                            below_neighbour -= vertex;
+                            
+                            // Compute cros product for normal
+                            normal = right_neighbour.cross( below_neighbour );
+                        }
+                    }
+                } else {
+                    vertex = BAD_VERTEX;
+                }
+                
+                // Store
+                vertices.push_front( vertex );
+                normals.push_front( normal );
             }
         }
     }

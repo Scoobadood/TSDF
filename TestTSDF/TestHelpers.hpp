@@ -9,8 +9,8 @@
 #ifndef TestHelpers_h
 #define TestHelpers_h
 
-#include "PngUtilities.hpp"
 #include "TSDFVolume.hpp"
+#include <Eigen/Dense>
 
 
 #pragma mark - helpers
@@ -20,6 +20,13 @@ void create_sphere_in_TSDF( phd::TSDFVolume & volume, float radius );
 void create_wall_in_TSDF( phd::TSDFVolume & volume, float depth );
 void save_normals_as_png( std::string filename, uint16_t width, uint16_t height, Eigen::Vector3f * normals );
 void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t height, Eigen::Vector3f * normals );
+
+void save_normals_as_png( std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> & normals );
+void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> & normals );
+
 void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height, Eigen::Vector3f * vertices, Eigen::Vector3f * normals, const Eigen::Vector3f & camera_position, const Eigen::Vector3f & light_source);
+void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> & vertices, const std::deque<Eigen::Vector3f> & normals, const Eigen::Vector3f & camera_position, const Eigen::Vector3f & light_source);
+uint16_t * read_nyu_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height );
+uint16_t * read_tum_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height );
 
 #endif /* TestHelpers_h */

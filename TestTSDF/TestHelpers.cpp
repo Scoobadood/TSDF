@@ -8,6 +8,8 @@
 
 #include <stdio.h>
 #include "TestHelpers.hpp"
+#include "PgmUtilities.hpp"
+#include "PngUtilities.hpp"
 
 
 #pragma mark - helpers
@@ -89,9 +91,46 @@ void save_normals_as_png( std::string filename, uint16_t width, uint16_t height,
     
     delete[] image;
 }
+void save_normals_as_png( std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> &normals ) {
+    // Allocate grey scale
+    uint8_t * image = new uint8_t[width * height];
+    
+    Eigen::Vector3f axis{ 0.577f, 0.577f, 0.577f };
+    for (uint32_t idx = 0; idx < (width*height); idx ++ ) {
+        
+        Eigen::Vector3f n = normals[idx];
+        float d = n.dot( axis);
+        
+        image[idx] = std::floorf(d * 255);
+    }
+    
+    save_png_to_file(filename, width, height, image);
+    
+    delete[] image;
+}
 
 
 void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t height, Eigen::Vector3f * normals ) {
+    // Allocate grey scale
+    uint8_t * image = new uint8_t[width * height * 3];
+    
+    uint32_t write_idx = 0;
+    for (uint32_t idx = 0; idx < (width*height); idx ++ ) {
+        
+        Eigen::Vector3f n = normals[idx];
+        
+        if( n[2] < 0 ) n[2] = -n[2];
+        n = ((n / 2.0f) + Eigen::Vector3f{0.5, 0.5, 0.5}) * 255;
+        image[write_idx++] = floor( n[0] );
+        image[write_idx++] = floor( n[1] );
+        image[write_idx++] = floor( n[2] );
+    }
+    
+    save_colour_png_to_file(filename, width, height, image);
+    
+    delete[] image;
+}
+void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> &normals ) {
     // Allocate grey scale
     uint8_t * image = new uint8_t[width * height * 3];
     
@@ -144,4 +183,67 @@ void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t h
     save_png_to_file(filename, width, height, image);
     
     delete[] image;
+}
+void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> &vertices, const std::deque<Eigen::Vector3f> &normals, const Eigen::Vector3f & camera_position, const Eigen::Vector3f & light_source) {
+    
+    uint8_t * image = new uint8_t[width * height];
+    
+    // Ensure that there's always ambient light
+    float ambient_coefficient = 0.2;
+    float diffuse_coefficient = 1.0 - ambient_coefficient;
+    
+    // For each vertex/normal
+    for (uint32_t idx = 0; idx < (width*height); idx ++ ) {
+        // Vertex in camera space
+        Eigen::Vector3f vertex = vertices[idx];
+        
+        // Convert to global space
+        vertex = vertex + camera_position;
+        
+        // Compute vector from light source to vertex
+        Eigen::Vector3f r = (light_source - vertex).normalized();
+        Eigen::Vector3f n = normals[idx];
+        
+        // Compute shade
+        float shade = std::fmax( 0.0, r.dot( n ) );
+        shade = ambient_coefficient + ( diffuse_coefficient * shade );
+        
+        image[idx] = std::floorf( shade * 255  );
+    }
+    
+    save_png_to_file(filename, width, height, image);
+    
+    delete[] image;
+}
+
+
+
+uint16_t * read_tum_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height ) {
+    uint16_t * range_map = load_png_from_file( file_name, width, height );
+    
+    size_t map_size = width * height;
+    for( size_t i=0; i<map_size; i++ ) {
+        uint16_t v = range_map[i];
+        
+        // Convert to metres by dividing by 5000, then to millimetres by multiplying by 1000
+        range_map[i] = v / 5;
+    }
+    
+    return range_map;
+}
+
+// NYU Maps are in mm already but do need to be byte swapped
+uint16_t * read_nyu_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height ) {
+    uint16_t * range_map = read_pgm( file_name, width, height );
+    
+    size_t map_size = width * height;
+    for( size_t i=0; i<map_size; i++ ) {
+        uint16_t v = range_map[i];
+        
+        v = (v >> 8) + ( ( v & 0xFF ) * 256 );
+        
+        range_map[i] = v;
+    }
+    
+    return range_map;
 }
