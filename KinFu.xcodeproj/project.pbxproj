@@ -360,16 +360,16 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */,
 				55EB4DC91CE43BCF00E35EA0 /* gtest-all.cc in Sources */,
-				558B95081CF0082300B42E13 /* TestTSDF_Integration.cpp in Sources */,
 				555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */,
+				558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */,
 				558917421CED4B5A00DD5452 /* Camera.cpp in Sources */,
 				555C4E491CE6B19100D92070 /* PngUtilities.cpp in Sources */,
 				555C4E451CE679E100D92070 /* Cubic.cpp in Sources */,
 				55EB4DD81CE43E1B00E35EA0 /* MarchingCubes.cpp in Sources */,
 				55EB4DD71CE43DFC00E35EA0 /* TSDFVolume.cpp in Sources */,
 				558917411CED4B2300DD5452 /* TestCamera.cpp in Sources */,
+				558B95081CF0082300B42E13 /* TestTSDF_Integration.cpp in Sources */,
 				55EB4DD11CE43BCF00E35EA0 /* TestExtractISOSurface.cpp in Sources */,
 				55EB4DD21CE43BCF00E35EA0 /* TestTSDF.cpp in Sources */,
 				555C4E4C1CE7FE5B00D92070 /* TestTSDFMetrics.cpp in Sources */,
