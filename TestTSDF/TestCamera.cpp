@@ -43,6 +43,32 @@ TEST( Camera, givenPointWhenAtOriginOfImageThenCamPointIs_MM ) {
     EXPECT_NEAR( cam_point.y(), 240.0f/500.0f, EPS );
 }
 
+TEST( Camera, givenDefaultConstructorThenPoseIsIdentity ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    
+    EXPECT_EQ( cam.pose(), Matrix4f::Identity() );
+}
+
+
+TEST( Camera, givenCameraThenSettingPoseWorks ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    
+    Matrix4f new_pose;
+    new_pose << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16;
+    
+    cam.set_pose(new_pose);
+    
+    EXPECT_EQ( cam.pose(), new_pose );
+}
+
+
+
 TEST( Camera, givenDepthMapThenGenerateNormalMap ) {
     using namespace phd;
     using namespace Eigen;

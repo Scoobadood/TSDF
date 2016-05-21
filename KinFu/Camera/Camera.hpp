@@ -63,8 +63,12 @@ namespace phd {
         /**
          * @return the pose of the camera as a 4x4 matrix
          */
-        Eigen::Matrix4f & pose( ) const;
+        const Eigen::Matrix4f & pose( ) const;
         
+        /**
+         * @param The new pose of the camera as a 4x4 matrix
+         */
+        void set_pose( const Eigen::Matrix4f & pose );
         
         
 #pragma mark - Camera coordinate methods
