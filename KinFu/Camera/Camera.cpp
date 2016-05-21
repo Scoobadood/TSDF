@@ -16,6 +16,14 @@ namespace phd {
     Eigen::Vector3f BAD_VERTEX{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
     
     /**
+     * Common construction code
+     */
+    void Camera::init( ) {
+        m_k_inverse = m_k.inverse();
+        m_pose << 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f;
+    }
+    
+    /**
      * Construct a camera with the given intrinsic parameters
      * @param focal_x The focal length in the x direction in pixels
      * @param focal_y The focal length in the y direction in pixels
@@ -24,7 +32,7 @@ namespace phd {
      */
     Camera::Camera( const float focal_x, const float focal_y, const float centre_x, const float centre_y )  {
         m_k << -focal_x, 0.0f, centre_x, 0.0f, -focal_y, centre_y, 0.0f, 0.0f, 1.0f;
-        m_k_inverse = m_k.inverse();
+        init( );
     }
     
     /**
@@ -37,7 +45,7 @@ namespace phd {
      */
     Camera::Camera( const Eigen::Matrix3f & k ) {
         m_k = k;
-        m_k_inverse = m_k.inverse();
+        init( );
     }
     
     /**
@@ -51,7 +59,8 @@ namespace phd {
         float focal_x = -image_width / ( 2 * std::tanf(fov_x / 2.0f ) );
         float focal_y = -image_height / ( 2 * std::tanf(fov_y / 2.0f ) );
         m_k << -focal_x, 0.0f, (image_width / 2.0f), 0.0f, -focal_y, (image_height / 2.0f), 0.0f, 0.0f, 1.0f;
-        m_k_inverse = m_k.inverse();
+         
+         init() ;
     }
     
     /**

@@ -22,6 +22,14 @@ namespace phd {
         // The inverse of K, precalculated
         Eigen::Matrix3f     m_k_inverse;
         
+        // The pose of the camera in global coordinate space
+        Eigen::Matrix4f     m_pose;
+        
+        /**
+         * Common construction code
+         */
+        void init( );
+        
     public:
         /**
          * Construct a camera with the given intrinsic parameters
@@ -51,6 +59,15 @@ namespace phd {
          */
         explicit Camera( const int image_width, const int image_height, const float fov_x, const float fov_y );
         
+#pragma mark - Pose
+        /**
+         * @return the pose of the camera as a 4x4 matrix
+         */
+        Eigen::Matrix4f & pose( ) const;
+        
+        
+        
+#pragma mark - Camera coordinate methods
         /**
          * Convert from image plane coordinates to camera space coordinates
          * @param image_coordinate The 2D coordinate in the image space
@@ -66,6 +83,7 @@ namespace phd {
          */
         void image_to_camera( const int x, const int y, Eigen::Vector2f & camera_coordinate ) const;
 
+#pragma mark - Depth map methods
         /**
          * Convert from a depth image to 3D camera space coordinates
          * @param depth_image A width x height array of uint16_t depth values
