@@ -18,8 +18,7 @@
 #include <pcl/surface/organized_fast_mesh.h>
 #include <Eigen/Dense>
 #include <vector>
-
-struct VERTEX_DATA ;
+#include "Camera.hpp" 
 
 namespace phd
 {
