@@ -43,14 +43,162 @@ TEST( Camera, givenPointWhenAtOriginOfImageThenCamPointIs_MM ) {
     EXPECT_NEAR( cam_point.y(), 240.0f/500.0f, EPS );
 }
 
-TEST( Camera, givenDefaultConstructorThenPoseIsIdentity ) {
+TEST( Camera, givenPositionThenPoseIsUpdatedCorrectly ) {
     using namespace phd;
     using namespace Eigen;
     
     Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
     
+    Vector2i point{ 0, 0 };
+    Vector2f cam_point;
+    cam.image_to_camera(point, cam_point);
+    
+    EXPECT_NEAR( cam_point.x(), 320.0f/500.0f, EPS );
+    EXPECT_NEAR( cam_point.y(), 240.0f/500.0f, EPS );
+}
+
+TEST( Camera, givenDefaultConstructorThenPoseIsIdentity ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
     EXPECT_EQ( cam.pose(), Matrix4f::Identity() );
 }
+
+TEST( Camera, givenMoveToThenPoseUpdatesCorrcetly ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    EXPECT_EQ( cam.pose(), Matrix4f::Identity() );
+    
+    cam.move_to(Vector3f { 100.0, 200.0, 300.0 } );
+    
+    Matrix4f pose = cam.pose();
+    EXPECT_EQ( pose(0,3), 100 );
+    EXPECT_EQ( pose(1,3), 200 );
+    EXPECT_EQ( pose(2,3), 300 );
+}
+
+
+
+TEST( Camera, givenLookAtOriginWhenInFrontThenPoseLooksBack ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Vector3f camera_postion{ 0, 0, 100 };
+    
+    cam.move_to(camera_postion );
+    cam.look_at(Vector3f::Zero() );
+    
+    Matrix4f pose = cam.pose();
+    
+    Matrix4f expected = make_y_axis_rotation(0, camera_postion);
+    for( int i=0; i<16; i++ ) {
+        int r = i%4;
+        int c = i/4;
+        EXPECT_NEAR(pose(i), expected(i), EPS ) << "Failed at (" << r << ", " << c << ")" << std::endl;
+    }
+}
+
+
+TEST( Camera, givenLookAtOriginWhenRightOfOriginThenPoseLooksLeft ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Vector3f camera_postion{ 100, 0, 0 };
+    
+    cam.move_to(camera_postion );
+    cam.look_at(Vector3f::Zero() );
+    Matrix4f pose = cam.pose();
+    
+
+    Matrix4f expected = make_y_axis_rotation(M_PI_2, camera_postion);
+    for( int i=0; i<16; i++ ) {
+        int r = i%4;
+        int c = i/4;
+        EXPECT_NEAR(pose(i), expected(i), EPS ) << "Failed at (" << r << ", " << c << ")" << std::endl;
+    }
+}
+
+TEST( Camera, givenLookAtOriginWhenLeftOfOriginThenPoseLooksRight ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Vector3f camera_postion{ -100, 0, 0 };
+    
+    cam.move_to(camera_postion );
+    cam.look_at(Vector3f::Zero() );
+    Matrix4f pose = cam.pose();
+    
+    Matrix4f expected = make_y_axis_rotation(-M_PI_2, camera_postion);
+    for( int i=0; i<16; i++ ) {
+        int r = i%4;
+        int c = i/4;
+        EXPECT_NEAR(pose(i), expected(i), EPS ) << "Failed at (" << r << ", " << c << ")" << std::endl;
+    }
+}
+
+TEST( Camera, givenLookAtOriginWhenBehindOriginThenPoseLooksFront ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Vector3f camera_postion{ 0, 0, -100 };
+    
+    cam.move_to(camera_postion );
+    cam.look_at(Vector3f::Zero() );
+    Matrix4f pose = cam.pose();
+    
+    Matrix4f expected = make_y_axis_rotation(M_PI, camera_postion);
+    for( int i=0; i<16; i++ ) {
+        int r = i%4;
+        int c = i/4;
+        EXPECT_NEAR(pose(i), expected(i), EPS ) << "Failed at (" << r << ", " << c << ")" << std::endl;
+    }
+}
+
+TEST( Camera, givenLookAtOriginWhenAboveThenPoseLooksDown ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Vector3f camera_postion{ 0, 100, 0 };
+    
+    cam.move_to(camera_postion );
+    cam.look_at(Vector3f::Zero() );
+    Matrix4f pose = cam.pose();
+    
+    Matrix4f expected = make_x_axis_rotation(-M_PI_2, camera_postion);
+    for( int i=0; i<16; i++ ) {
+        int r = i / 4;
+        int c = i % 4;
+        EXPECT_NEAR( pose(i), expected(i), EPS ) << "Incorrect value for index (" << r << ", " << c << ")";
+    }
+}
+
+TEST( Camera, givenLookAtOriginWhenBelowThenPoseLooksUp ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Vector3f camera_postion{ 0, -100, 0 };
+    
+    cam.move_to(camera_postion );
+    cam.look_at(Vector3f::Zero() );
+    Matrix4f pose = cam.pose();
+    
+    Matrix4f expected = make_x_axis_rotation(M_PI_2, camera_postion);
+    for( int i=0; i<16; i++ ) {
+        int r = i / 4;
+        int c = i % 4;
+        EXPECT_NEAR( pose(i), expected(i), EPS ) << "Incorrect value for index (" << r << ", " << c << ")";
+    }
+}
+
 
 
 TEST( Camera, givenCameraThenSettingPoseWorks ) {

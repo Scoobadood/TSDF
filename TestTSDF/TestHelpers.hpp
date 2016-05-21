@@ -29,4 +29,9 @@ void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t h
 uint16_t * read_nyu_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height );
 uint16_t * read_tum_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height );
 
+
+Eigen::Matrix4f make_y_axis_rotation( float theta, Eigen::Vector3f pos );
+Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos );
+Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos );
+
 #endif /* TestHelpers_h */

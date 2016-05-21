@@ -247,3 +247,44 @@ uint16_t * read_nyu_depth_map( const std::string & file_name, uint32_t & width, 
     
     return range_map;
 }
+
+
+Eigen::Matrix4f make_y_axis_rotation( float theta, Eigen::Vector3f pos ) {
+    
+    float cos_theta = cosf( theta );
+    float sin_theta = sinf( theta );
+    Eigen::Matrix4f rot;
+
+    rot <<  cos_theta,  0,  sin_theta,  pos.x(),
+            0,          1,  0,          pos.y(),
+            -sin_theta, 0,  cos_theta,  pos.z(),
+            0,          0,  0,          1;
+
+    return rot;
+}
+Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos ) {
+    
+    float cos_theta = cosf( theta );
+    float sin_theta = sinf( theta );
+    Eigen::Matrix4f rot;
+    
+    rot <<  1, 0,           0,          pos.x(),
+            0, cos_theta,   -sin_theta, pos.y(),
+            0, sin_theta,   cos_theta,  pos.z(),
+            0,  0,          0,          1;
+    
+    return rot;
+}
+Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos ) {
+    
+    float cos_theta = cosf( theta );
+    float sin_theta = sinf( theta );
+    Eigen::Matrix4f rot;
+    
+    rot <<  cos_theta, -sin_theta, 0, pos.x(),
+            sin_theta,  cos_theta, 0, pos.y(),
+            0,          0,         1, pos.z(),
+            0,          0,         0,  1;
+    
+    return rot;
+}

@@ -78,7 +78,69 @@ namespace phd {
         m_pose = pose;
     }
 
+    /**
+     * Move the camera to the given global coordinates
+     * @param world_coordinate The 3D world coordinate
+     */
+    void Camera::move_to( const Eigen::Vector3f & world_coordinate ) {
+        m_pose( 0, 3) = world_coordinate.x();
+        m_pose( 1, 3) = world_coordinate.y();
+        m_pose( 2, 3) = world_coordinate.z();
+    }
     
+    /**
+     * Adjust the camera pose so that it faces the given point
+     * assumes that 'up' is in the direction of the +ve Y axis
+     * From gluLookat()
+     * @param world_coordinate The 3D world coordinate
+     */
+    void Camera::look_at( const Eigen::Vector3f & world_coordinate ) {
+        using namespace Eigen;
+        
+        // Compute ray from current location to look_at point
+        Vector3f cam_position = m_pose.block(0, 3, 3, 1);
+        Vector3f forward = (world_coordinate - cam_position);
+        forward.normalize();
+        
+        // If forward is straight down or up, make 'up' be the -vez axis otherwise it's the +ve y axis
+        Vector3f up;
+        if( ( forward.y() == 1.0f) || ( forward.y() == -1) ){
+            up << 0.0, 0.0, forward.y();
+        } else {
+            up << 0.0, 1.0, 0.0;
+        }
+        
+        Vector3f side = forward.cross( up );
+        side.normalize();
+        
+        up = side.cross( forward );
+        
+        m_pose(0,0) = side.x();
+        m_pose(1,0) = side.y();
+        m_pose(2,0) = side.z();
+        m_pose(3,0) = 0.0f;
+        
+        m_pose(0,1) = up.x();
+        m_pose(1,1) = up.y();
+        m_pose(2,1) = up.z();
+        m_pose(3,1) = 0.0f;
+        
+        m_pose(0,2) = -forward.x();
+        m_pose(1,2) = -forward.y();
+        m_pose(2,2) = -forward.z();
+        m_pose(3,2) = 0.0f;
+        
+        m_pose(3,3) = 1.0f;
+    }
+
+    
+    /**
+     * @return the position of the camera as a vector
+     */
+    Eigen::Vector3f Camera::position(  ) const {
+        return m_pose.block( 0, 3, 3, 1 );
+    }
+
     
 #pragma mark - Camera coordinate methods
     /**

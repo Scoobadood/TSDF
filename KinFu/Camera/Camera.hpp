@@ -70,6 +70,26 @@ namespace phd {
          */
         void set_pose( const Eigen::Matrix4f & pose );
         
+        /**
+         * Move the camera to the given global coordinates
+         * @param world_coordinate The 3D world coordinate
+         */
+        void move_to( const Eigen::Vector3f & world_coordinate );
+        
+        /**
+         * Adjust the camera pose so that it faces the given point 
+         * assumes that 'up' is in the direction of the +ve Y axis
+         * @param world_coordinate The 3D world coordinate
+         */
+        void look_at( const Eigen::Vector3f & world_coordinate );
+        
+        /**
+         * @return the position of the camera as a vector
+         */
+        Eigen::Vector3f position(  ) const;
+        
+        
+        
         
 #pragma mark - Camera coordinate methods
         /**

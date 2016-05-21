@@ -23,6 +23,7 @@
 		558917411CED4B2300DD5452 /* TestCamera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558917401CED4B2300DD5452 /* TestCamera.cpp */; };
 		558917421CED4B5A00DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
 		558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
+		558B95081CF0082300B42E13 /* TestTSDF_Integration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558B95071CF0082300B42E13 /* TestTSDF_Integration.cpp */; };
 		5595348F1CE5A3E8007E5EF2 /* Cubic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */; };
 		559CF1491CD8107F00EE563B /* libpcl_io.1.8.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */; };
 		55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
@@ -83,6 +84,7 @@
 		5589173C1CED288600DD5452 /* Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Camera.cpp; path = Camera/Camera.cpp; sourceTree = "<group>"; };
 		5589173D1CED288600DD5452 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = Camera/Camera.hpp; sourceTree = "<group>"; };
 		558917401CED4B2300DD5452 /* TestCamera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestCamera.cpp; sourceTree = "<group>"; };
+		558B95071CF0082300B42E13 /* TestTSDF_Integration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TestTSDF_Integration.cpp; sourceTree = "<group>"; };
 		5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Cubic.cpp; sourceTree = "<group>"; };
 		5595348E1CE5A3E8007E5EF2 /* Cubic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Cubic.hpp; sourceTree = "<group>"; };
 		559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpcl_io.1.8.0.dylib; path = ../../../../../../../../../usr/local/Cellar/pcl/HEAD/lib/libpcl_io.1.8.0.dylib; sourceTree = "<group>"; };
@@ -233,6 +235,7 @@
 				555C4E4A1CE7FE5B00D92070 /* TestTSDFMetrics.cpp */,
 				555C4E4D1CE9357B00D92070 /* TestHelpers.hpp */,
 				555C4E4E1CE9372700D92070 /* TestHelpers.cpp */,
+				558B95071CF0082300B42E13 /* TestTSDF_Integration.cpp */,
 			);
 			path = TestTSDF;
 			sourceTree = "<group>";
@@ -359,6 +362,7 @@
 			files = (
 				558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */,
 				55EB4DC91CE43BCF00E35EA0 /* gtest-all.cc in Sources */,
+				558B95081CF0082300B42E13 /* TestTSDF_Integration.cpp in Sources */,
 				555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */,
 				558917421CED4B5A00DD5452 /* Camera.cpp in Sources */,
 				555C4E491CE6B19100D92070 /* PngUtilities.cpp in Sources */,
