@@ -47,7 +47,7 @@ namespace phd {
      * @param fov_x The horizontal field of view in mm
      * @param fov_y The vertical field of view in mm
      */
-    Camera::Camera( const int image_width, const int image_height, const float fov_x, const float fov_y ) {
+     Camera::Camera( const int image_width, const int image_height, const float fov_x, const float fov_y ) {
         float focal_x = -image_width / ( 2 * std::tanf(fov_x / 2.0f ) );
         float focal_y = -image_height / ( 2 * std::tanf(fov_y / 2.0f ) );
         m_k << -focal_x, 0.0f, (image_width / 2.0f), 0.0f, -focal_y, (image_height / 2.0f), 0.0f, 0.0f, 1.0f;

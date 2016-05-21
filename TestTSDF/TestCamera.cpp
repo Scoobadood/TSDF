@@ -39,15 +39,15 @@ TEST( Camera, givenPointWhenAtOriginOfImageThenCamPointIs_MM ) {
     Vector2f cam_point;
     cam.image_to_camera(point, cam_point);
     
-    EXPECT_NEAR( cam_point.x(), -500.0f, EPS );
-    EXPECT_NEAR( cam_point.y(), -500.0f, EPS );
+    EXPECT_NEAR( cam_point.x(), 320.0f/500.0f, EPS );
+    EXPECT_NEAR( cam_point.y(), 240.0f/500.0f, EPS );
 }
 
 TEST( Camera, givenDepthMapThenGenerateNormalMap ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam{ 500, 500, 320, 240 };
     
     // Load depth image
     uint32_t width;
