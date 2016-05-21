@@ -18,7 +18,7 @@ TEST( Camera, givenPointWhenInCentreOfImageThenCamPointIsOrigin ) {
     using namespace phd;
     using namespace Eigen;
 
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
     
     Vector2i point{ 320, 240 };
     Vector2f cam_point;
@@ -33,7 +33,7 @@ TEST( Camera, givenPointWhenAtOriginOfImageThenCamPointIs_MM ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
     
     Vector2i point{ 0, 0 };
     Vector2f cam_point;
@@ -47,7 +47,7 @@ TEST( Camera, givenDepthMapThenGenerateNormalMap ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
     
     // Load depth image
     uint32_t width;
@@ -61,7 +61,7 @@ TEST( Camera, givenDepthMapThenGenerateNormalMap ) {
     cam.depth_image_to_vertices_and_normals(depthmap, width, height, vertices, normals);
     
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_tum.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/render_tum.png", width, height, vertices, normals, Vector3f{1343, 627, 1660}, Vector3f{0,0,100});
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render_tum.png", width, height, vertices, normals, Vector3f{0, 0, 0}, Vector3f{1000, 0, 1500});
     
 }
 
