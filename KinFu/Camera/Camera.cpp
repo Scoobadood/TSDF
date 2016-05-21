@@ -109,6 +109,62 @@ namespace phd {
     }
     
     /**
+     * Convert from camera coordinates to image coordinates
+     * @param camera_x The x coordinate in the camera plane
+     * @param camera_y The y coordinate in the camera plane
+     * @param image_coordinate The 2D coordinate in camera's image
+     */
+    void Camera::camera_to_image_plane( const float x, const float y, Eigen::Vector2i & image_coordinate ) const {
+        using namespace Eigen;
+        
+        camera_to_image_plane(Vector3f{ x, y, 1.0f }, image_coordinate );
+    }
+    
+    /**
+     * Convert from camera coordinates to image coordinates
+     * @param camera_coordinates The point coorinates in camera plane homegenous
+     * @param image_coordinate The 2D coordinate in camera's image
+     */
+    void Camera::camera_to_image_plane( const Eigen::Vector3f camera_coordinates, Eigen::Vector2i & image_coordinate ) const {
+        using namespace Eigen;
+        
+        Vector3f image_h = m_k * camera_coordinates;
+        
+        image_coordinate.x() = std::roundf(image_h[0] / image_h[2]);
+        image_coordinate.y() = std::roundf(image_h[1] / image_h[2]);
+    }
+    
+    /**
+     * Convert the global coordinates into camera space
+     * Multiply by pose.inverse()
+     * @param world_coordinate The 3D point in world space
+     * @param camera_coordinate The 3D pointin camera space
+     */
+    void Camera::world_to_camera( const Eigen::Vector3f & world_coordinate, Eigen::Vector3f & camera_coordinate ) const {
+        using namespace Eigen;
+        
+        Vector4f world_h{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0f};
+        Vector4f cam_h = m_pose.inverse() * world_h;
+        
+        camera_coordinate = cam_h.block(0, 0, 3, 1) / cam_h.w();
+    }
+    
+    /**
+     * Convert the global coordinates into camera space
+     * Multiply by pose.inverse()
+     * @param world_coordinate The 3D point in world space
+     * @param camera_coordinate The 3D pointin camera space
+     */
+    void Camera::world_to_image( const Eigen::Vector3f & world_coordinate, Eigen::Vector2i & image_coordinate ) const {
+        using namespace Eigen;
+        
+        Vector3f cam_coordinate;
+        world_to_camera(world_coordinate, cam_coordinate);
+        camera_to_image_plane(cam_coordinate, image_coordinate);
+    }
+    
+#pragma mark - Depth map methods
+    /**
      * Convert from a depth image to 3D camera space coordinates
      * @param depth_image A width x height array of uint16_t depth values
      * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
@@ -197,8 +253,6 @@ namespace phd {
                     // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
                     Vector2f cam_point;
                     image_to_camera( x, y, cam_point );
-                    
-                    // Create the actual vertex
                     vertex = Vector3f{ cam_point.x() * depth, cam_point.y() * depth, depth };
                     
                     // Compute normal as v(y,x+1)-v(y,x) cross v(y+1, x)-v(y, x )

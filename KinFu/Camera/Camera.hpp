@@ -87,6 +87,38 @@ namespace phd {
          */
         void image_to_camera( const int x, const int y, Eigen::Vector2f & camera_coordinate ) const;
 
+        /**
+         * Convert from camera coordinates to image coordinates
+         * @param camera_x The x coordinate in the camera plane
+         * @param camera_y The y coordinate in the camera plane
+         * @param image_coordinate The 2D coordinate in camera's image
+         */
+        void camera_to_image_plane( const float x, const float y, Eigen::Vector2i & image_coordinate ) const;
+
+        /**
+         * Convert from camera coordinates to image coordinates
+         * @param camera_coordinates The point coorinates in camera plane homegenous
+         * @param image_coordinate The 2D coordinate in camera's image
+         */
+        void camera_to_image_plane( const Eigen::Vector3f camera_coordinates, Eigen::Vector2i & image_coordinate ) const;
+
+        /**
+         * Convert the global coordinates into camera space
+         * Multiply by pose.inverse()
+         * @param world_coordinate The 3D point in world space
+         * @param camera_coordinate The 3D pointin camera space
+         */
+        void world_to_camera( const Eigen::Vector3f & world_coordinate, Eigen::Vector3f & camera_coordinate ) const;
+
+        /**
+         * Convert the global coordinates into camera space
+         * Multiply by pose.inverse()
+         * @param world_coordinate The 3D point in world space
+         * @param camera_coordinate The 3D pointin camera space
+         */
+        void world_to_image( const Eigen::Vector3f & world_coordinate, Eigen::Vector2i & image_coordinate ) const;
+        
+
 #pragma mark - Depth map methods
         /**
          * Convert from a depth image to 3D camera space coordinates

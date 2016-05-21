@@ -189,9 +189,12 @@ namespace phd
 #pragma mark - Integrate new depth data
         /**
          * Integrate a range map into the TSDF
+         * @param depth_map Pointer to width*height depth values where 0 is an invalid depth and positive values are expressed in mm
+         * @param width The horiontal dimension of the depth_map
+         * @param height The height of the depth_map
+         * @param camera The camera from which the depth_map was taken
          */
-        void integrate( const unsigned short * range_map, uint32_t width, uint32_t height, const Eigen::Matrix4f & camera_pose );
-
+        void integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera );
         
         /**
          * Extract the ISO Surface corresponding to the 0 crossing

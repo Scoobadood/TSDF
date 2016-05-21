@@ -252,80 +252,80 @@ namespace phd {
     }
     
 #pragma mark - Integrate new depth data
-    /*
-     * Given depth map Rk and pose Tk,w, For each voxel p within frustum of frame k update the Truncated Signed Distance function
+    /**
+     * Integrate a range map into the TSDF
+     * This follows the approach in Cohen, N.S.V. 2013, 'Open Fusion', pp. 1–35.
+     * whereby new maps have less weight than existing maps
+     * @param depth_map Pointer to width*height depth values where 0 is an invalid depth and positive values are expressed in mm
+     * @param width The horiontal dimension of the depth_map
+     * @param height The height of the depth_map
+     * @param camera The camera from which the depth_map was taken
      */
-    void TSDFVolume::integrate( const unsigned short * range_map, uint32_t width, uint32_t height, const Eigen::Matrix4f & camera_pose ) {
+    void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
         using namespace Eigen;
         
-        // Precalculate KT_kw - note we invert the pose to transform from global to frame coords
-        Matrix4f Tkw = camera_pose.inverse();
-        
-        Matrix3f Kinv = m_K.inverse();
-        
+        // First cnvert the depth_map into global coordinates
+        std::deque<Vector3f> vertices;
+        std::deque<Vector3f> normals;
+        camera.depth_image_to_vertices_and_normals(depth_map, width, height, vertices, normals);
+    
         // For each voxel in the space
         for( int vy=0; vy<m_size[1]; vy++ ) {
             for( int vx=0; vx<m_size[0]; vx++ ) {
-                
                 for( int vz=0; vz<m_size[2]; vz++ ) {
                     
-                    // Get voxel coordinates in camera frame of reference by multiplying by
-                    // inverse camera pose
-                    Vector3f p = centre_of_voxel_at( vx, vy, vz );
-                    Vector4f ph{ p[0], p[1], p[2], 1.0 };
-                    Vector4f xh = Tkw * ph;
-                    Vector3f x{ xh[0]/xh[3], xh[1]/xh[3], xh[2]/xh[3] };
+                    // Get voxel coordinates in global frame
+                    Vector3f centre_of_voxel = centre_of_voxel_at( vx, vy, vz );
                     
-                    // Now apply intrinsic paramters - this converts from 2D plane to camera image plane
-                    // And perform perspective projection
-                    x = m_K * x;
-                    x = x / x[2];
+                    // Convert to image coordinate sin camera
+                    Vector2i cov_in_image;
+                    camera.world_to_image( centre_of_voxel, cov_in_image);
                     
-                    
-                    // if x in camera view frustum
-                    int range_x =std::roundf( x[0] );
-                    int range_y =std::roundf( x[1] );
-                    if( range_x >= 0 && range_x < width && range_y >= 0 && range_y < height) {
+                    // if this point is in the camera view frustum...
+                    if( cov_in_image.x() >= 0 && cov_in_image.x() < width && cov_in_image.y() >= 0 && cov_in_image.y() < height) {
                         
-                        // Measured distance to surface is given from range image
-                        uint16_t measured_depth = range_map[ range_x + range_y * width ];
+                        // Scanned depth
+                        uint16_t scanned_depth = depth_map[ cov_in_image.x() + cov_in_image.y() * width ];
+                        
+                        // Surely we need to convert this scanned depth to an actal surface vertex and measure distance to that
+                        Vector3f surface_vertex;
                         
                         
-                        if( measured_depth > 0 ) {
-                            // Computed depth is the distance between camera origin and point p
-                            Vector3f camera_origin{ camera_pose(0,3), camera_pose(1,3), camera_pose(2,3) };
-                            Vector3f computed_depth_vector = p - camera_origin;
+
+                        // If the depth is valid
+                        if( scanned_depth > 0 ) {
+                            // Extract camera origin in global space
+                            Vector3f camera_origin{ camera.pose()(0,3), camera.pose()(1,3), camera.pose()(2,3) };
+
+                            // Convert the cov to a 3D vertex in camera space
+                            Vector2f cam_point;
+                            camera.image_to_camera( cov_in_image.x(), cov_in_image.y(), cam_point );
+                            Vector3f surface_vertex{ cam_point.x() * scanned_depth, cam_point.y() * scanned_depth, scanned_depth };
                             
-                            // Compute lambda ; a scale factor to convert from mm to camera focal lengths
+                            // Measured distance is length of the surface_vertex vector
+                            float measured_depth = surface_vertex.norm();
+
                             
-                            Vector3f v = Kinv * x;
-                            float lambda = v.norm();
+                            // Computed distance is from cam origin to voxel centre in global space
+                            Vector3f computed_depth_vector = centre_of_voxel - camera_origin;
+                            float computed_depth = computed_depth_vector.norm();
                             
-                            v = v * measured_depth;
-                            
-                            float computed_depth = computed_depth_vector.norm() / lambda;
-                            
-                            float sdf = computed_depth - measured_depth;
-                            std::cout << "( " << vx << ", " << vy << ", " << vz << " ) = " << sdf << std::endl;
+                            // SDF is the difference between them.
+                            float sdf = measured_depth - computed_depth;
                             
                             // Truncate
-                            float current_distance = 0.0;
-                            if ( sdf > 0 ) {
-                                current_distance = std::min( 1.0f, sdf / m_truncation_distance);
-                            } else {
-                                current_distance = std::max( -1.0f, sdf / m_truncation_distance);
-                            }
+                            float tsdf = tsdf = std::min( std::max( sdf, -m_truncation_distance ), m_truncation_distance );
                             
+                            // Extract prior weight
                             float prior_weight = weight( vx, vy, vz );
-                            float current_weight = std::min( m_max_weight, prior_weight + 1);
+                            float current_weight = 1;
                             
                             float prior_distance = distance( vx, vy, vz );
                             
-                            float new_weight = prior_weight + current_weight;
-                            float new_distance = ( (prior_distance * prior_weight) + (current_distance * current_weight) ) / new_weight;
+                            float new_weight = std::min( prior_weight + current_weight, m_max_weight );
+                            float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
                             
                             distance( vx, vy, vz ) = new_distance;
-                            
                             weight( vx, vy, vz ) = new_weight;
                         }
                     }
