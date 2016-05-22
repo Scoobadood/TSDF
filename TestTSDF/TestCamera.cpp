@@ -14,11 +14,15 @@
 
 const float EPS = 1e-6;
 
+phd::Camera make_kinect( ) {
+    return phd::Camera{ 585, 585, 316, 247 };
+}
+
 TEST( Camera, givenPointWhenInCentreOfImageThenCamPointIsOrigin ) {
     using namespace phd;
     using namespace Eigen;
 
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     
     Vector2i point{ 320, 240 };
     Vector2f cam_point;
@@ -33,7 +37,7 @@ TEST( Camera, givenPointWhenAtOriginOfImageThenCamPointIs_MM ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     
     Vector2i point{ 0, 0 };
     Vector2f cam_point;
@@ -47,7 +51,7 @@ TEST( Camera, givenPositionThenPoseIsUpdatedCorrectly ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     
     Vector2i point{ 0, 0 };
     Vector2f cam_point;
@@ -61,7 +65,7 @@ TEST( Camera, givenDefaultConstructorThenPoseIsIdentity ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     EXPECT_EQ( cam.pose(), Matrix4f::Identity() );
 }
 
@@ -69,7 +73,7 @@ TEST( Camera, givenMoveToThenPoseUpdatesCorrcetly ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     EXPECT_EQ( cam.pose(), Matrix4f::Identity() );
     
     cam.move_to(Vector3f { 100.0, 200.0, 300.0 } );
@@ -86,7 +90,7 @@ TEST( Camera, givenLookAtOriginWhenInFrontThenPoseLooksBack ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     Vector3f camera_postion{ 0, 0, 100 };
     
     cam.move_to(camera_postion );
@@ -107,7 +111,7 @@ TEST( Camera, givenLookAtOriginWhenRightOfOriginThenPoseLooksLeft ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     Vector3f camera_postion{ 100, 0, 0 };
     
     cam.move_to(camera_postion );
@@ -127,7 +131,7 @@ TEST( Camera, givenLookAtOriginWhenLeftOfOriginThenPoseLooksRight ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     Vector3f camera_postion{ -100, 0, 0 };
     
     cam.move_to(camera_postion );
@@ -146,7 +150,7 @@ TEST( Camera, givenLookAtOriginWhenBehindOriginThenPoseLooksFront ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     Vector3f camera_postion{ 0, 0, -100 };
     
     cam.move_to(camera_postion );
@@ -165,7 +169,7 @@ TEST( Camera, givenLookAtOriginWhenAboveThenPoseLooksDown ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     Vector3f camera_postion{ 0, 100, 0 };
     
     cam.move_to(camera_postion );
@@ -184,7 +188,7 @@ TEST( Camera, givenLookAtOriginWhenBelowThenPoseLooksUp ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     Vector3f camera_postion{ 0, -100, 0 };
     
     cam.move_to(camera_postion );
@@ -205,7 +209,7 @@ TEST( Camera, givenCameraThenSettingPoseWorks ) {
     using namespace phd;
     using namespace Eigen;
     
-    Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
+    Camera cam = make_kinect();
     
     Matrix4f new_pose;
     new_pose << 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16;
