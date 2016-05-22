@@ -27,7 +27,7 @@ TEST( TSDF_Raycasting, givenRayToLeftOfVolumeWhenIntersectingThenReturnsFalse ) 
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
 
     EXPECT_FALSE( is );
 }
@@ -43,7 +43,7 @@ TEST( TSDF_Raycasting, givenRayToRightOfVolumeWhenIntersectingThenReturnsFalse )
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -59,7 +59,7 @@ TEST( TSDF_Raycasting, givenRayToTopOfVolumeWhenIntersectingThenReturnsFalse ) {
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -75,7 +75,7 @@ TEST( TSDF_Raycasting, givenRayToBottomOfVolumeWhenIntersectingThenReturnsFalse 
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -87,11 +87,11 @@ TEST( TSDF_Raycasting, givenRayToFrontOfVolumeWhenIntersectingThenReturnsFalse )
     TSDFVolume volume{ Vector3i{ 10, 10, 10 },Vector3f{ 300, 300, 300 } };
     
     // Ray to left of volume
-    Vector3f origin{ 150, 150, -10 };
+    Vector3f origin{ 150, 150, 310 };
     Vector3f direction{ 0.0, 1.0, 0.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -103,11 +103,11 @@ TEST( TSDF_Raycasting, givenRayToBackOfVolumeWhenIntersectingThenReturnsFalse ) 
     TSDFVolume volume{ Vector3i{ 10, 10, 10 },Vector3f{ 300, 300, 300 } };
     
     // Ray to left of volume
-    Vector3f origin{ 150, 150, 310 };
+    Vector3f origin{ 150, 150, -10 };
     Vector3f direction{ 0.0, 1.0, 0.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -125,19 +125,19 @@ TEST( TSDF_Raycasting, givenRayFrontToBackOfVolumeWhenIntersectingThenReturnsTru
             float gx = x * 30 + 15;
             float gy = y * 30 + 15;
             
-            Vector3f origin{ gx, gy, -10 };
-            Vector3f direction{ 0.0, 0.0, 1.0 };
+            Vector3f origin{ gx, gy, 310 };
+            Vector3f direction{ 0.0, 0.0, -1.0 };
         
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
         
     
             EXPECT_TRUE( is );
             EXPECT_NEAR(actual_t, 10, FLT_EPSILON);
             EXPECT_NEAR(actual_entry_point.x(), gx, FLT_EPSILON);
             EXPECT_NEAR(actual_entry_point.y(), gy, FLT_EPSILON);
-            EXPECT_NEAR(actual_entry_point.z(), 0.0, FLT_EPSILON);
+            EXPECT_NEAR(actual_entry_point.z(), 300.0, FLT_EPSILON);
         }
     }
 }
@@ -153,19 +153,19 @@ TEST( TSDF_Raycasting, givenRayBackToFrontOfVolumeWhenIntersectingThenReturnsTru
             float gx = x * 30 + 15;
             float gy = y * 30 + 15;
             
-            Vector3f origin{ gx, gy, 310 };
-            Vector3f direction{ 0.0, 0.0, -1.0 };
+            Vector3f origin{ gx, gy, -10 };
+            Vector3f direction{ 0.0, 0.0, 1.0 };
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
             EXPECT_NEAR(actual_t, 10, FLT_EPSILON);
             EXPECT_NEAR(actual_entry_point.x(), gx, FLT_EPSILON);
             EXPECT_NEAR(actual_entry_point.y(), gy, FLT_EPSILON);
-            EXPECT_NEAR(actual_entry_point.z(), 300.0, FLT_EPSILON);
+            EXPECT_NEAR(actual_entry_point.z(), 0.0, FLT_EPSILON);
         }
     }
 }
@@ -187,7 +187,7 @@ TEST( TSDF_Raycasting, givenRayLeftToRightOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -215,7 +215,7 @@ TEST( TSDF_Raycasting, givenRayRightToLeftOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -244,7 +244,7 @@ TEST( TSDF_Raycasting, givenRayTopToBottomOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -272,7 +272,7 @@ TEST( TSDF_Raycasting, givenRayBottomToTopOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -286,21 +286,49 @@ TEST( TSDF_Raycasting, givenRayBottomToTopOfVolumeWhenIntersectingThenReturnsTru
 
 #pragma Walk Ray
 
-TEST( TSDF_Raycasting, givenRaysFromFrontToBackWhenRenderingWallThenVerticesAndNormalsAreCorrect ) {
+
+TEST( TSDF_Raycasting, givenRaysFromFrontToBackWhenRenderingWallThenNoValues ) {
     using namespace phd;
     using namespace Eigen;
     
     float vw, vh, vd;
-    TSDFVolume volume = construct_volume(64, 64, 64, 300, 300, 300, vw, vh, vd);
+    int num_voxels = 64;
+    TSDFVolume volume = construct_volume(num_voxels, num_voxels, num_voxels, 300, 300, 300, vw, vh, vd);
+    create_wall_in_TSDF(volume, 40);
+    
+    float trunc_dist = volume.truncation_distance();
+    
+    Vector3f direction{ 0.0, 0.0, -1.0 };
+    
+    for( int x=0; x<num_voxels; x++ ) {
+        for( int y=0; y<num_voxels; y++ ) {
+            Vector3f origin{ x * vw, y * vh, 450.0 };
+            
+            Eigen::Vector3f vertex;
+            Eigen::Vector3f normal;
+            bool values = volume.walk_ray( origin, direction, vertex, normal);
+            
+            EXPECT_FALSE( values );
+        }
+    }
+}
+
+TEST( TSDF_Raycasting, givenRaysFromBackToFrontWhenRenderingWallThenZVertexIs40NormalZIsMinus1 ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    float vw, vh, vd;
+    int num_voxels = 64;
+    TSDFVolume volume = construct_volume(num_voxels, num_voxels, num_voxels, 300, 300, 300, vw, vh, vd);
     create_wall_in_TSDF(volume, 40);
     
     float trunc_dist = volume.truncation_distance();
     
     Vector3f direction{ 0.0, 0.0, 1.0 };
 
-    for( int x=0; x<10; x++ ) {
-        for( int y=0; y<10; y++ ) {
-            Vector3f origin{ x * vw, y * vh, -450.0 };
+    for( int x=0; x<num_voxels; x++ ) {
+        for( int y=0; y<num_voxels; y++ ) {
+            Vector3f origin{ x * vw, y * vh, -150.0 };
             
             Eigen::Vector3f vertex;
             Eigen::Vector3f normal;
@@ -309,8 +337,8 @@ TEST( TSDF_Raycasting, givenRaysFromFrontToBackWhenRenderingWallThenVerticesAndN
             EXPECT_TRUE( values );
 
             // Check vertex
-            EXPECT_NEAR(vertex.x(), x*vw, trunc_dist);
-            EXPECT_NEAR(vertex.y(), y*vh, trunc_dist);
+            EXPECT_NEAR(vertex.x(), x*vw, EPS);
+            EXPECT_NEAR(vertex.y(), y*vh, EPS);
             EXPECT_NEAR(vertex.z(), 40, trunc_dist);
 
             // Check normal
@@ -319,12 +347,14 @@ TEST( TSDF_Raycasting, givenRaysFromFrontToBackWhenRenderingWallThenVerticesAndN
             EXPECT_NEAR(normal.z(), -1.0, EPS) << "Invalid normal at (" << x << ", " << y << ")";
         }
     }
-
 }
 
 
+
+
 #pragma mark - raycast generating images
-TEST( TSDF_Raycasting, testRayCastFront ) {
+// Front on positive Z axis
+TEST( TSDF_Raycasting, testRayCast_150_150_450 ) {
     using namespace phd;
     using namespace Eigen;
     
@@ -340,26 +370,24 @@ TEST( TSDF_Raycasting, testRayCastFront ) {
     Vector3f * normals = new Vector3f[ width * height ];
     
     Vector3f light_source{ 0, 0, 0 };
-    Vector3f camera_position{ 150, 150, -450 };
     
-    Matrix4f pose;
-    pose << 1, 0, 0, camera_position[0],
-            0, 1, 0, camera_position[1],
-            0, 0, 1, camera_position[2],
-            0, 0, 0, 1;
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( 150, 150, 450 );
+    cam.look_at( 150, 150, 150);
     
-    volume.raycast(pose, 640, 480, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/normals_front.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/render_front.png", width, height, vertices, normals, camera_position, light_source);
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals_150_150_450.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render_150_150_450.png", width, height, vertices, normals, cam.position(), light_source);
 }
 
-TEST( TSDF_Raycasting, testRayCastRight45 ) {
+// Front right positive Z axis
+TEST( TSDF_Raycasting, testRayCast_450_150_450 ) {
     using namespace phd;
     using namespace Eigen;
     
     float vw, vh, vd;
     TSDFVolume volume = construct_volume(64, 64, 64, 300, 300, 300, vw, vh, vd);
-    create_sphere_in_TSDF(volume, 80);
+    create_wall_in_TSDF(volume, 40);
     
     uint16_t width = 640;
     uint16_t height = 480;
@@ -368,21 +396,18 @@ TEST( TSDF_Raycasting, testRayCastRight45 ) {
     Vector3f * normals = new Vector3f[ width * height ];
     
     Vector3f light_source{ 0, 0, 0 };
-    Vector3f camera_position{ 750, 150, -450 };
     
-    Matrix4f pose;
-    pose << 0.707,  0, -0.707,   camera_position[0],
-            0,      1, 0,       camera_position[1],
-            0.707,  0, 0.707,   camera_position[2],
-            0,      0, 0,       1;
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( 450, 150, 450 );
+    cam.look_at( 150,150,150);
     
     
-    volume.raycast(pose, 640, 480, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/normals_right_45.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/render_right_45.png", width, height, vertices, normals, camera_position, light_source);
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals_450_150_450.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render__450_150_450.png", width, height, vertices, normals, cam.position(), light_source);
 }
-
-TEST( TSDF_Raycasting, testRayCastLeft45 ) {
+// Right on positive X axis
+TEST( TSDF_Raycasting, testRayCast_450_150_150 ) {
     using namespace phd;
     using namespace Eigen;
     
@@ -398,20 +423,98 @@ TEST( TSDF_Raycasting, testRayCastLeft45 ) {
     Vector3f * normals = new Vector3f[ width * height ];
 
     Vector3f light_source{ 0, 0, 0 };
-    Vector3f camera_position{ -450, 150, -450 };
     
-    Matrix4f pose;
-    pose << 0.707,  0, 0.707,   camera_position[0],
-            0,      1, 0,       camera_position[1],
-            -0.707,  0, 0.707,   camera_position[2],
-            0,      0, 0,       1;
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( 450, 150, 150 );
+    cam.look_at( 150,150,150);
     
-    volume.raycast(pose, 640, 480, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/normals_left_45.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/render_left_45.png", width, height, vertices, normals, camera_position, light_source);
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals_450_150_150.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render_450_150_150.png", width, height, vertices, normals, cam.position(), light_source);
 }
 
-TEST( TSDF_Raycasting, testRayCastTop45 ) {
+// Right rear on positive X, negative Z axis
+TEST( TSDF_Raycasting, testRayCast_450_150_m150 ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    float vw, vh, vd;
+    TSDFVolume volume = construct_volume(64, 64, 64, 300, 300, 300, vw, vh, vd);
+    create_wall_in_TSDF(volume, 100);
+    //    create_sphere_in_TSDF(volume, 80);
+    
+    uint16_t width = 640;
+    uint16_t height = 480;
+    
+    Vector3f * vertices = new Vector3f[ width * height ];
+    Vector3f * normals = new Vector3f[ width * height ];
+    
+    Vector3f light_source{ 0, 0, 0 };
+    
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( 450, 150, -150 );
+    cam.look_at( 150,150,150);
+    
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normalstestRayCast_450_150_m150.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/rendertestRayCast_450_150_m150.png", width, height, vertices, normals, cam.position(), light_source);
+}
+
+// Rear on -ve Z axis
+TEST( TSDF_Raycasting, testRayCast_150_150_m150 ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    float vw, vh, vd;
+    TSDFVolume volume = construct_volume(64, 64, 64, 300, 300, 300, vw, vh, vd);
+    create_wall_in_TSDF(volume, 40);
+    
+    uint16_t width = 640;
+    uint16_t height = 480;
+    
+    Vector3f * vertices = new Vector3f[ width * height ];
+    Vector3f * normals = new Vector3f[ width * height ];
+
+    Vector3f light_source{ 0, 0, 0 };
+    
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( 150, 150, -150 );
+    cam.look_at( 150,150,150);
+    
+    
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals_150_150_m150.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render_150_150_m150.png", width, height, vertices, normals, cam.position(), light_source);
+}
+
+// Left rear on -ve Z, -ve X axis
+TEST( TSDF_Raycasting, testRayCast_m150_150_m150 ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    float vw, vh, vd;
+    TSDFVolume volume = construct_volume(64, 64, 64, 300, 300, 300, vw, vh, vd);
+    create_wall_in_TSDF(volume, 40);
+    
+    uint16_t width = 640;
+    uint16_t height = 480;
+    
+    Vector3f * vertices = new Vector3f[ width * height ];
+    Vector3f * normals = new Vector3f[ width * height ];
+    
+    Vector3f light_source{ 0, 0, 0 };
+    
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( -150, 150, -150 );
+    cam.look_at( 150,150,150);
+    
+    
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals_m150_150_m150.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render_m150_150_m150.png", width, height, vertices, normals, cam.position(), light_source);
+}
+// Left on -ve X axis
+TEST( TSDF_Raycasting, testRayCast_m150_150_150 ) {
     using namespace phd;
     using namespace Eigen;
     
@@ -424,18 +527,41 @@ TEST( TSDF_Raycasting, testRayCastTop45 ) {
     
     Vector3f * vertices = new Vector3f[ width * height ];
     Vector3f * normals = new Vector3f[ width * height ];
-
+    
     Vector3f light_source{ 0, 0, 0 };
-    Vector3f camera_position{ 150, 750, -450 };
     
-    Matrix4f pose;
-    pose << 1,  0,      0,   camera_position[0],
-            0,  0.707,  -0.707,   camera_position[1],
-            0,  0.707,  0.707,   camera_position[2],
-            0,  0,      0,       1;
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( -150, 150, 150 );
+    cam.look_at( 150,150,150);
     
     
-    volume.raycast(pose, 640, 480, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/normals_top_45.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/render_top_45.png", width, height, vertices, normals, camera_position, light_source);
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals_m150_150_150.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render_m150_150_150.png", width, height, vertices, normals, cam.position(), light_source);
+}
+// Left front on -ve x axis, +ve z axis
+TEST( TSDF_Raycasting, testRayCast_m150_150_450 ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    float vw, vh, vd;
+    TSDFVolume volume = construct_volume(64, 64, 64, 300, 300, 300, vw, vh, vd);
+    create_sphere_in_TSDF(volume, 80);
+    
+    uint16_t width = 640;
+    uint16_t height = 480;
+    
+    Vector3f * vertices = new Vector3f[ width * height ];
+    Vector3f * normals = new Vector3f[ width * height ];
+    
+    Vector3f light_source{ 0, 0, 0 };
+    
+    Camera cam{ 500, 500, 320, 240 };
+    cam.move_to( -150, 150, 450 );
+    cam.look_at( 150,150,150);
+    
+    
+    volume.raycast(cam, 640, 480, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals_m150_150_450.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render_m150_150_450.png", width, height, vertices, normals, cam.position(), light_source);
 }

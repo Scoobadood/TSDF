@@ -62,17 +62,6 @@ namespace phd {
             assert( m_weights );
             clear();
             
-            // This K is from 3D with Kinect, Jan Smisek, Michal Jancosek and Tomas Pajdla
-            m_K.setZero();
-            m_K(0,0) = 585.6f;
-            m_K(0,2) = 316.0f;
-            m_K(1,1) = 585.6f;
-            m_K(1,2) = 247.6f;
-            m_K(2,2) = 1.0f;
-            
-            // Compute K_Inverse
-            m_K_inv = m_K.inverse();
-            
             // Max weight for integrating depth images
             m_max_weight = 10.0f;
             
@@ -87,8 +76,8 @@ namespace phd {
     
     /**
      * @param voxel The voxel to consider
-     * @param lower_bounds Coordinates (in global) of front left lower corner of voxel
-     * @param upper_bounds Coordinates (in global) of back right upper corner of voxel
+     * @param lower_bounds Coordinates (in global) of rear left lower corner of voxel
+     * @param upper_bounds Coordinates (in global) of front right upper corner of voxel
      * @throw std::invalid_argument if voxel coords are out of range
      */
     void TSDFVolume::voxel_bounds( const Eigen::Vector3i & voxel, Eigen::Vector3f & lower_bounds, Eigen::Vector3f & upper_bounds ) const {
@@ -264,7 +253,7 @@ namespace phd {
     void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
         using namespace Eigen;
         
-        // First cnvert the depth_map into global coordinates
+        // First convert the depth_map into global coordinates
         std::deque<Vector3f> vertices;
         std::deque<Vector3f> normals;
         camera.depth_image_to_vertices_and_normals(depth_map, width, height, vertices, normals);
@@ -295,7 +284,7 @@ namespace phd {
                         // If the depth is valid
                         if( scanned_depth > 0 ) {
                             // Extract camera origin in global space
-                            Vector3f camera_origin{ camera.pose()(0,3), camera.pose()(1,3), camera.pose()(2,3) };
+                            Vector3f camera_origin = camera.position();
 
                             // Convert the cov to a 3D vertex in camera space
                             Vector2f cam_point;
@@ -349,24 +338,7 @@ namespace phd {
 #pragma mark - Raycasting
     
     /**
-     * Given an image plane coordinate (x,y) and a depth z, backproject to a point in 3D space
-     */
-    Eigen::Vector3f TSDFVolume::back_project( const Eigen::Matrix4f & pose, const Eigen::Vector3f & point ) const {
-        Eigen::Matrix3f K_inv = m_K.inverse();
-        Eigen::Vector3f inter = K_inv * point;
-        
-        // Now multiply by pose to convert from camera to worl coordinates
-        Eigen::Vector4f back_h = pose * Eigen::Vector4f{ inter.x(), inter.y(), inter.z(), 1.0f };
-        
-        Eigen::Vector3f back{ back_h.x(), back_h.y(), back_h.z() };
-        back = back / back_h.w();
-        
-        return back;
-    }
-    
-
-    /**
-     * Compute the bormal to the ISO surface at the given point
+     * Compute the normal to the ISO surface at the given point
      * Based on http://www.cs.technion.ac.il/~veredc/openfusion/OpenFusionReport.pdf
      * @param point The point; should be inside the TSDF
      * @param normal The returned normal
@@ -399,15 +371,15 @@ namespace phd {
     
     /**
      * Find the point where the given ray first intersects the TSDF space in global coordinates
-     * @param origin The r=source of the ray
+     * @param origin The source of the ray
      * @param ray_direction A unit vector in the direction of the ray
      * @param entry_point The point at which the ray enters the TSDF which may be the origin
      * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
      * @return true if the ray intersects the TSDF otherwise false
      */
     bool TSDFVolume::is_intersected_by_ray_2( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
-        float t_near = std::numeric_limits<float>::min( );
-        float t_far = std::numeric_limits<float>::max( );
+        float t_near = std::numeric_limits<float>::lowest( );
+        float t_far = std::numeric_limits<float>::max();
         
         bool intersects = true;
         
@@ -460,66 +432,6 @@ namespace phd {
         }
         
         return intersects;
-    }
-    
-    /**
-     * Find the point where the given ray first intersects the TSDF space in global coordinates
-     * @param origin The r=source of the ray
-     * @param ray_direction A unit vector in the direction of the ray
-     * @param entry_point The point at which the ray enters the TSDF which may be the origin
-     * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
-     * @return true if the ray intersects the TSDF otherwise false
-     */
-    bool TSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
-        using namespace Eigen;
-        
-        bool is_intersected = false;
-        
-        // Handle the case where origin is in grid
-        if( point_is_in_tsdf( origin )  ) {
-            entry_point = origin;
-            is_intersected = true;
-        } else {
-            // Work out ray intersection with boundary of grid if it exists
-            std::vector<float> minT;
-            std::vector<Vector3f> intersection;
-            
-            for( int i=0; i<3; i++ ) {
-                if( ray_direction[i] != 0 ) {
-                    float t_near = ( m_offset[i]                      - origin[i] ) / ray_direction[i];
-                    float t_far  = ( m_offset[i] + m_physical_size[i] - origin[i] ) / ray_direction[i];
-                    
-                    Vector3f potential_entry_point = origin + (t_near * ray_direction);
-                    if(  point_is_in_tsdf( potential_entry_point ) ) {
-                        minT.push_back( t_near );
-                        intersection.push_back( potential_entry_point );
-                    }
-                    
-                    potential_entry_point = origin + (t_far * ray_direction);
-                    if(  point_is_in_tsdf( potential_entry_point ) ) {
-                        minT.push_back( t_far );
-                        intersection.push_back( potential_entry_point );
-                    }
-                }
-            }
-            
-            // Now find the lowest minT and adopt that intersection
-            if( minT.size() > 0 ) {
-                t = minT[0];
-                entry_point = intersection[0];
-                int i=1;
-                while( i < minT.size() ) {
-                    if( minT[i] < t ) {
-                        entry_point = intersection[i];
-                        t = minT[i];
-                    }
-                    i++;
-                }
-                
-                is_intersected = true;
-            }
-        }
-        return is_intersected;
     }
     
     /**
@@ -603,31 +515,29 @@ namespace phd {
     
     /**
      * Generate a raycast surface
-     * @param pose The point in world coordinates from which to render
+     * @param camera The camera doing the rendering
      * @param width The width of the output image
      * @param height The height of the output image
      * @param vertex_map A pointer to an array of width * height vertices in frame of reference of camera
      * @param normal_map A pointer to an array of width * height normals in frame of reference of camera
      */
-    void TSDFVolume::raycast( const Eigen::Matrix4f & pose, uint16_t width, uint16_t height,
+    void TSDFVolume::raycast( const Camera & camera, uint16_t width, uint16_t height,
                              Eigen::Vector3f * vertex_map,
                              Eigen::Vector3f * normal_map) const {
         using namespace Eigen;
-        
-        Matrix4f pose_inverse = pose.inverse();
-        Matrix3f rot = pose_inverse.block<3,3>(0,0);
         
         // For each pixel u ∈ output image do
         for( uint16_t y=0; y<height; y++ ) {
             for( uint16_t x =0; x<width; x++ ) {
 
+                // Ray origin is at camera position in world coords
+                Vector3f ray_start = camera.position();
                 
-                
-                // Ray origin is at camera position
-                Vector3f ray_start{ pose(0,3), pose(1,3), pose(2,3) };
-                
-                // Backproject the pixel (x, y, 1mm) into global space
-                Vector3f ray_next = back_project( pose, Vector3f{ x, y, 1 } );
+                // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
+                Vector3f ray_next;
+                Vector2f camera_coord;
+                camera.image_to_camera(x, y, camera_coord);
+                camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 }, ray_next );
                 
                 // Obtain a unit vector in the direction of the ray
                 Vector3f ray_direction = (ray_next - ray_start).normalized();
@@ -635,24 +545,21 @@ namespace phd {
                 // Walk the ray to obtain vertex and normal values
                 // Default normal value is 0
                 Vector3f normal{ 0.0, 0.0, 0.0 };
-                
-                // Default vertex value is maximum range
-                Vector3f vertex = ray_start + 8000 * ray_direction;
+                Vector3f vertex;
                 
                 bool ray_insersects_surface = walk_ray( ray_start, ray_direction, vertex, normal);
                 
                 Vector3f normal_posed;
+                Vector3f vertex_posed;
                 if( ray_insersects_surface ) {
-                    normal_posed = rot * normal;
+                    camera.world_to_camera_normal( normal, normal_posed );
                 } else {
+                    vertex = ray_start + 8000 * ray_direction;
                     normal_posed = Vector3f::Zero();
                 }
+                camera.world_to_camera(vertex, vertex_posed);
                 
-                Vector4f vertex_h{ vertex.x(), vertex.y(), vertex.z(), 1.0f };
-                Vector4f vertex_posed_h = pose_inverse * vertex_h;
-                Vector3f vertex_posed = vertex_posed_h.block<3,1>( 0,0);
-                vertex_posed = vertex_posed / vertex_posed_h.w();
-                    
+                
                 // Transform normal and vertex back into pose space
                 vertex_map[ y * width + x ] = vertex_posed;
                 normal_map[ y * width + x ] = normal_posed;

@@ -239,3 +239,23 @@ TEST( Camera, givenDepthMapThenGenerateNormalMap ) {
     
 }
 
+
+TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeZThenCameraCoordinateIsCorrect ) {
+    using namespace phd;
+    using namespace Eigen;
+    
+    Camera cam{ 500, 500, 320, 240 };
+    
+    cam.move_to( 0, 0, 0);
+    cam.look_at( 0, 0, -1 );
+    
+    Vector3f x{ 1, 0, 0 };
+    Vector3f world;
+    cam.camera_to_world(x, world);
+    
+    EXPECT_NEAR( world.x(), x.x(), EPS );
+    EXPECT_NEAR( world.y(), x.y(), EPS );
+    EXPECT_NEAR( world.z(), x.z(), EPS );
+}
+
+

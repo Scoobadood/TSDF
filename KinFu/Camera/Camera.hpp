@@ -75,14 +75,31 @@ namespace phd {
          * @param world_coordinate The 3D world coordinate
          */
         void move_to( const Eigen::Vector3f & world_coordinate );
-        
+
+        /**
+         * Move the camera to the given global coordinates
+         * @param wx World X coordinate
+         * @param wy World Y coordinate
+         * @param wz World Z coordinate
+         */
+        void move_to( float wx, float wy, float wz );
+
         /**
          * Adjust the camera pose so that it faces the given point 
          * assumes that 'up' is in the direction of the +ve Y axis
          * @param world_coordinate The 3D world coordinate
          */
         void look_at( const Eigen::Vector3f & world_coordinate );
-        
+
+        /**
+         * Adjust the camera pose so that it faces the given point
+         * assumes that 'up' is in the direction of the +ve Y axis
+         * @param wx World X coordinate
+         * @param wy World Y coordinate
+         * @param wz World Z coordinate
+         */
+        void look_at( float wx, float wy, float wz );
+
         /**
          * @return the position of the camera as a vector
          */
@@ -122,6 +139,21 @@ namespace phd {
          */
         void camera_to_image_plane( const Eigen::Vector3f camera_coordinates, Eigen::Vector2i & image_coordinate ) const;
 
+        /**
+         * Convert the camera coordinate into world space
+         * Multiply by pose
+         * @param camera_coordinate The 3D pointin camera space
+         * @param world_coordinate The 3D point in world space
+         */
+        void camera_to_world( const Eigen::Vector3f & camera_coordinate, Eigen::Vector3f & world_coordinate ) const;
+        
+        /**
+         * Convert the normal in world coords into camera coords
+         * @param world_normal The 3D normal in world space
+         * @param camera_normal The 3D normal camera space
+         */
+        void world_to_camera_normal( const Eigen::Vector3f & world_normal, Eigen::Vector3f & camera_normal ) const;
+        
         /**
          * Convert the global coordinates into camera space
          * Multiply by pose.inverse()

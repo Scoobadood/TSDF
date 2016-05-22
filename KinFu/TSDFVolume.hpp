@@ -42,25 +42,10 @@ namespace phd
         // Maximum weight
         float           m_max_weight;
         
-        // K is the intrinsic matrix for the Kinect
-        Eigen::Matrix3f m_K;
-        Eigen::Matrix3f m_K_inv;
-        
         // Voxel data
         float           *m_voxels;
         float           *m_weights;
 
-        /**
-         * Find the first voxel in a grid along the given ray.
-         * @param origin The origin of the ray in world coordinates
-         * @ray_direction A unit vector in the directio of the ray
-         * @param voxel The returned voxel coordinate of the first voxel the ray hits in the grid
-         * @param t Given the ray is origin + t.direction, the value of t for the intersection is returned
-         * @return true if the ray intersects the voxel grid or else false
-         */
-        bool first_voxel_along_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3i & voxel, float & t ) const;
-
-        
     public:
         /**
          * Constructor with specified number of voxels in each dimension
@@ -205,12 +190,6 @@ namespace phd
 #pragma mark - Ray casting
         
         /**
-         * Given an image plane coordinate (x,y) and a depth z, backproject to a point in 3D space
-         * using the current camera pose
-         */
-        Eigen::Vector3f back_project( const Eigen::Matrix4f & pose, const Eigen::Vector3f & point ) const ;
-        
-        /**
          * Compute the bormal to the ISO surface at the given point
          * Based on http://www.cs.technion.ac.il/~veredc/openfusion/OpenFusionReport.pdf
          * @param point The point; should be inside the TSDF
@@ -237,24 +216,14 @@ namespace phd
         bool is_intersected_by_ray_2( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const;
 
         /**
-         * Find the point where the given ray first intersects the TSDF sace in global coordinates
-         * @param origin The r=source of the ray
-         * @param ray_direction A unit vector in the direction of the ray
-         * @param entry_point The point at which the ray enters the TSDF which may be the origin
-         * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
-         * @return true if the ray intersects the TSDF otherwise false
-         */
-        bool is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const;
-        
-        /**
          * Generate a raycast surface
-         * @param pose The point in world coordinates from which to render
+         * @param camera The camera doing the rendering
          * @param width The width of the output image
          * @param height The height of the output image
          * @param vertex_map A pointer to an array of width * height vertices in frame of reference of camera
          * @param normal_map A pointer to an array of width * height normals in frame of reference of camera
          */
-        void raycast( const Eigen::Matrix4f & pose, uint16_t width, uint16_t height,
+        void raycast( const Camera & camera, uint16_t width, uint16_t height,
                                  Eigen::Vector3f * vertex_map,
                                  Eigen::Vector3f * normal_map) const;
     };

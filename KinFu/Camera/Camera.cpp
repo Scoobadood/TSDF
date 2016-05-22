@@ -83,11 +83,21 @@ namespace phd {
      * @param world_coordinate The 3D world coordinate
      */
     void Camera::move_to( const Eigen::Vector3f & world_coordinate ) {
-        m_pose( 0, 3) = world_coordinate.x();
-        m_pose( 1, 3) = world_coordinate.y();
-        m_pose( 2, 3) = world_coordinate.z();
+        move_to(world_coordinate.x(), world_coordinate.y(), world_coordinate.z() );
     }
-    
+
+    /**
+     * Move the camera to the given global coordinates
+     * @param wx World X coordinate
+     * @param wy World Y coordinate
+     * @param wz World Z coordinate
+     */
+    void Camera::move_to( float wx, float wy, float wz ) {
+        m_pose( 0, 3) = wx;
+        m_pose( 1, 3) = wy;
+        m_pose( 2, 3) = wz;
+    }
+
     /**
      * Adjust the camera pose so that it faces the given point
      * assumes that 'up' is in the direction of the +ve Y axis
@@ -133,7 +143,19 @@ namespace phd {
         m_pose(3,3) = 1.0f;
     }
 
+    /**
+     * Adjust the camera pose so that it faces the given point
+     * assumes that 'up' is in the direction of the +ve Y axis
+     * @param wx World X coordinate
+     * @param wy World Y coordinate
+     * @param wz World Z coordinate
+     */
+    void Camera::look_at( float wx, float wy, float wz ) {
+        look_at( Eigen::Vector3f{ wx, wy, wz } );
+    }
     
+    
+
     /**
      * @return the position of the camera as a vector
      */
@@ -194,6 +216,31 @@ namespace phd {
         
         image_coordinate.x() = std::roundf(image_h[0] / image_h[2]);
         image_coordinate.y() = std::roundf(image_h[1] / image_h[2]);
+    }
+    
+    
+    /**
+     * Convert the camera coordinate into world space
+     * Multiply by pose
+     * @param camera_coordinate The 3D pointin camera space
+     * @param world_coordinate The 3D point in world space
+     */
+    void Camera::camera_to_world( const Eigen::Vector3f & camera_coordinate, Eigen::Vector3f & world_coordinate ) const {
+        using namespace Eigen;
+        
+        Vector4f cam_h{ camera_coordinate.x(), camera_coordinate.y(), camera_coordinate.z(), 1.0f};
+        Vector4f world_h = m_pose * cam_h;
+        
+        world_coordinate = world_h.block(0, 0, 3, 1) / world_h.w();
+    }
+
+    /**
+     * Convert the normal in world coords into camera coords
+     * @param world_normal The 3D normal in world space
+     * @param camera_normal The 3D normal camera space
+     */
+    void Camera::world_to_camera_normal( const Eigen::Vector3f & world_normal, Eigen::Vector3f & camera_normal ) const {
+        camera_normal = m_pose.block( 0, 0, 3, 3) * world_normal;
     }
     
     /**
