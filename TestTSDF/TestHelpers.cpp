@@ -289,3 +289,7 @@ Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos ) {
     return rot;
 }
 
+phd::Camera make_kinect( ) {
+    return phd::Camera{ 585.6f, 585.6f, 316.0f, 247.6f };
+}
+

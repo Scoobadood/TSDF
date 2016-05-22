@@ -526,17 +526,18 @@ namespace phd {
                              Eigen::Vector3f * normal_map) const {
         using namespace Eigen;
         
+        // Ray origin is at camera position in world coords
+        Vector3f ray_start = camera.position();
+        
         // For each pixel u ∈ output image do
         for( uint16_t y=0; y<height; y++ ) {
             for( uint16_t x =0; x<width; x++ ) {
 
-                // Ray origin is at camera position in world coords
-                Vector3f ray_start = camera.position();
-                
                 // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
-                Vector3f ray_next;
                 Vector2f camera_coord;
                 camera.image_to_camera(x, y, camera_coord);
+                
+                Vector3f ray_next;
                 camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 }, ray_next );
                 
                 // Obtain a unit vector in the direction of the ray

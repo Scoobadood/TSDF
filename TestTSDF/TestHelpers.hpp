@@ -11,7 +11,7 @@
 
 #include "TSDFVolume.hpp"
 #include <Eigen/Dense>
-
+#include "Camera.hpp"
 
 #pragma mark - helpers
 
@@ -33,5 +33,8 @@ uint16_t * read_tum_depth_map( const std::string & file_name, uint32_t & width, 
 Eigen::Matrix4f make_y_axis_rotation( float theta, Eigen::Vector3f pos );
 Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos );
 Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos );
+
+phd::Camera make_kinect( );
+
 
 #endif /* TestHelpers_h */

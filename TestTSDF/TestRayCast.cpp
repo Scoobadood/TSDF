@@ -296,8 +296,6 @@ TEST( TSDF_Raycasting, givenRaysFromFrontToBackWhenRenderingWallThenNoValues ) {
     TSDFVolume volume = construct_volume(num_voxels, num_voxels, num_voxels, 300, 300, 300, vw, vh, vd);
     create_wall_in_TSDF(volume, 40);
     
-    float trunc_dist = volume.truncation_distance();
-    
     Vector3f direction{ 0.0, 0.0, -1.0 };
     
     for( int x=0; x<num_voxels; x++ ) {
@@ -371,7 +369,7 @@ TEST( TSDF_Raycasting, testRayCast_150_150_450 ) {
     
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect();
     cam.move_to( 150, 150, 450 );
     cam.look_at( 150, 150, 150);
     
@@ -397,7 +395,7 @@ TEST( TSDF_Raycasting, testRayCast_450_150_450 ) {
     
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect();
     cam.move_to( 450, 150, 450 );
     cam.look_at( 150,150,150);
     
@@ -424,7 +422,7 @@ TEST( TSDF_Raycasting, testRayCast_450_150_150 ) {
 
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect();
     cam.move_to( 450, 150, 150 );
     cam.look_at( 150,150,150);
     
@@ -451,7 +449,7 @@ TEST( TSDF_Raycasting, testRayCast_450_150_m150 ) {
     
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect( );
     cam.move_to( 450, 150, -150 );
     cam.look_at( 150,150,150);
     
@@ -477,7 +475,7 @@ TEST( TSDF_Raycasting, testRayCast_150_150_m150 ) {
 
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect();
     cam.move_to( 150, 150, -150 );
     cam.look_at( 150,150,150);
     
@@ -504,7 +502,7 @@ TEST( TSDF_Raycasting, testRayCast_m150_150_m150 ) {
     
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect();
     cam.move_to( -150, 150, -150 );
     cam.look_at( 150,150,150);
     
@@ -530,7 +528,7 @@ TEST( TSDF_Raycasting, testRayCast_m150_150_150 ) {
     
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect();
     cam.move_to( -150, 150, 150 );
     cam.look_at( 150,150,150);
     
@@ -556,7 +554,7 @@ TEST( TSDF_Raycasting, testRayCast_m150_150_450 ) {
     
     Vector3f light_source{ 0, 0, 0 };
     
-    Camera cam{ 500, 500, 320, 240 };
+    Camera cam = make_kinect();
     cam.move_to( -150, 150, 450 );
     cam.look_at( 150,150,150);
     

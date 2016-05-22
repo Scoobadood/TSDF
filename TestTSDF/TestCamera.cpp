@@ -14,10 +14,6 @@
 
 const float EPS = 1e-6;
 
-phd::Camera make_kinect( ) {
-    return phd::Camera{ 585, 585, 316, 247 };
-}
-
 TEST( Camera, givenPointWhenInCentreOfImageThenCamPointIsOrigin ) {
     using namespace phd;
     using namespace Eigen;

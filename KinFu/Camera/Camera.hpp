@@ -38,7 +38,7 @@ namespace phd {
          * @param centre_x The horizontal centre of the image in pixels
          * @param centre_y The vertical centre of the image in pixels
          */
-        Camera( const float focal_x, const float focal_y, const float centre_x, const float centre_y );
+        explicit Camera( const float focal_x, const float focal_y, const float centre_x, const float centre_y );
         
         /**
          * Construct a camera with the given intrinsic parameters as a 3x3 matrix of the form
