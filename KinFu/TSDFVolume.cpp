@@ -78,13 +78,11 @@ namespace phd {
             
             m_physical_size = Vector3f{ psize_x, psize_y, psize_z };
             
-            // Compute truncation distance
+            // Compute truncation distance - must be at least 2x max voxel size
             float cx = m_physical_size[0] / m_size[0];
             float cy = m_physical_size[1] / m_size[1];
             float cz = m_physical_size[2] / m_size[2];
-            
-            // Set minimal truncation distance - must be at least 2x max voxel size
-            m_truncation_distance = 2.1f * std::max (cx, std::max (cy, cz));
+            m_truncation_distance = 4.1f * std::max (cx, std::max (cy, cz));
             
             m_voxel_size = Eigen::Vector3f( cx, cy, cz );
             
@@ -312,7 +310,7 @@ namespace phd {
     void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
         using namespace Eigen;
         
-        // First convert the depth_map into global coordinates
+        // First convert the depth_map into CAMERA space
         std::deque<Vector3f> vertices;
         std::deque<Vector3f> normals;
         camera.depth_image_to_vertices_and_normals(depth_map, width, height, vertices, normals);
@@ -322,30 +320,31 @@ namespace phd {
             for( int vx=0; vx<m_size.x(); vx++ ) {
                 for( int vz=0; vz<m_size.z(); vz++ ) {
                     
-                    // Get voxel centre and project to image
+                    
+                    // Work out where in the image, the centre of this voxel projects
+                    // This gives us a pixel in the depth map
                     Vector3f centre_of_voxel = centre_of_voxel_at( vx, vy, vz );
                     Vector2i cov_in_pixels = camera.world_to_pixel( centre_of_voxel);
-                    uint16_t voxel_image_x = cov_in_pixels.x();
-                    uint16_t voxel_image_y = cov_in_pixels.y();
+                    uint16_t voxel_pixel_x = cov_in_pixels.x();
+                    uint16_t voxel_pixel_y = cov_in_pixels.y();
                     
                     // if this point is in the camera view frustum...
-                    if( ( voxel_image_x >= 0 && voxel_image_x < width ) &&
-                       ( voxel_image_y >= 0 && voxel_image_y < height) ) {
-                        uint32_t voxel_image_index = voxel_image_y * width + voxel_image_x;
+                    if( ( voxel_pixel_x >= 0 && voxel_pixel_x < width ) && ( voxel_pixel_y >= 0 && voxel_pixel_y < height) ) {
+                        uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
                         
                         // Extract the associated depth
                         uint16_t voxel_depth = depth_map[ voxel_image_index ];
                         
                         // If the depth is valid
                         if( voxel_depth > 0 ) {
-                            // Obtain surface vertex in cam coords
+                            // Obtain surface vertex in CAMERA coords
                             Vector3f surface_vertex = vertices[ voxel_image_index ];
                             
-                            // Surface distance is length of the surface_vertex vector
+                            // Distance to surface is length of the surface_vertex vector
                             float distance_to_surface = surface_vertex.norm();
                             
                             
-                            // Computed distance is from cam origin to voxel centre in global space
+                            // Distance from cam to voxel
                             Vector3f camera_origin = camera.position();
                             float distance_to_voxel = (centre_of_voxel - camera_origin).norm();
                             
@@ -365,13 +364,8 @@ namespace phd {
                             float new_weight = std::min( prior_weight + current_weight, m_max_weight );
                             float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
                             
-                            //
-                            size_t idx = index( vx, vy, vz );
-                            m_voxels[idx] =new_distance;
-                            m_weights[idx] = new_weight;
-                            
-                            //                            distance( vx, vy, vz ) = new_distance;
-                            //                            weight( vx, vy, vz ) = new_weight;
+                            set_weight(vx, vy, vz, new_weight);
+                            set_distance(vx, vy, vz, new_distance);
                         }
                     } // Voxel depth <= 0
                 }
