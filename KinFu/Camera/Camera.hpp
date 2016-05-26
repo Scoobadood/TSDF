@@ -115,47 +115,47 @@ namespace phd {
         /**
          * Convert from pixel coordinates to camera image plane coordinates
          * @param image_coordinate The 2D coordinate in the image space
-         * @param camera_coordinate The 2D coordinate in camera image plane
+         * @return camera_coordinate The 2D coordinate in camera image plane
          */
-        void pixel_to_image_plane( const Eigen::Vector2i & image_coordinate, Eigen::Vector2f & camera_coordinate ) const;
+        Eigen::Vector2f pixel_to_image_plane( const Eigen::Vector2i & image_coordinate ) const;
         
         /**
          * Convert from pixel coordinates to camera image plane coordinates
          * @param image_x The x coordinate in the image space
          * @param image_y The y coordinate in the image space
-         * @param camera_coordinate The 2D coordinate in camera image plane
+         * @return camera_coordinate The 2D coordinate in camera image plane
          */
-        void pixel_to_image_plane( const int x, const int y, Eigen::Vector2f & camera_coordinate ) const;
+        Eigen::Vector2f  pixel_to_image_plane( const int x, const int y ) const;
 
         /**
          * Convert from image plane to pixel coordinates
          * @param camera_coordinate The 2D coordinate in camera image plane
-         * @param image_coordinate The 2D coordinate in the image space
+         * @return image_coordinate The 2D coordinate in the image space
          */
-        void image_plane_to_pixel( const Eigen::Vector2f & camera_coordinate, Eigen::Vector2i & image_coordinate ) const;
+        Eigen::Vector2i image_plane_to_pixel( const Eigen::Vector2f & camera_coordinate ) const;
         
         /**
          * Convert the camera coordinate into world space
          * Multiply by pose
          * @param camera_coordinate The 3D pointin camera space
-         * @param world_coordinate The 3D point in world space
+         * @return world_coordinate The 3D point in world space
          */
-        void camera_to_world( const Eigen::Vector3f & camera_coordinate, Eigen::Vector3f & world_coordinate ) const;
+        Eigen::Vector3f camera_to_world( const Eigen::Vector3f & camera_coordinate ) const;
         
         /**
          * Convert the normal in world coords into camera coords
          * @param world_normal The 3D normal in world space
-         * @param camera_normal The 3D normal camera space
+         * @return camera_normal The 3D normal camera space
          */
-        void world_to_camera_normal( const Eigen::Vector3f & world_normal, Eigen::Vector3f & camera_normal ) const;
+        Eigen::Vector3f  world_to_camera_normal( const Eigen::Vector3f & world_normal ) const;
         
         /**
          * Convert the global coordinates into camera space
          * Multiply by pose.inverse()
          * @param world_coordinate The 3D point in world space
-         * @param camera_coordinate The 3D pointin camera space
+         * @return camera_coordinate The 3D pointin camera space
          */
-        void world_to_camera( const Eigen::Vector3f & world_coordinate, Eigen::Vector3f & camera_coordinate ) const;
+        Eigen::Vector3f world_to_camera( const Eigen::Vector3f & world_coordinate ) const;
 
         /**
          * Convert global coordinates into pixel coordinates
@@ -163,7 +163,7 @@ namespace phd {
          * @param world_coordinate The 3D point in world space
          * @param pixel_coordinate The 2D point in pixel space
          */
-        void world_to_pixel( const Eigen::Vector3f & world_coordinate, Eigen::Vector2i & pixel_coordinate ) const;
+        Eigen::Vector2i world_to_pixel( const Eigen::Vector3f & world_coordinate ) const;
         
 
 #pragma mark - Depth map methods

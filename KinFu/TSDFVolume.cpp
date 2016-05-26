@@ -324,8 +324,7 @@ namespace phd {
                     
                     // Get voxel centre and project to image
                     Vector3f centre_of_voxel = centre_of_voxel_at( vx, vy, vz );
-                    Vector2i cov_in_pixels;
-                    camera.world_to_pixel( centre_of_voxel, cov_in_pixels);
+                    Vector2i cov_in_pixels = camera.world_to_pixel( centre_of_voxel);
                     uint16_t voxel_image_x = cov_in_pixels.x();
                     uint16_t voxel_image_y = cov_in_pixels.y();
                     
@@ -573,8 +572,8 @@ namespace phd {
      * @param camera The camera doing the rendering
      * @param width The width of the output image
      * @param height The height of the output image
-     * @param vertex_map A pointer to an array of width * height vertices in frame of reference of camera
-     * @param normal_map A pointer to an array of width * height normals in frame of reference of camera
+     * @param vertex_map A pointer to an array of width * height vertices in World Coordinate system
+     * @param normal_map A pointer to an array of width * height normals in World Coordinate system
      */
     void TSDFVolume::raycast( const Camera & camera, uint16_t width, uint16_t height,
                              Eigen::Vector3f * vertex_map,
@@ -589,36 +588,28 @@ namespace phd {
             for( uint16_t x =0; x<width; x++ ) {
                 
                 // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
-                Vector2f camera_coord;
-                camera.pixel_to_image_plane(x, y, camera_coord);
+                Vector2f camera_coord = camera.pixel_to_image_plane(x, y);
                 
-                Vector3f ray_next;
-                camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 }, ray_next );
+                Vector3f ray_next = camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 } );
                 
                 // Obtain a unit vector in the direction of the ray
                 Vector3f ray_direction = (ray_next - ray_start).normalized();
                 
                 // Walk the ray to obtain vertex and normal values
-                // Default normal value is 0
-                Vector3f normal{ 0.0, 0.0, 0.0 };
+                Vector3f normal;
                 Vector3f vertex;
                 
                 bool ray_insersects_surface = walk_ray( ray_start, ray_direction, vertex, normal);
                 
-                Vector3f normal_posed;
-                Vector3f vertex_posed;
-                if( ray_insersects_surface ) {
-                    camera.world_to_camera_normal( normal, normal_posed );
-                } else {
+                if( !ray_insersects_surface ) {
                     vertex = ray_start + 8000 * ray_direction;
-                    normal_posed = Vector3f::Zero();
+                    normal = Vector3f::Zero();
                 }
-                camera.world_to_camera(vertex, vertex_posed);
                 
                 
                 // Transform normal and vertex back into pose space
-                vertex_map[ y * width + x ] = vertex_posed;
-                normal_map[ y * width + x ] = normal_posed;
+                vertex_map[ y * width + x ] = vertex;
+                normal_map[ y * width + x ] = normal;
             } // End for Y
         } // End For X
     } // End function

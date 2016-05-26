@@ -175,7 +175,16 @@ void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t 
 }
 
 
-// Lambertian colouring as per https://www.cs.unc.edu/~rademach/xroads-RT/RTarticle.html
+/* 
+ * Implement Lambertian colouring as per https://www.cs.unc.edu/~rademach/xroads-RT/RTarticle.html
+ * @param filename Where to save file
+ * @param width The with of the image
+ * @param height The height of the imahe
+ * @param vertices A width x height array of Vertex coordinates in global space
+ * @param normals A width x height array of surface normals in global space
+ * @param camera The Camera for which to render
+ * @param light_source THe global position of the light source
+ */
 void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height, Eigen::Vector3f * vertices, Eigen::Vector3f * normals, const phd::Camera & camera, const Eigen::Vector3f & light_source) {
     
     uint8_t * image = new uint8_t[width * height];
@@ -184,11 +193,6 @@ void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t h
     float ambient_coefficient = 0.2;
     float diffuse_coefficient = 1.0 - ambient_coefficient;
     
-    // convert the global light sourcr poition to camera space
-    // ( Vertices and normals are in cam space )
-    Eigen::Vector3f light_source_cam;
-    camera.world_to_camera(light_source, light_source_cam );
-    
 
     // For each vertex/normal
     for (uint32_t idx = 0; idx < (width*height); idx ++ ) {
@@ -196,7 +200,7 @@ void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t h
         Eigen::Vector3f vertex = vertices[idx];
         
         // Compute vector from vertex to light source
-        Eigen::Vector3f r = (light_source_cam - vertex).normalized();
+        Eigen::Vector3f r = (light_source - vertex).normalized();
         Eigen::Vector3f n = normals[idx];
         
         // Compute shade
@@ -210,6 +214,7 @@ void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t h
     
     delete[] image;
 }
+
 void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> &vertices, const std::deque<Eigen::Vector3f> &normals, const Eigen::Vector3f & camera_position, const Eigen::Vector3f & light_source) {
     
     uint8_t * image = new uint8_t[width * height];
@@ -222,9 +227,6 @@ void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t h
     for (uint32_t idx = 0; idx < (width*height); idx ++ ) {
         // Vertex in camera space
         Eigen::Vector3f vertex = vertices[idx];
-        
-        // Convert to global space
-        vertex = vertex + camera_position;
         
         // Compute vector from light source to vertex
         Eigen::Vector3f r = (light_source - vertex).normalized();
