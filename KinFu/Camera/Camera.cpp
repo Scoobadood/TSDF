@@ -169,41 +169,45 @@ namespace phd {
     /**
      * Convert from pixel coordinates to camera image plane coordinates
      * @param image_coordinate The 2D coordinate in the image space
-     * @param camera_coordinate The 2D coordinate in camera image plane
+     * @return camera_coordinate The 2D coordinate in camera image plane
      */
-    void Camera::pixel_to_image_plane( const Eigen::Vector2i & image_coordinate, Eigen::Vector2f & camera_coordinate ) const {
+    Eigen::Vector2f Camera::pixel_to_image_plane( const Eigen::Vector2i & image_coordinate ) const {
         using namespace Eigen;
         
-        pixel_to_image_plane(image_coordinate.x(), image_coordinate.y(), camera_coordinate );
+        return pixel_to_image_plane(image_coordinate.x(), image_coordinate.y() );
     }
     
     /**
      * Convert from pixel coordinates to camera image plane coordinates
      * @param image_x The x coordinate in the image space
      * @param image_y The y coordinate in the image space
-     * @param camera_coordinate The 2D coordinate in camera image plane
+     * @return camera_coordinate The 2D coordinate in camera image plane
      */
-    void Camera::pixel_to_image_plane( const int x, const int y, Eigen::Vector2f & camera_coordinate ) const {
+    Eigen::Vector2f Camera::pixel_to_image_plane( const int x, const int y ) const {
         using namespace Eigen;
         
         // Multiply the (homgeous) point by the intrinsic matrix
         Vector3f homogenous_coordinate{ x, y, 1.0f };
         Vector3f homogenous_camera_coordinate = m_k_inverse * homogenous_coordinate;
-        camera_coordinate.x() = homogenous_camera_coordinate[0] / homogenous_camera_coordinate[2];
-        camera_coordinate.y() = homogenous_camera_coordinate[1] / homogenous_camera_coordinate[2];
+        
+        Vector2f camera_coordinate = homogenous_camera_coordinate.block(0,0,2,1) / homogenous_camera_coordinate[2];
+        return camera_coordinate;
     }
+    
     /**
      * Convert from image plane to pixel coordinates
      * @param camera_coordinate The 2D coordinate in camera image plane
-     * @param image_coordinate The 2D coordinate in the image space
+     * @return image_coordinate The 2D coordinate in the image space
      */
-    void Camera::image_plane_to_pixel( const Eigen::Vector2f & camera_coordinate, Eigen::Vector2i & image_coordinate ) const {
+    Eigen::Vector2i Camera::image_plane_to_pixel( const Eigen::Vector2f & camera_coordinate ) const {
         using namespace Eigen;
         
         Vector3f cam_h{ camera_coordinate.x(), camera_coordinate.y(), 1.0f };
         Vector3f image_h = m_k * cam_h;
+        Eigen::Vector2i image_coordinate;
         image_coordinate.x( ) = std::round( image_h.x() );
         image_coordinate.y( ) = std::round( image_h.y() );
+        return image_coordinate;
     }
     
 
@@ -212,48 +216,48 @@ namespace phd {
      * Convert the camera coordinate into world space
      * Multiply by pose
      * @param camera_coordinate The 3D pointin camera space
-     * @param world_coordinate The 3D point in world space
+     * @return world_coordinate The 3D point in world space
      */
-    void Camera::camera_to_world( const Eigen::Vector3f & camera_coordinate, Eigen::Vector3f & world_coordinate ) const {
+    Eigen::Vector3f Camera::camera_to_world( const Eigen::Vector3f & camera_coordinate ) const {
         using namespace Eigen;
         
         Vector4f cam_h{ camera_coordinate.x(), camera_coordinate.y(), camera_coordinate.z(), 1.0f};
         Vector4f world_h = m_pose * cam_h;
         
-        world_coordinate = world_h.block(0, 0, 3, 1) / world_h.w();
+        return world_h.block(0, 0, 3, 1) / world_h.w();
     }
 
     /**
      * Convert the normal in world coords into camera coords
      * @param world_normal The 3D normal in world space
-     * @param camera_normal The 3D normal camera space
+     * @return camera_normal The 3D normal camera space
      */
-    void Camera::world_to_camera_normal( const Eigen::Vector3f & world_normal, Eigen::Vector3f & camera_normal ) const {
-        camera_normal = m_pose.block( 0, 0, 3, 3) * world_normal;
+    Eigen::Vector3f Camera::world_to_camera_normal( const Eigen::Vector3f & world_normal ) const {
+        return m_pose_inverse.block( 0, 0, 3, 3) * world_normal;
     }
     
     /**
      * Convert the global coordinates into camera space
      * Multiply by pose.inverse()
      * @param world_coordinate The 3D point in world space
-     * @param camera_coordinate The 3D pointin camera space
+     * @return camera_coordinate The 3D pointin camera space
      */
-    void Camera::world_to_camera( const Eigen::Vector3f & world_coordinate, Eigen::Vector3f & camera_coordinate ) const {
+    Eigen::Vector3f Camera::world_to_camera( const Eigen::Vector3f & world_coordinate ) const {
         using namespace Eigen;
         
         Vector4f world_h{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0f};
-        Vector4f cam_h = m_pose.inverse() * world_h;
+        Vector4f cam_h = m_pose_inverse * world_h;
         
-        camera_coordinate = cam_h.block(0, 0, 3, 1) / cam_h.w();
+        return cam_h.block(0, 0, 3, 1) / cam_h.w();
     }
     
     /**
      * Convert global coordinates into pixel coordinates
      * Multiply by pose.inverse(), then K
      * @param world_coordinate The 3D point in world space
-     * @param pixel_coordinate The 2D point in pixel space
+     * @return pixel_coordinate The 2D point in pixel space
      */
-    void Camera::world_to_pixel( const Eigen::Vector3f & world_coordinate, Eigen::Vector2i & pixel_coordinate ) const {
+    Eigen::Vector2i Camera::world_to_pixel( const Eigen::Vector3f & world_coordinate ) const {
         using namespace Eigen;
         
         // To cam coordinate space
@@ -267,8 +271,11 @@ namespace phd {
         Vector3f cam_image_coordinate = m_k * cam_coordinate;
 
         // Round and store
+        Eigen::Vector2i pixel_coordinate;
         pixel_coordinate.x() = std::round(cam_image_coordinate[0]);
         pixel_coordinate.y() = std::round(cam_image_coordinate[1]);
+        
+        return pixel_coordinate;
     }
     
 #pragma mark - Depth map methods
@@ -295,8 +302,7 @@ namespace phd {
                 if( depth != 0 ) {
                     
                     // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
-                    Vector2f cam_point;
-                    pixel_to_image_plane( x, y, cam_point );
+                    Vector2f cam_point = pixel_to_image_plane( x, y );
                     vertex = Vector3f{ cam_point.x() * depth, cam_point.y() * depth, -depth };
                     
                     // Compute normal as v(y,x+1)-v(y,x) cross v(y+1, x)-v(y, x )
