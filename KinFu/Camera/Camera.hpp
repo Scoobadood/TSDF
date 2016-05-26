@@ -25,6 +25,9 @@ namespace phd {
         // The pose of the camera in global coordinate space
         Eigen::Matrix4f     m_pose;
         
+        // The inverse pose of the camera
+        Eigen::Matrix4f     m_pose_inverse;
+        
         /**
          * Common construction code
          */
@@ -110,35 +113,27 @@ namespace phd {
         
 #pragma mark - Camera coordinate methods
         /**
-         * Convert from image plane coordinates to camera space coordinates
+         * Convert from pixel coordinates to camera image plane coordinates
          * @param image_coordinate The 2D coordinate in the image space
          * @param camera_coordinate The 2D coordinate in camera image plane
          */
-        void image_to_camera( const Eigen::Vector2i & image_coordinate, Eigen::Vector2f & camera_coordinate ) const;
+        void pixel_to_image_plane( const Eigen::Vector2i & image_coordinate, Eigen::Vector2f & camera_coordinate ) const;
         
         /**
-         * Convert from image plane coordinates to camera space coordinates
+         * Convert from pixel coordinates to camera image plane coordinates
          * @param image_x The x coordinate in the image space
          * @param image_y The y coordinate in the image space
          * @param camera_coordinate The 2D coordinate in camera image plane
          */
-        void image_to_camera( const int x, const int y, Eigen::Vector2f & camera_coordinate ) const;
+        void pixel_to_image_plane( const int x, const int y, Eigen::Vector2f & camera_coordinate ) const;
 
         /**
-         * Convert from camera coordinates to image coordinates
-         * @param camera_x The x coordinate in the camera plane
-         * @param camera_y The y coordinate in the camera plane
-         * @param image_coordinate The 2D coordinate in camera's image
+         * Convert from image plane to pixel coordinates
+         * @param camera_coordinate The 2D coordinate in camera image plane
+         * @param image_coordinate The 2D coordinate in the image space
          */
-        void camera_to_image_plane( const float x, const float y, Eigen::Vector2i & image_coordinate ) const;
-
-        /**
-         * Convert from camera coordinates to image coordinates
-         * @param camera_coordinates The point coorinates in camera plane homegenous
-         * @param image_coordinate The 2D coordinate in camera's image
-         */
-        void camera_to_image_plane( const Eigen::Vector3f camera_coordinates, Eigen::Vector2i & image_coordinate ) const;
-
+        void image_plane_to_pixel( const Eigen::Vector2f & camera_coordinate, Eigen::Vector2i & image_coordinate ) const;
+        
         /**
          * Convert the camera coordinate into world space
          * Multiply by pose
@@ -163,12 +158,12 @@ namespace phd {
         void world_to_camera( const Eigen::Vector3f & world_coordinate, Eigen::Vector3f & camera_coordinate ) const;
 
         /**
-         * Convert the global coordinates into camera space
-         * Multiply by pose.inverse()
+         * Convert global coordinates into pixel coordinates
+         * Multiply by pose.inverse(), then K
          * @param world_coordinate The 3D point in world space
-         * @param camera_coordinate The 3D pointin camera space
+         * @param pixel_coordinate The 2D point in pixel space
          */
-        void world_to_image( const Eigen::Vector3f & world_coordinate, Eigen::Vector2i & image_coordinate ) const;
+        void world_to_pixel( const Eigen::Vector3f & world_coordinate, Eigen::Vector2i & pixel_coordinate ) const;
         
 
 #pragma mark - Depth map methods
@@ -179,13 +174,6 @@ namespace phd {
          * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
          */
         void depth_image_to_vertices_and_normals(const uint16_t * depth_image, const uint32_t width, const uint32_t height,std::deque<Eigen::Vector3f> & vertices,std::deque<Eigen::Vector3f> & normals ) const;
-        /**
-         * Convert from a depth image to 3D camera space coordinates
-         * @param depth_image A width x height array of uint16_t depth values
-         * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
-         * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
-         */
-        void depth_image_to_vertices_and_normals( const Eigen::Array<uint16_t, Eigen::Dynamic, Eigen::Dynamic> & depth_image, std::deque<Eigen::Vector3f> & vertices, std::deque<Eigen::Vector3f> & normals ) const;
     };
 }
 #endif /* Camera_hpp */

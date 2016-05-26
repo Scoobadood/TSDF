@@ -43,8 +43,25 @@ namespace phd
         float           m_max_weight;
         
         // Voxel data
-        float           *m_voxels;
-        float           *m_weights;
+        float           *m_voxels = 0;
+        float           *m_weights = 0;
+        
+        // Convenience values for speeing up index calculation
+        size_t          m_x_size;
+        size_t          m_xy_slice_size;
+        
+
+        /**
+         * Set the size of the volume. This will delete any existing values and resize the volume, clearing it when done.
+         * Volume offset is maintained
+         * @param volume_x X dimension in voxels
+         * @param volume_y Y dimension in voxels
+         * @param volume_z Z dimension in voxels
+         * @param psize_x Physical size in X dimension in mm
+         * @param psize_y Physical size in Y dimension in mm
+         * @param psize_z Physical size in Z dimension in mm
+         */
+        void set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z);
 
     public:
         /**
@@ -52,7 +69,7 @@ namespace phd
          * @param size
          * @param physical_size
          */
-        TSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size = Eigen::Vector3f{3000.0f, 3000.0f, 3000.0f} );
+        TSDFVolume( const Eigen::Vector3i & size = Eigen::Vector3i{64, 64, 64}, const Eigen::Vector3f & physical_size = Eigen::Vector3f{3000.0f, 3000.0f, 3000.0f} );
         
         /**
          * Dtor
@@ -141,15 +158,33 @@ namespace phd
          * @param z The depth voxel coord
          * @return The distance to the surface at that voxel
          */
-        float & distance( int x, int y, int z ) const;
-        
+        float distance( int x, int y, int z ) const;
+
+        /**
+         * @param x The horizontal voxel coord
+         * @param y The vertical voxel coord
+         * @param z The depth voxel coord
+         * @param distance The distance to set
+         * @return The distance to the surface at that voxel
+         */
+        void set_distance( int x, int y, int z, float distance );
+
         /**
          * @param x The horizontal voxel coord
          * @param y The vertical voxel coord
          * @param z The depth voxel coord
          * @return The weight at that voxel
          */
-        float & weight( int x, int y, int z ) const;
+        float weight( int x, int y, int z ) const;
+        
+        /**
+         * @param x The horizontal voxel coord
+         * @param y The vertical voxel coord
+         * @param z The depth voxel coord
+         * @param weight The weight to set
+         * @return The weight at that voxel
+         */
+        void set_weight( int x, int y, int z, float weight );
         
         /**
          * @return the size (number of elements) in this space. Used to index
@@ -163,11 +198,9 @@ namespace phd
          * @param z The depth coord (0-depth - 1)
          * @return te coordinate of the centre of the given voxel in world coords (m)
          */
-        inline size_t index( int x, int y, int z ) const {
-            size_t maxIdx = m_size[0] * m_size[1] * m_size[2];
-            size_t idx = z * ( m_size[0] * m_size[1]) + y * (m_size[0] ) + x;
+        inline size_t index( uint16_t x, uint16_t y, uint16_t z ) const {
+            size_t idx = z * m_xy_slice_size + y * m_x_size + x;
             
-            assert( idx < maxIdx );
             return idx;
         }
         
@@ -226,6 +259,23 @@ namespace phd
         void raycast( const Camera & camera, uint16_t width, uint16_t height,
                                  Eigen::Vector3f * vertex_map,
                                  Eigen::Vector3f * normal_map) const;
+
+
+#pragma mark - Import/Export
+
+        /**
+         * Save the TSDF to file
+         * @param The filename
+         * @return true if the file saved OK otherwise false.
+         */
+        bool save_to_file( const std::string & file_name) const;
+        
+        /**
+         * Load the given TSDF file
+         * @param The filename
+         * @return true if the file saved OK otherwise false.
+         */
+        bool load_from_file( const std::string & file_name);
     };
 }
 

@@ -10,6 +10,9 @@
 #include <pcl/io/ply_io.h>
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
+#include <string>
+#include <iomanip>
 #include <boost/weak_ptr.hpp>
 
 #include "TSDFVolume.hpp"
@@ -20,11 +23,11 @@ namespace phd {
     
     TSDFVolume::~TSDFVolume() {
         if( m_voxels ) {
-            delete m_voxels;
+            delete [] m_voxels;
             m_voxels = 0;
         }
         if( m_weights ) {
-            delete m_weights;
+            delete [] m_weights;
             m_weights = 0;
         }
     }
@@ -34,15 +37,46 @@ namespace phd {
      * @param size
      * @param physical_size
      */
-    TSDFVolume::TSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size ) : m_size{size}, m_physical_size{physical_size}, m_offset{0.0, 0.0, 0.0}
-    {
+    TSDFVolume::TSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size ) : m_offset{ Eigen::Vector3f::Zero()}{
+        set_size( size.x(), size.y(), size.z() , physical_size.x(), physical_size.y(), physical_size.z() );
         
-        int volume_x = m_size[0];
-        int volume_y = m_size[1];
-        int volume_z = m_size[2];
+    }
+    
+    
+    /**
+     * Set the size of the volume. This will delete any existing values and resize the volume, clearing it when done.
+     * Volume offset is maintained
+     * @param volume_x X dimension in voxels
+     * @param volume_y Y dimension in voxels
+     * @param volume_z Z dimension in voxels
+     * @param psize_x Physical size in X dimension in mm
+     * @param psize_y Physical size in Y dimension in mm
+     * @param psize_z Physical size in Z dimension in mm
+     */
+    void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z) {
+        using namespace Eigen;
         
         if( ( volume_x > 0 && volume_y > 0 && volume_z > 0 ) &&
-           ( m_physical_size[0] > 0 && m_physical_size[1] > 0 && m_physical_size[2] > 0 ) ) {
+           ( psize_x > 0 && psize_y > 0 && psize_z > 0 ) ) {
+            
+            
+            // Remove existing data
+            if( m_voxels ) {
+                delete [] m_voxels;
+                m_voxels = 0;
+            }
+            if( m_weights ) {
+                delete [] m_weights;
+                m_weights = 0;
+            }
+            
+            
+            m_size = Vector3i{ volume_x, volume_y, volume_z };
+            
+            m_x_size = volume_x;
+            m_xy_slice_size = volume_x * volume_y;
+            
+            m_physical_size = Vector3f{ psize_x, psize_y, psize_z };
             
             // Compute truncation distance
             float cx = m_physical_size[0] / m_size[0];
@@ -63,12 +97,13 @@ namespace phd {
             clear();
             
             // Max weight for integrating depth images
-            m_max_weight = 10.0f;
+            m_max_weight = 20.0f;
             
         } else {
             //        std::cerr << "Attempt to construct TSDFvolume with zero or negative dimension" << std::endl;
             throw std::invalid_argument( "Attempt to construct TSDFvolume with zero or negative dimension" );
         }
+        
     }
     
     
@@ -206,7 +241,7 @@ namespace phd {
     void TSDFVolume::clear( ) {
         size_t maxIdx = m_size[0] * m_size[1] * m_size[2];
         for( size_t idx = 0; idx < maxIdx; idx ++ ) {
-            m_voxels[idx] = 0.0f;
+            m_voxels[idx] = m_truncation_distance;
             m_weights[idx] = 0.0f;
         }
     }
@@ -217,8 +252,20 @@ namespace phd {
      * @param z The depth voxel coord
      * @return The distance to the surface at that voxel
      */
-    float & TSDFVolume::distance( int x, int y, int z ) const {
+    float TSDFVolume::distance( int x, int y, int z ) const {
         return m_voxels[ index(x, y, z) ];
+    }
+    
+    /**
+     * @param x The horizontal voxel coord
+     * @param y The vertical voxel coord
+     * @param z The depth voxel coord
+     * @param distance The distance to set
+     * @return The distance to the surface at that voxel
+     */
+    void TSDFVolume::set_distance( int x, int y, int z, float distance ) {
+        size_t idx =index( x, y, z );
+        m_voxels[ idx ] = distance;
     }
     
     
@@ -228,9 +275,21 @@ namespace phd {
      * @param z The depth voxel coord
      * @return The weight at that voxel
      */
-    float & TSDFVolume::weight( int x, int y, int z ) const {
+    float TSDFVolume::weight( int x, int y, int z ) const {
         return m_weights[ index(x, y, z) ];
     }
+    
+    /**
+     * @param x The horizontal voxel coord
+     * @param y The vertical voxel coord
+     * @param z The depth voxel coord
+     * @param weight The weight to set
+     * @return The weight at that voxel
+     */
+    void TSDFVolume::set_weight( int x, int y, int z, float weight ) {
+        m_weights[ index(x, y, z) ] = weight;
+    }
+    
     
     /**
      * @return the length (number of elements) in this space. Used to index
@@ -257,67 +316,65 @@ namespace phd {
         std::deque<Vector3f> vertices;
         std::deque<Vector3f> normals;
         camera.depth_image_to_vertices_and_normals(depth_map, width, height, vertices, normals);
-    
+        
         // For each voxel in the space
-        for( int vy=0; vy<m_size[1]; vy++ ) {
-            for( int vx=0; vx<m_size[0]; vx++ ) {
-                for( int vz=0; vz<m_size[2]; vz++ ) {
+        for( int vy=0; vy<m_size.y(); vy++ ) {
+            for( int vx=0; vx<m_size.x(); vx++ ) {
+                for( int vz=0; vz<m_size.z(); vz++ ) {
                     
-                    // Get voxel coordinates in global frame
+                    // Get voxel centre and project to image
                     Vector3f centre_of_voxel = centre_of_voxel_at( vx, vy, vz );
-                    
-                    // Convert to image coordinate sin camera
-                    Vector2i cov_in_image;
-                    camera.world_to_image( centre_of_voxel, cov_in_image);
+                    Vector2i cov_in_pixels;
+                    camera.world_to_pixel( centre_of_voxel, cov_in_pixels);
+                    uint16_t voxel_image_x = cov_in_pixels.x();
+                    uint16_t voxel_image_y = cov_in_pixels.y();
                     
                     // if this point is in the camera view frustum...
-                    if( cov_in_image.x() >= 0 && cov_in_image.x() < width && cov_in_image.y() >= 0 && cov_in_image.y() < height) {
+                    if( ( voxel_image_x >= 0 && voxel_image_x < width ) &&
+                       ( voxel_image_y >= 0 && voxel_image_y < height) ) {
+                        uint32_t voxel_image_index = voxel_image_y * width + voxel_image_x;
                         
-                        // Scanned depth
-                        uint16_t scanned_depth = depth_map[ cov_in_image.x() + cov_in_image.y() * width ];
+                        // Extract the associated depth
+                        uint16_t voxel_depth = depth_map[ voxel_image_index ];
                         
-                        // Surely we need to convert this scanned depth to an actal surface vertex and measure distance to that
-                        Vector3f surface_vertex;
-                        
-                        
-
                         // If the depth is valid
-                        if( scanned_depth > 0 ) {
-                            // Extract camera origin in global space
-                            Vector3f camera_origin = camera.position();
-
-                            // Convert the cov to a 3D vertex in camera space
-                            Vector2f cam_point;
-                            camera.image_to_camera( cov_in_image.x(), cov_in_image.y(), cam_point );
-                            Vector3f surface_vertex{ cam_point.x() * scanned_depth, cam_point.y() * scanned_depth, scanned_depth };
+                        if( voxel_depth > 0 ) {
+                            // Obtain surface vertex in cam coords
+                            Vector3f surface_vertex = vertices[ voxel_image_index ];
                             
-                            // Measured distance is length of the surface_vertex vector
-                            float measured_depth = surface_vertex.norm();
-
+                            // Surface distance is length of the surface_vertex vector
+                            float distance_to_surface = surface_vertex.norm();
+                            
                             
                             // Computed distance is from cam origin to voxel centre in global space
-                            Vector3f computed_depth_vector = centre_of_voxel - camera_origin;
-                            float computed_depth = computed_depth_vector.norm();
+                            Vector3f camera_origin = camera.position();
+                            float distance_to_voxel = (centre_of_voxel - camera_origin).norm();
+                            
                             
                             // SDF is the difference between them.
-                            float sdf = measured_depth - computed_depth;
+                            float sdf = distance_to_surface - distance_to_voxel;
                             
                             // Truncate
                             float tsdf = tsdf = std::min( std::max( sdf, -m_truncation_distance ), m_truncation_distance );
                             
                             // Extract prior weight
                             float prior_weight = weight( vx, vy, vz );
-                            float current_weight = 1;
+                            float current_weight = 1.0f;
                             
                             float prior_distance = distance( vx, vy, vz );
                             
                             float new_weight = std::min( prior_weight + current_weight, m_max_weight );
                             float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
                             
-                            distance( vx, vy, vz ) = new_distance;
-                            weight( vx, vy, vz ) = new_weight;
+                            //
+                            size_t idx = index( vx, vy, vz );
+                            m_voxels[idx] =new_distance;
+                            m_weights[idx] = new_weight;
+                            
+                            //                            distance( vx, vy, vz ) = new_distance;
+                            //                            weight( vx, vy, vz ) = new_weight;
                         }
-                    }
+                    } // Voxel depth <= 0
                 }
             }
         }
@@ -350,7 +407,7 @@ namespace phd {
         point_to_voxel( point, voxel );
         
         // Get voxel values at voxel (x +/1 1, y +/- 1 z +/-1 )
-
+        
         Vector3i lower_index;
         Vector3i upper_index;
         for( int i=0; i<3; i++ ) {
@@ -359,11 +416,11 @@ namespace phd {
         }
         
         Vector3f upper_values{ distance( upper_index.x(), voxel.y(), voxel.z() ),
-                               distance( voxel.x(), upper_index.y(), voxel.z() ),
-                               distance( voxel.x(), voxel.y(), upper_index.z() ) };
+            distance( voxel.x(), upper_index.y(), voxel.z() ),
+            distance( voxel.x(), voxel.y(), upper_index.z() ) };
         Vector3f lower_values{ distance( lower_index.x(), voxel.y(), voxel.z() ),
-                               distance( voxel.x(), lower_index.y(), voxel.z() ),
-                               distance( voxel.x(), voxel.y(), lower_index.z() ) };
+            distance( voxel.x(), lower_index.y(), voxel.z() ),
+            distance( voxel.x(), voxel.y(), lower_index.z() ) };
         
         normal = upper_values - lower_values;
         normal.normalize();
@@ -423,13 +480,11 @@ namespace phd {
                     intersects = false;
                     break;
                 }
-            } // end of for loop
-            
-            // If Box survived all above tests, return true with intersection point Tnear and exit point Tfar.
-            t = t_near;
-            entry_point = origin + ( t * ray_direction);
-            
-        }
+            }
+        } // end of all dims
+        // If Box survived all above tests, return true with intersection point Tnear and exit point Tfar.
+        t = t_near;
+        entry_point = origin + ( t * ray_direction);
         
         return intersects;
     }
@@ -453,10 +508,10 @@ namespace phd {
             float previous_distance_to_surface;
             float previous_step = 0.0f;
             float distance_to_surface = std::numeric_limits<float>::max();
-
+            
             // Check that this isn't behind the surface already
             point_to_voxel( current_point, voxel );
-
+            
             bool done = (distance(voxel.x(), voxel.y(), voxel.z() ) < 0 );
             while( ! done ) {
                 
@@ -468,7 +523,7 @@ namespace phd {
                 if( distance_to_surface < m_truncation_distance ) {
                     
                     // If distance to surface is positive, skip
-                    if( distance_to_surface > 0 ) {
+                    if( distance_to_surface > 0.01 ) {
                         previous_step = distance_to_surface;
                         t = t + previous_step;
                         
@@ -492,7 +547,7 @@ namespace phd {
                     }
                     
                 } else { // We are at least truncation distance away from the surface so we can skip by 80 % of truncation distance
-                    previous_step = m_truncation_distance * 0.8f;
+                    previous_step = m_truncation_distance * 0.9f;
                     t = t + previous_step;
                 }
                 
@@ -532,10 +587,10 @@ namespace phd {
         // For each pixel u ∈ output image do
         for( uint16_t y=0; y<height; y++ ) {
             for( uint16_t x =0; x<width; x++ ) {
-
+                
                 // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
                 Vector2f camera_coord;
-                camera.image_to_camera(x, y, camera_coord);
+                camera.pixel_to_image_plane(x, y, camera_coord);
                 
                 Vector3f ray_next;
                 camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 }, ray_next );
@@ -567,4 +622,122 @@ namespace phd {
             } // End for Y
         } // End For X
     } // End function
+    
+#pragma mark - Import/Export
+    
+    /**
+     * Save the TSDF to file
+     * @param The filename
+     * @return true if the file saved OK otherwise false.
+     */
+    bool TSDFVolume::save_to_file( const std::string & file_name) const {
+        using namespace std;
+        
+        // Open file
+        ofstream ofs{ file_name };
+        ofs << fixed << setprecision(3);
+        
+        // Write Dimensions
+        ofs << "voxel size = " << m_size.x() << " " << m_size.y() << " " << m_size.z() << std::endl;
+        ofs << "space size = " << m_physical_size.x() << " " << m_physical_size.y() << " " << m_physical_size.z() << std::endl;
+        
+        // Write data
+        for( uint16_t y = 0; y< m_size.y() ; y++ ) {
+            for( uint16_t x = 0; x< m_size.x() ; x++ ) {
+                ofs << std::endl << "# y "<< y << ", x " << x << " tsdf" << std::endl;
+                
+                for( uint16_t z = 0; z< m_size.z() ; z++ ) {
+                    size_t idx = index( x, y, z ) ;
+                    
+                    ofs << m_voxels[ idx ] << " ";
+                }
+                
+                ofs << std::endl << "# y "<< y << ", x " << x << " weights" << std::endl;
+                for( uint16_t z = 0; z< m_size.z() ; z++ ) {
+                    size_t idx = index( x, y, z ) ;
+                    ofs  << m_weights[ idx ] << " ";
+                }
+            }
+        }
+        
+        // Close file
+        ofs.close();
+        return true;
+    }
+    
+    /**
+     * Load the given TSDF file
+     * @param The filename
+     * @return true if the file saved OK otherwise false.
+     */
+    bool TSDFVolume::load_from_file( const std::string & file_name) {
+        
+        // Open file
+        std::ifstream ifs{ file_name, std::ifstream::in };
+        
+        if( ifs.good() ) {
+            
+            // Read Dimensions
+            uint16_t size_x, size_y, size_z;
+            std::string line;
+            
+            
+            std::getline(ifs,line);
+            std::stringstream iss(line);
+            std::string rubbish;
+            std::getline(iss, rubbish, '=');
+            iss >> size_x >> size_y >> size_z;
+            
+            
+            // Read physical size
+            float psize_x, psize_y, psize_z;
+            if( std::getline(ifs,line) ) {
+                std::stringstream iss(line);
+                std::getline(iss, rubbish, '=');
+                iss >> psize_x >> psize_y >> psize_z;
+            }
+            
+            
+            // Allocate storage
+            set_size( size_x, size_y, size_z, psize_x, psize_y, psize_z);
+            
+            std::cout << "         Size : " << size_x << ", " << size_y << ", " << size_z << std::endl;
+            std::cout << "Physical Size : " << psize_x << ", " << psize_y << ", " << psize_z << std::endl;
+            std::cout << std::endl;
+            for( uint16_t y = 0; y<size_y ; y++ ) {
+                std::cout <<  ".";
+                std::cout.flush();
+                for( uint16_t x = 0; x< size_x ; x++ ) {
+                    
+                    // Discard tsdf comment
+                    std::getline( ifs, line );
+                    
+                    
+                    // Get distances
+                    for( uint16_t z=0; z<size_z; z++ ) {
+                        float distance;
+                        ifs >> distance;
+                        set_distance( x, y, z, distance );
+                    }
+                    
+                    // Discard weights comment
+                    std::getline( ifs, line );
+                    
+                    // Get weights
+                    for( uint16_t z=0; z<size_z; z++ ) {
+                        float weight;
+                        ifs >> weight;
+                        set_weight( x, y, z, weight );
+                    }
+                }
+            }
+            std::cout << std::endl;
+
+        } else {
+            // File not found or wouldn't open
+            std::cerr << "File error " << file_name << std::endl;
+        }
+        return true;
+    }
 }
+
