@@ -63,8 +63,7 @@ TEST( TSDF_Integration, given ) {
     
     // Make volume
     float vw, vh, vd;
-    TSDFVolume volume = construct_volume(512, 512, 512, 6400, 6400, 6400, vw, vh, vd);
-//    volume.offset( -3200, -3200, -3200 );
+    TSDFVolume volume = construct_volume(64, 64, 64, 6400, 6400, 6400, vw, vh, vd);
 
     // And camera
     Camera camera = make_kinect();
@@ -76,8 +75,8 @@ TEST( TSDF_Integration, given ) {
     
     uint16_t * depthmap = read_tum_depth_map("/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.160407.png", width, height);
     
-    camera.move_to( 1344.4, 627.2, 1661.8 );
-    camera.look_at( 1332.9, 1416.9, 2275.1 );
+    camera.move_to( 1343.4, 627.1, 1660.6 );
+    camera.look_at( 1331.0, 1416.3, 2274.6 );
     
     volume.integrate(depthmap, width, height, camera);
     delete [] depthmap;
@@ -116,8 +115,8 @@ TEST( TSDF_Integration, given ) {
 
  
     
-    camera.move_to( 1344.4, 627.2, 1661.8 );
-    camera.look_at( 1332.9, 1416.9, 2275.1 );
+    camera.move_to( 1343.4, 627.1, 1660.6 );
+    camera.look_at( 1331.0, 1416.3, 2274.6 );
     
     volume.save_to_file( "/Users/Dave/Desktop/TSDF.dat");
     
