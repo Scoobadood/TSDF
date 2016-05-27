@@ -261,7 +261,7 @@ namespace phd {
         using namespace Eigen;
         
         // To cam coordinate space
-        Vector4f cam_coordinate_h = m_pose_inverse * Vector4f{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0 };
+        Vector4f cam_coordinate_h = m_pose.inverse() * Vector4f{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0 };
         Vector3f cam_coordinate = cam_coordinate_h.block(0,0,3,1) / cam_coordinate_h[3];
         
         // Project down
@@ -318,7 +318,7 @@ namespace phd {
                             right_neighbour -= vertex;
                             below_neighbour -= vertex;
                             
-                            // Compute cros product for normal
+                            // Compute cross product for normal
                             normal = right_neighbour.cross( below_neighbour ).normalized();
                         }
                     }

@@ -73,6 +73,8 @@ TEST( TSDF_Integration, given ) {
     uint32_t height;
     
     
+    std::cout << "Integrating 1" << std::endl;
+    
     uint16_t * depthmap = read_tum_depth_map("/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.160407.png", width, height);
     
     camera.move_to( 1343.4, 627.1, 1660.6 );
@@ -84,11 +86,12 @@ TEST( TSDF_Integration, given ) {
     
     
     // Go again
-    depthmap = read_tum_depth_map("/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.194330.png", width, height);
-    camera.move_to( 1343.6, 626.5, 1652.4 );
-    camera.look_at( 1334.8, 1413.9, 2268.8 );
-    volume.integrate(depthmap, width, height, camera);
-    delete [] depthmap;
+//    std::cout << "Integrating 2" << std::endl;
+//    depthmap = read_tum_depth_map("/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.194330.png", width, height);
+//    camera.move_to( 1343.6, 626.5, 1652.4 );
+//    camera.look_at( 1334.8, 1413.9, 2268.8 );
+//    volume.integrate(depthmap, width, height, camera);
+//    delete [] depthmap;
     
 
     // And again
@@ -115,20 +118,22 @@ TEST( TSDF_Integration, given ) {
 
  
     
-    camera.move_to( 1343.4, 627.1, 1660.6 );
-    camera.look_at( 1331.0, 1416.3, 2274.6 );
-    
+    std::cout << "Saving" << std::endl;
     volume.save_to_file( "/Users/Dave/Desktop/TSDF.dat");
     
     // Set up camera
+    std::cout << "Rendering" << std::endl;
+    camera.move_to( 1343.4, 627.1, 1660.6 );
+    camera.look_at( 1331.0, 1416.3, 2274.6 );
+    
     Vector3f light_source{ 1500, 1000, 1600 };
     Vector3f * vertices = new Vector3f[ width * height ];
     Vector3f * normals  = new Vector3f[ width * height ];
 
     // Raycast volume
     volume.raycast(camera, width, height, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/tum_2_normals.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/tum_2_render.png", width, height, vertices, normals, camera, light_source);
+    save_normals_as_colour_png("/Users/Dave/Desktop/normals.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/render.png", width, height, vertices, normals, camera, light_source);
 
     delete [] vertices;
     delete [] normals;
