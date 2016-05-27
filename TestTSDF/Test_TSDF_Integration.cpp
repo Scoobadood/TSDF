@@ -125,6 +125,10 @@ TEST( TSDF_Integration, given ) {
     std::cout << "Rendering" << std::endl;
     camera.move_to( 1343.4, 627.1, 1660.6 );
     camera.look_at( 1331.0, 1416.3, 2274.6 );
+    Vector3f lookat_vec{ 13331 - 1343.4, 1416.3-627.1, 2274.6 - 1660.6};
+    camera.move_to( 1343.4 + lookat_vec.x() * 3, 627.1+ lookat_vec.y() * 3, 1660.6 + lookat_vec.z() * 3);
+    camera.look_at( 1331.0, 1416.3, 2274.6 );
+    
     
     Vector3f light_source{ 1500, 1000, 1600 };
     Vector3f * vertices = new Vector3f[ width * height ];

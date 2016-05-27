@@ -20,7 +20,8 @@ namespace phd {
      */
     void Camera::init( ) {
         m_k_inverse = m_k.inverse();
-        m_pose << 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f;
+        
+        set_pose( Eigen::Matrix4f::Identity() );
     }
     
     /**
@@ -88,7 +89,8 @@ namespace phd {
     }
 
     /**
-     * Move the camera to the given global coordinates
+     * Move the camera to the given global coordinates. Camera will maintain it's facing but will NOT keep 
+     * looking at a previous lookat point
      * @param wx World X coordinate
      * @param wy World Y coordinate
      * @param wz World Z coordinate
@@ -97,6 +99,8 @@ namespace phd {
         m_pose( 0, 3) = wx;
         m_pose( 1, 3) = wy;
         m_pose( 2, 3) = wz;
+        m_pose_inverse = m_pose.inverse();
+
     }
 
     /**
@@ -142,6 +146,8 @@ namespace phd {
         m_pose(3,2) = 0.0f;
         
         m_pose(3,3) = 1.0f;
+        
+        m_pose_inverse = m_pose.inverse();
     }
 
     /**
@@ -261,7 +267,7 @@ namespace phd {
         using namespace Eigen;
         
         // To cam coordinate space
-        Vector4f cam_coordinate_h = m_pose.inverse() * Vector4f{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0 };
+        Vector4f cam_coordinate_h = m_pose_inverse * Vector4f{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0 };
         Vector3f cam_coordinate = cam_coordinate_h.block(0,0,3,1) / cam_coordinate_h[3];
         
         // Project down
