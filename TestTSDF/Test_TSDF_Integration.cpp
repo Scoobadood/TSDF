@@ -55,7 +55,7 @@ void helper_move_look( float vars[7], Eigen::Vector3f & move_to, Eigen::Vector3f
     move_to.y() = vars[1];
     move_to.z() = vars[2];
     move_to = move_to * 1000;
-
+    
     Eigen::Quaternionf qq{ vars[6], vars[3], vars[4], vars[5] };
     
     Eigen::Matrix3f r = qq.toRotationMatrix();
@@ -72,21 +72,27 @@ TEST( TSDF_Integration, givenManyImages ) {
     using namespace phd;
     using namespace Eigen;
     
+    // Parameters
+    uint16_t voxels = 64;
+    uint16_t num_images = 1;
+    bool     save = false;
+    bool     raycast = true;
+    
+    
     // Make volume
     float vw, vh, vd;
-    TSDFVolume volume = construct_volume(512, 512, 512, 6400, 6400, 6400, vw, vh, vd);
+    TSDFVolume volume = construct_volume(voxels, voxels, voxels, 6400, 6400, 6400, vw, vh, vd);
     
     // And camera
     Camera camera = make_kinect();
     
     // Load depth image
-    uint32_t width;
-    uint32_t height;
+    uint32_t width{0};
+    uint32_t height{0};
     Vector3f camera_location;
     Vector3f camera_focus;
     
-
-    int num_images = sizeof( g_data ) / sizeof( g_data[0] );
+    
     for( int i=0; i < num_images; i++ ) {
         std::cout << "Integrating " << i << std::endl;
         
@@ -105,25 +111,36 @@ TEST( TSDF_Integration, givenManyImages ) {
     
     
     // Now save ...
-    std::cout << "Saving" << std::endl;
-    volume.save_to_file( "/Users/Dave/Desktop/TSDF_512_512_512.txt");
+    if( save ) {
+        std::cout << "Saving" << std::endl;
+        volume.save_to_file( "/Users/Dave/Desktop/TSDF_512_512_512.txt");
+    }
     
-
+    
     // ... and render ...
-    Vector3f light_source{ 1500, 1000, 1600 };
-    Vector3f * vertices = new Vector3f[ width * height ];
-    Vector3f * normals  = new Vector3f[ width * height ];
-    
-    
-    std::cout << "Rendering" << std::endl;
-    
-    // Set location
-    helper_move_look(g_data[0].ground_truth, camera_location, camera_focus);
-    camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
-    camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
-    
-    // Raycast volume
-    volume.raycast(camera, width, height, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/normals_X.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/render_X.png", width, height, vertices, normals, camera, light_source);
+    if( raycast ) {
+        if( (width > 0) && (height > 0 ) ){
+        Vector3f light_source{ 1500, 1000, 1600 };
+        Vector3f * vertices = new Vector3f[ width * height ];
+        Vector3f * normals  = new Vector3f[ width * height ];
+        
+        
+        std::cout << "Rendering" << std::endl;
+        
+        // Set location
+        helper_move_look(g_data[0].ground_truth, camera_location, camera_focus);
+        camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
+        camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
+        
+        // Raycast volume
+        volume.raycast(camera, width, height, vertices, normals);
+        save_normals_as_colour_png("/Users/Dave/Desktop/normals_X.png", width, height, normals);
+        save_rendered_scene_as_png("/Users/Dave/Desktop/render_X.png", width, height, vertices, normals, camera, light_source);
+        
+        delete [] vertices;
+        delete[] normals;
+        } else {
+            std::cerr << "Width or height not set. Can't render" << std::endl;
+        }
+    }
 }
