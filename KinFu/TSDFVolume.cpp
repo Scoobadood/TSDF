@@ -581,13 +581,8 @@ namespace phd {
         for( uint16_t y=0; y<height; y++ ) {
             for( uint16_t x =0; x<width; x++ ) {
         
-//        std:: cout << "TSDFVolume::raycast >> REMOVE THIS CODE IT LIMITS RENDERING TO A 10x10 PATCH <<" << std::endl;
-//                for( uint16_t y=235; y<245; y++ ) {
-//                    for( uint16_t x =475; x<325; x++ ) {
-                
                 // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
                 Vector2f camera_coord = camera.pixel_to_image_plane(x, y);
-                
                 Vector3f ray_next = camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 } );
                 
                 // Obtain a unit vector in the direction of the ray
