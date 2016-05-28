@@ -353,7 +353,7 @@ namespace phd {
                             float sdf = distance_to_surface - distance_to_voxel;
                             
                             // Truncate
-                            float tsdf = tsdf = std::min( std::max( sdf, -m_truncation_distance ), m_truncation_distance );
+                            float tsdf = std::min( std::max( sdf, -m_truncation_distance ), m_truncation_distance );
                             
                             // Extract prior weight
                             float prior_weight = weight( vx, vy, vz );
@@ -580,6 +580,10 @@ namespace phd {
         // For each pixel u ∈ output image do
         for( uint16_t y=0; y<height; y++ ) {
             for( uint16_t x =0; x<width; x++ ) {
+        
+//        std:: cout << "TSDFVolume::raycast >> REMOVE THIS CODE IT LIMITS RENDERING TO A 10x10 PATCH <<" << std::endl;
+//                for( uint16_t y=235; y<245; y++ ) {
+//                    for( uint16_t x =475; x<325; x++ ) {
                 
                 // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
                 Vector2f camera_coord = camera.pixel_to_image_plane(x, y);
