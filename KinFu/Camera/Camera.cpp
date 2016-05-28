@@ -309,7 +309,7 @@ namespace phd {
                     
                     // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
                     Vector2f cam_point = pixel_to_image_plane( x, y );
-                    vertex = Vector3f{ cam_point.x() * depth, cam_point.y() * depth, -depth };
+                    vertex = Vector3f{ cam_point.x(), cam_point.y(), 1.0f } * depth;
                     
                     // Compute normal as v(y,x+1)-v(y,x) cross v(y+1, x)-v(y, x )
                     if( (y < height - 1 ) && ( x < width - 1 ) ) {
