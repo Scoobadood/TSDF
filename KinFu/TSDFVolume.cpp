@@ -340,14 +340,14 @@ namespace phd {
                             // Obtain surface vertex in CAMERA coords
                             Vector3f surface_vertex = vertices[ voxel_image_index ];
                             
-                            // Distance to surface is length of the surface_vertex vector
-                            float distance_to_surface = surface_vertex.norm();
+                            // Distance to surface Z coord of vertex
+                            float distance_to_surface = surface_vertex.z();
                             
+                            // Convert voxel coordinate into cam coords
+                            Vector3f voxel_in_cam_coords = camera.world_to_camera(centre_of_voxel);
                             
-                            // Distance from cam to voxel
-                            Vector3f camera_origin = camera.position();
-                            float distance_to_voxel = (centre_of_voxel - camera_origin).norm();
-                            
+                            // Take Z coord as distance
+                            float distance_to_voxel = voxel_in_cam_coords.z();
                             
                             // SDF is the difference between them.
                             float sdf = distance_to_surface - distance_to_voxel;
