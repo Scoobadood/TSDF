@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		55414A6A1CFB8F4400ABDB59 /* BilateralFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */; };
 		554FE7741CDD527C008C287B /* MarchingCubes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554FE7721CDD527C008C287B /* MarchingCubes.cpp */; };
 		555C4E451CE679E100D92070 /* Cubic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */; };
 		555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */ = {isa = PBXBuildFile; fileRef = 55EB4DBB1CE43BCF00E35EA0 /* gtest_main.cc */; };
@@ -77,6 +78,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = BilateralFilter.cpp; sourceTree = "<group>"; };
+		55414A691CFB8F4400ABDB59 /* BilateralFilter.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = BilateralFilter.hpp; sourceTree = "<group>"; };
 		554FE7721CDD527C008C287B /* MarchingCubes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MarchingCubes.cpp; sourceTree = "<group>"; };
 		554FE7731CDD527C008C287B /* MarchingCubes.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = MarchingCubes.hpp; sourceTree = "<group>"; };
 		555C4E471CE6AAC600D92070 /* Test_TSDF_RayCast.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_TSDF_RayCast.cpp; sourceTree = "<group>"; };
@@ -153,6 +156,8 @@
 		555C61FB1CD6B98E0071FBF3 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
+				55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */,
+				55414A691CFB8F4400ABDB59 /* BilateralFilter.hpp */,
 				555C61FF1CD6BA0A0071FBF3 /* PngUtilities.hpp */,
 				555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */,
 				55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */,
@@ -358,6 +363,7 @@
 			files = (
 				554FE7741CDD527C008C287B /* MarchingCubes.cpp in Sources */,
 				555C62011CD6BA0A0071FBF3 /* PngUtilities.cpp in Sources */,
+				55414A6A1CFB8F4400ABDB59 /* BilateralFilter.cpp in Sources */,
 				5589173E1CED288600DD5452 /* Camera.cpp in Sources */,
 				55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */,
 				55D02C9A1CD5EF8C005561CE /* TSDFVolume.cpp in Sources */,
@@ -614,6 +620,7 @@
 				55DB8E111CF6A99700BFD72E /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		55EB4DBA1CE43BAE00E35EA0 /* Build configuration list for PBXNativeTarget "TestTSDF" */ = {
 			isa = XCConfigurationList;
