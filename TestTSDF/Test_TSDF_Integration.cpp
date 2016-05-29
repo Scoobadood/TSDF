@@ -63,8 +63,12 @@ void helper_move_look( float vars[7], Eigen::Vector3f & move_to, Eigen::Vector3f
     
     c = c * r;
     
-    look_at = move_to;
-    look_at = look_at + ( 8000 * c.transpose() );
+    look_at = move_to + ( 1000 * c.transpose() );
+    
+    std::cout << "Move To : (" << move_to.x() << ", " << move_to.y() << ", " << move_to.z() << ")" << std::endl;
+    std::cout << "Look At : (" << look_at.x() << ", " << look_at.y() << ", " << look_at.z() << ")" << std::endl;
+    
+    
 }
 
 TEST( TSDF_Integration, givenManyImages ) {
@@ -75,7 +79,7 @@ TEST( TSDF_Integration, givenManyImages ) {
     // Parameters
     uint16_t voxels = 64;
     uint16_t num_images = 1;
-    bool     save = false;
+    bool     save = true;
     bool     raycast = true;
     
     
@@ -113,32 +117,35 @@ TEST( TSDF_Integration, givenManyImages ) {
     // Now save ...
     if( save ) {
         std::cout << "Saving" << std::endl;
-        volume.save_to_file( "/Users/Dave/Desktop/TSDF_512_512_512.txt");
+        std::ostringstream file_name;
+        file_name << "/Users/Dave/Desktop/TSDF_" << voxels << ".txt";
+        volume.save_to_file( file_name.str());
     }
     
     
     // ... and render ...
     if( raycast ) {
         if( (width > 0) && (height > 0 ) ){
-        Vector3f light_source{ 1500, 1000, 1600 };
-        Vector3f * vertices = new Vector3f[ width * height ];
-        Vector3f * normals  = new Vector3f[ width * height ];
-        
-        
-        std::cout << "Rendering" << std::endl;
-        
-        // Set location
-        helper_move_look(g_data[0].ground_truth, camera_location, camera_focus);
-        camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
-        camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
-        
-        // Raycast volume
-        volume.raycast(camera, width, height, vertices, normals);
-        save_normals_as_colour_png("/Users/Dave/Desktop/normals_X.png", width, height, normals);
-        save_rendered_scene_as_png("/Users/Dave/Desktop/render_X.png", width, height, vertices, normals, camera, light_source);
-        
-        delete [] vertices;
-        delete[] normals;
+            Vector3f light_source{ 1500, 1000, 1600 };
+            Vector3f * vertices = new Vector3f[ width * height ];
+            Vector3f * normals  = new Vector3f[ width * height ];
+            
+            
+            std::cout << "Rendering" << std::endl;
+            
+            // Set location
+            helper_move_look(g_data[0].ground_truth, camera_location, camera_focus);
+            camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
+            camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
+            
+            // Raycast volume
+            volume.raycast(camera, width, height, vertices, normals);
+            
+            save_normals_as_colour_png("/Users/Dave/Desktop/normals.png", width, height, normals);
+            save_rendered_scene_as_png("/Users/Dave/Desktop/vertices.png", width, height, vertices, normals, camera, light_source);
+            
+            delete [] vertices;
+            delete[] normals;
         } else {
             std::cerr << "Width or height not set. Can't render" << std::endl;
         }
