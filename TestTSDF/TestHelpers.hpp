@@ -26,6 +26,10 @@ void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t 
 
 void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height, Eigen::Vector3f * vertices, Eigen::Vector3f * normals, const phd::Camera & camera, const Eigen::Vector3f & light_source);
 void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height, const std::deque<Eigen::Vector3f> & vertices, const std::deque<Eigen::Vector3f> & normals, const Eigen::Vector3f & camera_position, const Eigen::Vector3f & light_source);
+
+void save_depth_map( std::string file_name, uint16_t width, uint16_t height, uint16_t * pixels);
+uint16_t * load_depth_map( std::string file_name, uint16_t & width, uint16_t & height);
+
 uint16_t * read_nyu_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height );
 uint16_t * read_tum_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height );
 

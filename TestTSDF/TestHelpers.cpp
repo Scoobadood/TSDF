@@ -6,7 +6,7 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 
-#include <stdio.h>
+#include <fstream>
 #include "TestHelpers.hpp"
 #include "PgmUtilities.hpp"
 #include "PngUtilities.hpp"
@@ -377,3 +377,46 @@ uint16_t * make_wall_depth_map( uint16_t width, uint16_t height, uint16_t max_de
     return depths;
 }
 
+/**
+ * Save a depth map as 
+ * width [uint16_t]
+ * height[uint16_t]
+ * data  [uint16_t * wdith x height]
+ */
+void save_depth_map( std::string file_name, uint16_t width, uint16_t height, uint16_t * pixels) {
+    std::ofstream of{ file_name, std::ios::out | std::ios::binary };
+    if( of.good() ) {
+        of.write ( reinterpret_cast <char*> ( &width ), sizeof( width ) );
+        of.write ( reinterpret_cast <char*> ( &height), sizeof( height ) );
+        of.write( reinterpret_cast <char*> ( pixels ), width * height * sizeof( uint16_t ) );
+    } else {
+        std::cerr << "Couldn't create file " << file_name << std::endl;
+    }
+}
+
+/**
+ * Load a depth map as
+ * width [uint16_t]
+ * height[uint16_t]
+ * data  [uint16_t * wdith x height]
+ */
+uint16_t * load_depth_map( std::string file_name, uint16_t & width, uint16_t & height) {
+    uint16_t * pixels = NULL;
+    
+    std::ifstream in_f{ file_name, std::ios::in | std::ios::binary };
+    if( in_f.good() ) {
+        in_f.read ( reinterpret_cast <char*> ( &width ), sizeof( width )  );
+        in_f.read ( reinterpret_cast <char*> ( &height), sizeof( height ) );
+        
+        pixels = new uint16_t[ width * height] ;
+        if( pixels ) {
+            in_f.read( reinterpret_cast <char*> ( pixels ), width * height * sizeof( uint16_t ) );
+        } else {
+            std::cerr << "out of memory reading file  " << file_name << std::endl;
+        }
+    } else {
+        std::cerr << "Couldn't create file " << file_name << std::endl;
+    }
+    
+    return pixels;
+}
