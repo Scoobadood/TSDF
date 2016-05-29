@@ -50,11 +50,13 @@ BilateralFilter::~BilateralFilter( ) {
     }
 }
 
-void BilateralFilter::filter( const unsigned char * image, int width, int height ) const {
+void BilateralFilter::filter_bpp( const void * const image, int width, int height, int bpp ) const {
     int kernel_radius = (m_kernel_size - 1) / 2;
     
+    size_t image_size = width * height * bpp / 8;
+    
     // Apply it
-    char * out_image = new char[ width * height];
+    char * out_image = new char[ image_size];
     
     
     // For each pixel in the image
@@ -62,7 +64,12 @@ void BilateralFilter::filter( const unsigned char * image, int width, int height
     for( int y=0; y<height; y++ ) {
         for( int x=0; x<width; x++ ) {
             
-            int current_pixel_intensity = image[image_idx];
+            int current_pixel_intensity;
+            if( bpp==8 ) {
+                current_pixel_intensity= pixel_at( (const uint8_t * const ) image, width, x, y);
+            } else {
+                current_pixel_intensity= pixel_at( (const uint16_t * const ) image, width, x, y);
+            }
 
             
             // For the neghbourhood, calculate the weighted average and the sum of weights
@@ -78,7 +85,13 @@ void BilateralFilter::filter( const unsigned char * image, int width, int height
                     // If the conv pixel is in the image
                     if ( conv_x >= 0 && conv_x < width && conv_y >= 0 && conv_y < height ) {
                         
-                        int conv_pixel_intensity = image[conv_x + conv_y * width];
+                        
+                        int conv_pixel_intensity;
+                        if( bpp == 8 ) {
+                            conv_pixel_intensity = pixel_at((const uint8_t * const) image, width, conv_x, conv_y);
+                        } else {
+                            conv_pixel_intensity = pixel_at((const uint16_t * const) image, width, conv_x, conv_y);
+                        }
                         
                         int delta_intensity = std::abs(conv_pixel_intensity - current_pixel_intensity);
                         
@@ -100,9 +113,18 @@ void BilateralFilter::filter( const unsigned char * image, int width, int height
     }
     
     // Move the out image over the in image
-    std::memcpy( (void * ) image, ( void * )out_image, width * height);
+    std::memcpy( (void * ) image, ( void * )out_image, image_size);
     
     
     // Free up the out image
     delete[] out_image;
+}
+
+
+void BilateralFilter::filter( const uint8_t * const image, int width, int height ) const {
+    filter_bpp(image, width, height, 8);
+}
+
+void BilateralFilter::filter( const uint16_t * const image, int width, int height ) const {
+    filter_bpp(image, width, height, 16);
 }
