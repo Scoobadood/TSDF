@@ -18,6 +18,12 @@
 		555C61FA1CD6B8BA0071FBF3 /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */; };
 		555C62011CD6BA0A0071FBF3 /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
 		555C62031CD6BC080071FBF3 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
+		557CD2E51CFBA51A00BB68FB /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 557CD2E41CFBA51A00BB68FB /* main.cpp */; };
+		557CD2E91CFBACA500BB68FB /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
+		557CD2EA1CFBACA900BB68FB /* BilateralFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */; };
+		557CD2EB1CFBACB000BB68FB /* TestHelpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C4E4E1CE9372700D92070 /* TestHelpers.cpp */; };
+		557CD2EC1CFBACBF00BB68FB /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */; };
+		557CD2ED1CFBACC300BB68FB /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
 		5589173E1CED288600DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
 		558917411CED4B2300DD5452 /* Test_Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558917401CED4B2300DD5452 /* Test_Camera.cpp */; };
 		558917421CED4B5A00DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
@@ -48,6 +54,15 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		557CD2E01CFBA51A00BB68FB /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
 		55D02C8B1CD5EF53005561CE /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -90,6 +105,8 @@
 		555C61FF1CD6BA0A0071FBF3 /* PngUtilities.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PngUtilities.hpp; sourceTree = "<group>"; };
 		555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PngUtilities.cpp; sourceTree = "<group>"; };
 		555C62021CD6BC080071FBF3 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../../../../usr/local/Cellar/libpng/1.6.21/lib/libpng16.16.dylib; sourceTree = "<group>"; };
+		557CD2E21CFBA51A00BB68FB /* BilatFilter */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BilatFilter; sourceTree = BUILT_PRODUCTS_DIR; };
+		557CD2E41CFBA51A00BB68FB /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		5589173C1CED288600DD5452 /* Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Camera.cpp; path = Camera/Camera.cpp; sourceTree = "<group>"; };
 		5589173D1CED288600DD5452 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = Camera/Camera.hpp; sourceTree = "<group>"; };
 		558917401CED4B2300DD5452 /* Test_Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_Camera.cpp; sourceTree = "<group>"; };
@@ -121,6 +138,15 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		557CD2DF1CFBA51A00BB68FB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				557CD2EC1CFBACBF00BB68FB /* libboost_system.dylib in Frameworks */,
+				557CD2ED1CFBACC300BB68FB /* libpng16.16.dylib in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		55D02C8A1CD5EF53005561CE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -170,6 +196,14 @@
 			name = Utility;
 			sourceTree = "<group>";
 		};
+		557CD2E31CFBA51A00BB68FB /* BilatFilter */ = {
+			isa = PBXGroup;
+			children = (
+				557CD2E41CFBA51A00BB68FB /* main.cpp */,
+			);
+			path = BilatFilter;
+			sourceTree = "<group>";
+		};
 		5589173B1CED286700DD5452 /* Camera */ = {
 			isa = PBXGroup;
 			children = (
@@ -205,6 +239,7 @@
 				55D02C8F1CD5EF53005561CE /* KinFu */,
 				55EB4DB51CE43BAE00E35EA0 /* TestTSDF */,
 				55DB8E0D1CF6A99700BFD72E /* VoxelSpaceViewer */,
+				557CD2E31CFBA51A00BB68FB /* BilatFilter */,
 				55D02C8E1CD5EF53005561CE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -215,6 +250,7 @@
 				55D02C8D1CD5EF53005561CE /* KinFu */,
 				55EB4DB41CE43BAE00E35EA0 /* TestTSDF */,
 				55DB8E0C1CF6A99700BFD72E /* VoxelSpaceViewer */,
+				557CD2E21CFBA51A00BB68FB /* BilatFilter */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -266,6 +302,23 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		557CD2E11CFBA51A00BB68FB /* BilatFilter */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 557CD2E81CFBA51A00BB68FB /* Build configuration list for PBXNativeTarget "BilatFilter" */;
+			buildPhases = (
+				557CD2DE1CFBA51A00BB68FB /* Sources */,
+				557CD2DF1CFBA51A00BB68FB /* Frameworks */,
+				557CD2E01CFBA51A00BB68FB /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = BilatFilter;
+			productName = BilatFilter;
+			productReference = 557CD2E21CFBA51A00BB68FB /* BilatFilter */;
+			productType = "com.apple.product-type.tool";
+		};
 		55D02C8C1CD5EF53005561CE /* KinFu */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 55D02C941CD5EF53005561CE /* Build configuration list for PBXNativeTarget "KinFu" */;
@@ -326,6 +379,9 @@
 				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = Sindesso;
 				TargetAttributes = {
+					557CD2E11CFBA51A00BB68FB = {
+						CreatedOnToolsVersion = 7.3.1;
+					};
 					55D02C8C1CD5EF53005561CE = {
 						CreatedOnToolsVersion = 7.3;
 					};
@@ -352,11 +408,23 @@
 				55D02C8C1CD5EF53005561CE /* KinFu */,
 				55EB4DB31CE43BAE00E35EA0 /* TestTSDF */,
 				55DB8E0B1CF6A99700BFD72E /* VoxelSpaceViewer */,
+				557CD2E11CFBA51A00BB68FB /* BilatFilter */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXSourcesBuildPhase section */
+		557CD2DE1CFBA51A00BB68FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				557CD2E51CFBA51A00BB68FB /* main.cpp in Sources */,
+				557CD2EB1CFBACB000BB68FB /* TestHelpers.cpp in Sources */,
+				557CD2E91CFBACA500BB68FB /* PngUtilities.cpp in Sources */,
+				557CD2EA1CFBACA900BB68FB /* BilateralFilter.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		55D02C891CD5EF53005561CE /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -411,6 +479,30 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
+		557CD2E61CFBA51A00BB68FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/boost/1.58.0/lib,
+					/usr/local/Cellar/libpng/1.6.21/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		557CD2E71CFBA51A00BB68FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/usr/local/Cellar/boost/1.58.0/lib,
+					/usr/local/Cellar/libpng/1.6.21/lib,
+				);
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
 		55D02C921CD5EF53005561CE /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -595,6 +687,14 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		557CD2E81CFBA51A00BB68FB /* Build configuration list for PBXNativeTarget "BilatFilter" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				557CD2E61CFBA51A00BB68FB /* Debug */,
+				557CD2E71CFBA51A00BB68FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
 		55D02C881CD5EF53005561CE /* Build configuration list for PBXProject "KinFu" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
