@@ -38,8 +38,11 @@ namespace phd {
      * @param physical_size
      */
     TSDFVolume::TSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size ) : m_offset{ Eigen::Vector3f::Zero()}{
-        set_size( size.x(), size.y(), size.z() , physical_size.x(), physical_size.y(), physical_size.z() );
-        
+        if( ( size.x() > 0 ) && ( size.y() > 0 ) && ( size.z() > 0 ) && ( physical_size.x() > 0 ) && ( physical_size.y() > 0 ) && ( physical_size.z() > 0 ) ) {
+            set_size( size.x(), size.y(), size.z() , physical_size.x(), physical_size.y(), physical_size.z() );
+        } else {
+            throw std::invalid_argument( "Attempt to construct TSDFVOlume with zero or negative size" );
+        }
     }
     
     
@@ -56,8 +59,7 @@ namespace phd {
     void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z) {
         using namespace Eigen;
         
-        if( ( volume_x > 0 && volume_y > 0 && volume_z > 0 ) &&
-           ( psize_x > 0 && psize_y > 0 && psize_z > 0 ) ) {
+        if( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
             
             
             // Remove existing data
@@ -98,8 +100,7 @@ namespace phd {
             m_max_weight = 20.0f;
             
         } else {
-            //        std::cerr << "Attempt to construct TSDFvolume with zero or negative dimension" << std::endl;
-            throw std::invalid_argument( "Attempt to construct TSDFvolume with zero or negative dimension" );
+            throw std::invalid_argument( "Attempt to set TSDF size to zero" );
         }
         
     }
