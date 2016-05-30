@@ -254,7 +254,7 @@ namespace phd {
         Vector4f world_h{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0f};
         Vector4f cam_h = m_pose_inverse * world_h;
         
-        return cam_h.block(0, 0, 3, 1) / cam_h.w();
+        return cam_h.block(0, 0, 3, 1) / cam_h[3];
     }
     
     /**
@@ -270,11 +270,11 @@ namespace phd {
         Vector4f cam_coordinate_h = m_pose_inverse * Vector4f{ world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0 };
         Vector3f cam_coordinate = cam_coordinate_h.block(0,0,3,1) / cam_coordinate_h[3];
         
-        // Project down
-        cam_coordinate = cam_coordinate / cam_coordinate[2];
+        // Push into camera image
+        Vector3f cam_image_coordinate = m_k * cam_coordinate;
+        cam_image_coordinate = cam_image_coordinate / cam_image_coordinate  [2];
         
         // To pixel space
-        Vector3f cam_image_coordinate = m_k * cam_coordinate;
 
         // Round and store
         Eigen::Vector2i pixel_coordinate;
