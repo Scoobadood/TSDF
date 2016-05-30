@@ -334,27 +334,28 @@ namespace phd {
                         uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
                         
                         // Extract the associated depth
-                        uint16_t voxel_depth = depth_map[ voxel_image_index ];
+                        uint16_t surface_depth_for_voxel = depth_map[ voxel_image_index ];
                         
                         // If the depth is valid
-                        if( voxel_depth > 0 ) {
-                            // Obtain surface vertex in CAMERA coords
-                            Vector3f surface_vertex = vertices[ voxel_image_index ];
+                        if( surface_depth_for_voxel > 0 ) {
+                            // Get distance from voxel to camera centre
+                            Vector3f voxel_cam_vector =centre_of_voxel - camera.position();
+                            float distance_to_voxel = voxel_cam_vector.norm();
                             
-                            // Distance to surface Z coord of vertex
-                            float distance_to_surface = surface_vertex.z();
-                            
-                            // Convert voxel coordinate into cam coords
-                            Vector3f voxel_in_cam_coords = camera.world_to_camera(centre_of_voxel);
-                            
-                            // Take Z coord as distance
-                            float distance_to_voxel = voxel_in_cam_coords.z();
+                            // Compute conversion factor
+                            Vector2f pixel_in_cam = camera.pixel_to_image_plane(voxel_pixel_x, voxel_pixel_y);
+                            float lambda = std::sqrt( pixel_in_cam.x()*pixel_in_cam.x() + pixel_in_cam.y()*pixel_in_cam.y() + 1 );
                             
                             // SDF is the difference between them.
-                            float sdf = distance_to_surface - distance_to_voxel;
+                            float sdf = ( distance_to_voxel / lambda ) - surface_depth_for_voxel;
                             
                             // Truncate
-                            float tsdf = std::min( std::max( sdf, -m_truncation_distance ), m_truncation_distance );
+                            float tsdf;
+                            if( sdf > 0 ) {
+                                tsdf = std::fminf( 1.0, sdf / m_truncation_distance);
+                            } else {
+                                tsdf = std::fmaxf( -1.0, sdf / m_truncation_distance);
+                            }
                             
                             // Extract prior weight
                             float prior_weight = weight( vx, vy, vz );
