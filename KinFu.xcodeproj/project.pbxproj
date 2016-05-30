@@ -24,6 +24,12 @@
 		557CD2EB1CFBACB000BB68FB /* TestHelpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C4E4E1CE9372700D92070 /* TestHelpers.cpp */; };
 		557CD2EC1CFBACBF00BB68FB /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */; };
 		557CD2ED1CFBACC300BB68FB /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
+		557CD2EE1CFBB53500BB68FB /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
+		557CD2EF1CFBB54C00BB68FB /* TSDFVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */; };
+		557CD2F11CFBB60D00BB68FB /* libboost_program_options-mt.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 557CD2F01CFBB60D00BB68FB /* libboost_program_options-mt.dylib */; };
+		557CD2F31CFBB62900BB68FB /* libboost_filesystem.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 557CD2F21CFBB62900BB68FB /* libboost_filesystem.dylib */; };
+		557CD2F41CFBB62E00BB68FB /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
+		557CD2F51CFBB63900BB68FB /* MarchingCubes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554FE7721CDD527C008C287B /* MarchingCubes.cpp */; };
 		5589173E1CED288600DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
 		558917411CED4B2300DD5452 /* Test_Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558917401CED4B2300DD5452 /* Test_Camera.cpp */; };
 		558917421CED4B5A00DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
@@ -107,6 +113,8 @@
 		555C62021CD6BC080071FBF3 /* libpng16.16.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpng16.16.dylib; path = ../../../../../../../../../usr/local/Cellar/libpng/1.6.21/lib/libpng16.16.dylib; sourceTree = "<group>"; };
 		557CD2E21CFBA51A00BB68FB /* BilatFilter */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = BilatFilter; sourceTree = BUILT_PRODUCTS_DIR; };
 		557CD2E41CFBA51A00BB68FB /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		557CD2F01CFBB60D00BB68FB /* libboost_program_options-mt.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = "libboost_program_options-mt.dylib"; path = "../../../../../../../../../usr/local/Cellar/boost/1.58.0/lib/libboost_program_options-mt.dylib"; sourceTree = "<group>"; };
+		557CD2F21CFBB62900BB68FB /* libboost_filesystem.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libboost_filesystem.dylib; path = ../../../../../../../../../usr/local/Cellar/boost/1.58.0/lib/libboost_filesystem.dylib; sourceTree = "<group>"; };
 		5589173C1CED288600DD5452 /* Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Camera.cpp; path = Camera/Camera.cpp; sourceTree = "<group>"; };
 		5589173D1CED288600DD5452 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = Camera/Camera.hpp; sourceTree = "<group>"; };
 		558917401CED4B2300DD5452 /* Test_Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_Camera.cpp; sourceTree = "<group>"; };
@@ -142,8 +150,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				557CD2EC1CFBACBF00BB68FB /* libboost_system.dylib in Frameworks */,
+				557CD2F31CFBB62900BB68FB /* libboost_filesystem.dylib in Frameworks */,
+				557CD2F11CFBB60D00BB68FB /* libboost_program_options-mt.dylib in Frameworks */,
 				557CD2ED1CFBACC300BB68FB /* libpng16.16.dylib in Frameworks */,
+				557CD2EC1CFBACBF00BB68FB /* libboost_system.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,6 +243,8 @@
 		55D02C841CD5EF53005561CE = {
 			isa = PBXGroup;
 			children = (
+				557CD2F21CFBB62900BB68FB /* libboost_filesystem.dylib */,
+				557CD2F01CFBB60D00BB68FB /* libboost_program_options-mt.dylib */,
 				559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */,
 				555C62021CD6BC080071FBF3 /* libpng16.16.dylib */,
 				555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */,
@@ -418,10 +430,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				557CD2F51CFBB63900BB68FB /* MarchingCubes.cpp in Sources */,
+				557CD2F41CFBB62E00BB68FB /* Camera.cpp in Sources */,
 				557CD2E51CFBA51A00BB68FB /* main.cpp in Sources */,
 				557CD2EB1CFBACB000BB68FB /* TestHelpers.cpp in Sources */,
 				557CD2E91CFBACA500BB68FB /* PngUtilities.cpp in Sources */,
 				557CD2EA1CFBACA900BB68FB /* BilateralFilter.cpp in Sources */,
+				557CD2EF1CFBB54C00BB68FB /* TSDFVolume.cpp in Sources */,
+				557CD2EE1CFBB53500BB68FB /* PgmUtilities.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
