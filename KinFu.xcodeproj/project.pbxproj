@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		552AA05A1CFC305C005D4A10 /* BilateralFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */; };
 		55414A6A1CFB8F4400ABDB59 /* BilateralFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */; };
 		554FE7741CDD527C008C287B /* MarchingCubes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554FE7721CDD527C008C287B /* MarchingCubes.cpp */; };
 		555C4E451CE679E100D92070 /* Cubic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */; };
@@ -474,6 +475,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				552AA05A1CFC305C005D4A10 /* BilateralFilter.cpp in Sources */,
 				55EB4DC91CE43BCF00E35EA0 /* gtest-all.cc in Sources */,
 				555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */,
 				558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */,
@@ -710,6 +712,7 @@
 				557CD2E71CFBA51A00BB68FB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		55D02C881CD5EF53005561CE /* Build configuration list for PBXProject "KinFu" */ = {
 			isa = XCConfigurationList;
