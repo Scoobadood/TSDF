@@ -240,7 +240,7 @@ namespace phd {
     void TSDFVolume::clear( ) {
         size_t maxIdx = m_size[0] * m_size[1] * m_size[2];
         for( size_t idx = 0; idx < maxIdx; idx ++ ) {
-            m_voxels[idx] = m_truncation_distance;
+            m_voxels[idx] = -1.0f;
             m_weights[idx] = 0.0f;
         }
     }
@@ -488,6 +488,30 @@ namespace phd {
      * Walk ray from start to end seeking intersection with the ISO surface in this TSDF
      * If an intersection is found, return the coordnates in vertex and the surface normal
      * in normal
+     
+     
+     for each pixel u ∈ output image in parallel do
+         raystart ← back project [u, 0]; convert to grid pos 
+         raynext ← back project [u, 1]; convert to grid pos 
+         raydir ← normalize (raynext − raystart)
+         raylen ← 0
+        g ← first voxel along raydir
+        m ← convert global mesh vertex to grid pos mdist ← ||raystart − m||
+     
+        while voxel g within volume bounds do
+            raylen ← raylen + 1 
+            gprev ← g
+            g ← traverse next voxel along raydir 
+            if zero crossing from g to gprev then
+                p ← extract trilinear interpolated grid position 
+                v ← convert p from grid to global 3D position 
+                n ← extract surface gradient as ∇tsdf (p) 
+                shade pixel for oriented point (v, n) or
+                follow secondary ray (shadows, reflections, etc)
+     
+            if raylen > mdist then
+                shade pixel using inputed mesh maps or
+                follow secondary ray (shadows, reflections, etc)
      */
     bool TSDFVolume::walk_ray( const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const {
         using namespace Eigen;
