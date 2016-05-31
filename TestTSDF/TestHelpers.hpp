@@ -39,7 +39,7 @@ Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos );
 Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos );
 
 phd::Camera make_kinect( );
-uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radius, uint16_t max_depth, uint16_t min_depth );
+uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radius, uint16_t min_depth, uint16_t max_depth ) ;
 uint16_t * make_wall_depth_map( uint16_t width, uint16_t height, uint16_t max_depth, uint16_t min_depth, uint16_t wall_depth );
 
 

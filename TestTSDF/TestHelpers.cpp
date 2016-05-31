@@ -321,34 +321,40 @@ phd::Camera make_kinect( ) {
     return phd::Camera{ 585.6f, 585.6f, 316.0f, 247.6f };
 }
 
-uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radius, uint16_t max_depth, uint16_t min_depth ) {
+uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radius, uint16_t min_depth, uint16_t max_depth ) {
     uint16_t * depths = new uint16_t[width*height];
+    
+    if( max_depth < min_depth) {
+        float t = min_depth;
+        min_depth = max_depth;
+        max_depth = t;
+    }
     
     uint32_t idx = 0;
     float cx = width/2.0f;
     float cy = height/2.0f;
     float r2 = radius * radius;
-    float depth_centre = (max_depth - min_depth) / 2.0;
-    
-    float dz_scale = (depth_centre / (height / 2 ) );
-    
+    float half_depth =(max_depth - min_depth) / 2.0;
+    float depth_centre = min_depth + half_depth;
     
     for( uint16_t y=0; y<height; y++ ) {
         for( uint16_t x=0; x<width; x++ ) {
             
             uint16_t depth = 0;
 
-            float dx = cx - x;
-            float dy = cy - y;
+            float dx = (cx - x);
+            float dy = (cy - y);
+            
             float dx2 = dx*dx;
             float dy2 = dy*dy;
             if( dx2+dy2 < r2 ) {
                 // dx^2 + dy^2 + dz^2 = radius^2
                 float dz = std::sqrtf( r2 - (dx2+dy2) );
-                depth = depth_centre + ( dz * dz_scale);
+                depth = depth_centre - dz;
+                depth = std::max(min_depth, std::min( max_depth, depth ) );
             }
             
-            depths[idx] = std::max(min_depth, std::min( max_depth, depth ) );
+            depths[idx] = depth;
             idx++;
         }
     }
