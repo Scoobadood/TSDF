@@ -223,6 +223,14 @@ namespace phd
 #pragma mark - Ray casting
         
         /**
+         * Trilinearly interpolate the point p in the voxel grid using the tsdf values
+         * of the surrounding voxels. At edges we assume that the voxel values continue
+         * @param point the point
+         * @return the interpolated value
+         */
+        float trilinearly_interpolate_sdf_at( const Eigen::Vector3f & point ) const;
+        
+        /**
          * Compute the bormal to the ISO surface at the given point
          * Based on http://www.cs.technion.ac.il/~veredc/openfusion/OpenFusionReport.pdf
          * @param point The point; should be inside the TSDF

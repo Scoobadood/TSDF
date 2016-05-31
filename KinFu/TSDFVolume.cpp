@@ -335,21 +335,25 @@ namespace phd {
                     if( ( voxel_pixel_x >= 0 && voxel_pixel_x < width ) && ( voxel_pixel_y >= 0 && voxel_pixel_y < height) ) {
                         uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
                         
-                        // Extract the associated depth
-                        uint16_t surface_depth_for_voxel = depth_map[ voxel_image_index ];
+                        // Extract the depth to the surface at this point
+                        uint16_t surface_depth = depth_map[ voxel_image_index ];
                         
                         // If the depth is valid
-                        if( surface_depth_for_voxel > 0 ) {
-                            // Get distance from voxel to camera centre
-                            Vector3f voxel_cam_vector =centre_of_voxel - camera.position();
-                            float distance_to_voxel = voxel_cam_vector.norm();
+                        if( surface_depth > 0 ) {
+                            
+                            // Get the voxel centre in cam coords
+                            Vector3f voxel_centre_in_cam = camera.world_to_camera(centre_of_voxel);
+                            float voxel_distance = std::fabs(voxel_centre_in_cam.z());
                             
                             // Compute conversion factor
                             Vector2f pixel_in_cam = camera.pixel_to_image_plane(voxel_pixel_x, voxel_pixel_y);
                             float lambda = std::sqrt( pixel_in_cam.x()*pixel_in_cam.x() + pixel_in_cam.y()*pixel_in_cam.y() + 1 );
+
+                            // Convert voxel distance to a depth
+                            float voxel_depth = voxel_distance / lambda;
                             
                             // SDF is the difference between them.
-                            float sdf = ( distance_to_voxel / lambda ) - surface_depth_for_voxel;
+                            float sdf = surface_depth - voxel_depth;
                             
                             // Truncate
                             float tsdf;
@@ -487,101 +491,148 @@ namespace phd {
     }
     
     /**
+     * Trilinearly interpolate the point p in the voxel grid using the tsdf values
+     * of the surrounding voxels. At edges we assume that the voxel values continue
+     * @param point the point
+     * @return the interpolated value
+     */
+    float TSDFVolume::trilinearly_interpolate_sdf_at( const Eigen::Vector3f & point ) const {
+        using namespace Eigen;
+        
+        float value = 0;
+        
+        Vector3i current_voxel;
+        point_to_voxel(point, current_voxel);
+        Vector3f cov = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
+        
+        Vector3f uvw;
+        Vector3i lower_bounds;
+        Vector3i upper_bounds;
+        
+        // Compute upper and lower bounding vertices for trilinear interp
+        for( int i=0; i<3; i++ ) {
+            if( point[i] < cov[i] ) {
+                upper_bounds[i] = current_voxel[i];
+                lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
+            } else {
+                lower_bounds[i] = current_voxel[i];
+                upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
+            }
+        }
+        
+        Vector3f col = centre_of_voxel_at(lower_bounds.x(), lower_bounds.y() , lower_bounds.z() );
+        uvw = (point - col).array() / m_physical_size.array();
+        
+        // Interpolate X
+        float c00 = (distance(lower_bounds.x(), lower_bounds.y(), lower_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), lower_bounds.y(), lower_bounds.z() ) * uvw.x() );
+        float c01 = (distance(lower_bounds.x(), lower_bounds.y(), upper_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), lower_bounds.y(), upper_bounds.z() ) * uvw.x() );
+        float c10 = (distance(lower_bounds.x(), upper_bounds.y(), lower_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), upper_bounds.y(), lower_bounds.z() ) * uvw.x() );
+        float c11 = (distance(lower_bounds.x(), upper_bounds.y(), upper_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), upper_bounds.y(), upper_bounds.z() ) * uvw.x() );
+
+        float c0 = (c00 * ( 1-uvw.y() ) ) + (c10 * uvw.y() );
+        float c1 = (c01 * ( 1-uvw.y() ) ) + (c11 * uvw.y() );
+        
+        value = (c0 * 1-uvw.z() ) + (c1 * uvw.z() );
+        
+        return value;
+    }
+    
+    /**
      * Walk ray from start to end seeking intersection with the ISO surface in this TSDF
      * If an intersection is found, return the coordnates in vertex and the surface normal
      * in normal
      
      
      for each pixel u ∈ output image in parallel do
-         raystart ← back project [u, 0]; convert to grid pos 
-         raynext ← back project [u, 1]; convert to grid pos 
-         raydir ← normalize (raynext − raystart)
-         raylen ← 0
-        g ← first voxel along raydir
-        m ← convert global mesh vertex to grid pos mdist ← ||raystart − m||
+     raystart ← back project [u, 0]; convert to grid pos
+     raynext ← back project [u, 1]; convert to grid pos
+     raydir ← normalize (raynext − raystart)
+     raylen ← 0
+     g ← first voxel along raydir
+     m ← convert global mesh vertex to grid pos mdist ← ||raystart − m||
      
-        while voxel g within volume bounds do
-            raylen ← raylen + 1 
-            gprev ← g
-            g ← traverse next voxel along raydir 
-            if zero crossing from g to gprev then
-                p ← extract trilinear interpolated grid position 
-                v ← convert p from grid to global 3D position 
-                n ← extract surface gradient as ∇tsdf (p) 
-                shade pixel for oriented point (v, n) or
-                follow secondary ray (shadows, reflections, etc)
+     while voxel g within volume bounds do
+     raylen ← raylen + 1
+     gprev ← g
+     g ← traverse next voxel along raydir
+     if zero crossing from g to gprev then
+     p ← extract trilinear interpolated grid position
+     v ← convert p from grid to global 3D position
+     n ← extract surface gradient as ∇tsdf (p)
+     shade pixel for oriented point (v, n) or
+     follow secondary ray (shadows, reflections, etc)
      
-            if raylen > mdist then
-                shade pixel using inputed mesh maps or
-                follow secondary ray (shadows, reflections, etc)
+     if raylen > mdist then
+     shade pixel using inputed mesh maps or
+     follow secondary ray (shadows, reflections, etc)
      */
     bool TSDFVolume::walk_ray( const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const {
         using namespace Eigen;
         
         bool values_returned = false;
         
-        // Find the point at which the ray enters the grid
+        // Find the point at which the ray enters the grid - if it does
         float t;
         Vector3f current_point;
+        
         if( is_intersected_by_ray_2( ray_start, ray_direction, current_point, t ) ) {
             
-            Vector3i voxel;
-            float previous_distance_to_surface;
-            float previous_step = 0.0f;
-            float distance_to_surface = std::numeric_limits<float>::max();
+            Vector3i current_voxel;
+            Vector3i previous_voxel;
+
+            Vector3f previous_position = current_point;
             
-            // Check that this isn't behind the surface already
-            point_to_voxel( current_point, voxel );
+            point_to_voxel( current_point, current_voxel );
+            float dist =distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
             
-            bool done = (distance(voxel.x(), voxel.y(), voxel.z() ) < 0 );
-            while( ! done ) {
-                
-                // Read off distance to surface in this voxel
-                previous_distance_to_surface = distance_to_surface;
-                distance_to_surface = distance(voxel.x(), voxel.y(), voxel.z() );
-                
-                // If this is > truncation distance we can skip by truncation distance (minus a bit)
-                if( distance_to_surface < m_truncation_distance ) {
+            float step_size = m_truncation_distance;
+            if( dist >= 0 ) {
+                bool done = false;
+                do {
                     
-                    // If distance to surface is positive, skip
-                    if( distance_to_surface > 0.01 ) {
-                        previous_step = distance_to_surface;
-                        t = t + previous_step;
+                    previous_voxel = current_voxel;
+                    // Update ray
+                    t = t + step_size;
+                    
+                    // Convert to new global position
+                    Vector3f new_position = ray_start + (ray_direction * t );
+                    
+                    // Check we're still in bounds
+                    if( point_is_in_tsdf(new_position) ) {
+                        point_to_voxel( new_position, current_voxel );
                         
-                    } else { // We crossed the surface
-                        // Interpolate between this value and previous value
-                        float interpolated_ratio = previous_distance_to_surface / ( previous_distance_to_surface - distance_to_surface );
-                        float interpolated_value = interpolated_ratio * previous_step;
+                        float distance_to_surface = distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
                         
-                        t = t + interpolated_value;
-                        
-                        vertex = ray_start + (t * ray_direction);
-                        
-                        if( point_is_in_tsdf(vertex)) {
-                            normal_at_point(vertex, normal );
+                        // Was zero crossing found?
+                        if( distance_to_surface < 0 ) {
                             
-                            values_returned = true;
+                            float sdf_new = trilinearly_interpolate_sdf_at( new_position);
+                            
+                            // recompute prior point
+                            float sdf_old = trilinearly_interpolate_sdf_at( previous_position );
+                            
+                            // Linear interpiolate across this
+                            float step_back = step_size * ( sdf_old / ( sdf_new - sdf_old ));
+                            t -= (step_size + step_back);
+                            
+                            // Compute vertex
+                            vertex = ray_start + (t * ray_direction);
+                            if( point_is_in_tsdf(vertex)) {
+                                normal_at_point(vertex, normal );
+                                values_returned = true;
+                            }
+                            done = true;
+                        } else { // distance to surface is positive or 0
+                            if( distance_to_surface > 0 ) {
+                                step_size = (distance_to_surface * m_truncation_distance);
+                            }
                         }
                         
-                        // Somehow skipped past iso surface
+                        previous_position = new_position;
+                    } else { // Point no longer inside grid
                         done = true;
                     }
-                    
-                } else { // We are at least truncation distance away from the surface so we can skip by 80 % of truncation distance
-                    previous_step = m_truncation_distance * 0.9f;
-                    t = t + previous_step;
-                }
-                
-                if( !done ) {
-                    current_point = ray_start + (t * ray_direction);
-                    
-                    // Check we're still reasonable; point is in TSDF
-                    if( point_is_in_tsdf(current_point)) {
-                        point_to_voxel( current_point, voxel );
-                    } else {
-                        done = true;
-                    }
-                }
+                } while( !done );
             }
         }
         
