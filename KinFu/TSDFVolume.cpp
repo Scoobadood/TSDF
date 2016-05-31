@@ -649,7 +649,12 @@ namespace phd {
                     std::fabsf( current_point.z() + m_offset.z() - m_physical_size.z() ) > 0.1 ) {
                         std::cerr << "walk_ray ray intersection is outside of grid by more than margins " << current_point << std::endl;
                         return false;
+                } else {
+                    // We need to nudge the current_voxel back into the grid
+                    for( int i=0; i<3; i++ ) {
+                        current_voxel[i] = std::max( std::min(current_voxel[i], m_size[i]-1), 0 );
                     }
+                }
             }
             
             
