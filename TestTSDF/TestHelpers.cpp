@@ -329,10 +329,14 @@ uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radi
     float cy = height/2.0f;
     float r2 = radius * radius;
     float depth_centre = (max_depth - min_depth) / 2.0;
-    float dz_scale = (depth_centre * 4 / 250 );
+    
+    float dz_scale = (depth_centre / (height / 2 ) );
+    
+    
     for( uint16_t y=0; y<height; y++ ) {
         for( uint16_t x=0; x<width; x++ ) {
-            uint16_t depth = max_depth;
+            
+            uint16_t depth = 0;
 
             float dx = cx - x;
             float dy = cy - y;
@@ -341,7 +345,7 @@ uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radi
             if( dx2+dy2 < r2 ) {
                 // dx^2 + dy^2 + dz^2 = radius^2
                 float dz = std::sqrtf( r2 - (dx2+dy2) );
-                depth = depth_centre - ( dz * dz_scale);
+                depth = depth_centre + ( dz * dz_scale);
             }
             
             depths[idx] = std::max(min_depth, std::min( max_depth, depth ) );
