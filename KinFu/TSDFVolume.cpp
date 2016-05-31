@@ -490,6 +490,40 @@ namespace phd {
         return intersects;
     }
     
+    
+    
+    /**
+     * Get the upper and lower bounding voxels for a trilinear interpolation at the given point in
+     * global space.
+     * @param point The point in global coordinates
+     * @param lower_bound The voxel forming the lower, left, near bound
+     * @param upper_bound The voxel forming the upper, right, far bound
+     */
+    void TSDFVolume::get_interpolation_bounds( const Eigen::Vector3f & point, Eigen::Vector3i & lower_bounds, Eigen::Vector3i & upper_bounds ) const {
+        using namespace Eigen;
+
+        // Obtain current voxel
+        Vector3i current_voxel;
+        point_to_voxel(point, current_voxel);
+        
+        // And central point
+        Vector3f voxel_centre = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
+        
+        // For each coordinate axis, determine whether point is below or above and
+        // select the appropriate bounds
+        for( int i=0; i<3; i++ ) {
+            if( point[i] < voxel_centre[i] ) {
+                // Point is left/below/nearer so UPPER bound in this direction is current_voxel
+                upper_bounds[i] = current_voxel[i];
+                lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
+            } else {
+                // Point is right/above/further so LOWER bound in this direction is current_voxel
+                lower_bounds[i] = current_voxel[i];
+                upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
+            }
+        }
+    }
+    
     /**
      * Trilinearly interpolate the point p in the voxel grid using the tsdf values
      * of the surrounding voxels. At edges we assume that the voxel values continue
@@ -501,38 +535,46 @@ namespace phd {
         
         float value = 0;
         
-        Vector3i current_voxel;
-        point_to_voxel(point, current_voxel);
-        Vector3f cov = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
-        
-        Vector3f uvw;
+        // Determine which voxels bound this point
         Vector3i lower_bounds;
         Vector3i upper_bounds;
+        get_interpolation_bounds(point, lower_bounds, upper_bounds);
+
+        // Compute uvw
+        Vector3f centre_of_lower_bound = centre_of_voxel_at(lower_bounds.x(), lower_bounds.y() , lower_bounds.z() );
+        Vector3f uvw = (point - centre_of_lower_bound).array() / m_physical_size.array();
         
-        // Compute upper and lower bounding vertices for trilinear interp
-        for( int i=0; i<3; i++ ) {
-            if( point[i] < cov[i] ) {
-                upper_bounds[i] = current_voxel[i];
-                lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
-            } else {
-                lower_bounds[i] = current_voxel[i];
-                upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
-            }
-        }
         
-        Vector3f col = centre_of_voxel_at(lower_bounds.x(), lower_bounds.y() , lower_bounds.z() );
-        uvw = (point - col).array() / m_physical_size.array();
+        // Local vars for clarity
+        float u = uvw[0];
+        float v = uvw[1];
+        float w = uvw[2];
+        
+        float u_prime = 1.0f - u;
+        float v_prime = 1.0f - v;
+        float w_prime = 1.0f - w;
+        
+        float c000 = distance( lower_bounds.x(), lower_bounds.y(), lower_bounds.z() );
+        float c001 = distance( lower_bounds.x(), lower_bounds.y(), upper_bounds.z() );
+        float c010 = distance( lower_bounds.x(), upper_bounds.y(), lower_bounds.z() );
+        float c011 = distance( lower_bounds.x(), upper_bounds.y(), upper_bounds.z() );
+        float c100 = distance( upper_bounds.x(), lower_bounds.y(), lower_bounds.z() );
+        float c101 = distance( upper_bounds.x(), lower_bounds.y(), upper_bounds.z() );
+        float c110 = distance( upper_bounds.x(), upper_bounds.y(), lower_bounds.z() );
+        float c111 = distance( upper_bounds.x(), upper_bounds.y(), upper_bounds.z() );
         
         // Interpolate X
-        float c00 = (distance(lower_bounds.x(), lower_bounds.y(), lower_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), lower_bounds.y(), lower_bounds.z() ) * uvw.x() );
-        float c01 = (distance(lower_bounds.x(), lower_bounds.y(), upper_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), lower_bounds.y(), upper_bounds.z() ) * uvw.x() );
-        float c10 = (distance(lower_bounds.x(), upper_bounds.y(), lower_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), upper_bounds.y(), lower_bounds.z() ) * uvw.x() );
-        float c11 = (distance(lower_bounds.x(), upper_bounds.y(), upper_bounds.z() ) * ( 1 - uvw.x() ) ) + (distance(upper_bounds.x(), upper_bounds.y(), upper_bounds.z() ) * uvw.x() );
+        float c00 = c000 * u_prime + c100 * u;
+        float c01 = c001 * u_prime + c101 * u;
+        float c10 = c010 * u_prime + c110 * u;
+        float c11 = c011 * u_prime + c111 * u;
 
-        float c0 = (c00 * ( 1-uvw.y() ) ) + (c10 * uvw.y() );
-        float c1 = (c01 * ( 1-uvw.y() ) ) + (c11 * uvw.y() );
+        // Interpolate Y
+        float c0 = c00 * v_prime + c10 * v;
+        float c1 = c01 * v_prime + c11 * v;
         
-        value = (c0 * 1-uvw.z() ) + (c1 * uvw.z() );
+        // Interpolate Z
+        value = c0 * w_prime + c1 * w;
         
         return value;
     }

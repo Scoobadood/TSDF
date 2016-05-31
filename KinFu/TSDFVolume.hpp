@@ -221,7 +221,15 @@ namespace phd
         pcl::PolygonMesh extractSISOSurface( ) const;
         
 #pragma mark - Ray casting
-        
+        /**
+         * Get the upper and lower bounding voxels for a trilinear interpolation at the given point in
+         * global space.
+         * @param point The point in global coordinates
+         * @param lower_bound The voxel forming the lower, left, near bound
+         * @param upper_bound The voxel forming the upper, right, far bound
+         */
+        void get_interpolation_bounds( const Eigen::Vector3f & point, Eigen::Vector3i & lower_bounds, Eigen::Vector3i & upper_bounds ) const;
+
         /**
          * Trilinearly interpolate the point p in the voxel grid using the tsdf values
          * of the surrounding voxels. At edges we assume that the voxel values continue
