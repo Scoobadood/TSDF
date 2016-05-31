@@ -91,10 +91,10 @@ namespace phd {
             float cz = m_physical_size[2] / m_size[2];
             
             m_voxel_size = Eigen::Vector3f( cx, cy, cz );
-
+            
             // Set t > diagonal of voxel
             m_truncation_distance = 1.1f * m_voxel_size.norm();
-
+            
             // Create the volume storage
             m_voxels  = new float[volume_x * volume_y * volume_z];
             m_weights = new float[volume_x * volume_y * volume_z];
@@ -164,27 +164,36 @@ namespace phd {
     
     
     /**
-     * Convert a point in the TSDF volume into the corresponding voxel
+     * Convert a point in global coordinates into voxel coordinates
      * @param point The point to obtain as a voxel
-     * @param voxel The voxel coordinate containing that point
+     * @param in_grid Set to true if the voxel is in the grid, otherwise false
+     * @return voxel The voxel coordinate containing that point
      */
-    void TSDFVolume::point_to_voxel( const Eigen::Vector3f & point, Eigen::Vector3i & voxel ) const {
+    Eigen::Vector3i TSDFVolume::point_to_voxel( const Eigen::Vector3f & point, bool & in_grid ) const {
+        
+        // Convert from global to Volume coords
         Eigen::Vector3f adjusted_point = point - m_offset;
+        
+        // FRactional voxel
         adjusted_point = adjusted_point.array() / m_voxel_size.array();
         
+        Eigen::Vector3i voxel;
         voxel.x() = std::floor( adjusted_point.x() );
         voxel.y() = std::floor( adjusted_point.y() );
         voxel.z() = std::floor( adjusted_point.z() );
         
-        // Adjust into bounds for points which are on the far surface in any direction
-        for (int i=0; i<3; i++ ) {
-            if( voxel[i] == m_size[i]) {
-                voxel[i] = m_size[i] - 1;
-            } else if( voxel[i] == -1) {
-                voxel[i] = 0;
+        in_grid = true;
+        for( int i=0; i<3; i++ ) {
+            if( voxel[i] < 0 || voxel[i] >= m_size[i]) {
+                in_grid = false;
+                break;
             }
         }
+        
+        return voxel;
     }
+    
+    
     /**
      * @return the size of this space.
      */
@@ -353,7 +362,7 @@ namespace phd {
                             // Compute conversion factor
                             Vector2f pixel_in_cam = camera.pixel_to_image_plane(voxel_pixel_x, voxel_pixel_y);
                             float lambda = std::sqrt( pixel_in_cam.x()*pixel_in_cam.x() + pixel_in_cam.y()*pixel_in_cam.y() + 1 );
-
+                            
                             // Convert voxel distance to a depth
                             float voxel_depth = voxel_distance / lambda;
                             
@@ -409,27 +418,29 @@ namespace phd {
     void TSDFVolume::normal_at_point( const Eigen::Vector3f & point, Eigen::Vector3f & normal ) const {
         using namespace Eigen;
         
-        Vector3i voxel;
-        point_to_voxel( point, voxel );
+        bool in_grid;
+        Vector3i voxel = point_to_voxel( point, in_grid );
         
-        // Get voxel values at voxel (x +/1 1, y +/- 1 z +/-1 )
-        
-        Vector3i lower_index;
-        Vector3i upper_index;
-        for( int i=0; i<3; i++ ) {
-            lower_index[i] = std::max( voxel[i]-1, 0);
-            upper_index[i] = std::min( voxel[i]+1, m_size[i] - 1);
+        if( in_grid ) {
+            Vector3i lower_index;
+            Vector3i upper_index;
+            for( int i=0; i<3; i++ ) {
+                lower_index[i] = std::max( voxel[i]-1, 0);
+                upper_index[i] = std::min( voxel[i]+1, m_size[i] - 1);
+            }
+            
+            Vector3f upper_values{ distance( upper_index.x(), voxel.y(), voxel.z() ),
+                distance( voxel.x(), upper_index.y(), voxel.z() ),
+                distance( voxel.x(), voxel.y(), upper_index.z() ) };
+            Vector3f lower_values{ distance( lower_index.x(), voxel.y(), voxel.z() ),
+                distance( voxel.x(), lower_index.y(), voxel.z() ),
+                distance( voxel.x(), voxel.y(), lower_index.z() ) };
+            
+            normal = upper_values - lower_values;
+            normal.normalize();
+        } else {
+            std::cerr << "normal_at_point called for point outside of grid " << point << std::endl;
         }
-        
-        Vector3f upper_values{ distance( upper_index.x(), voxel.y(), voxel.z() ),
-            distance( voxel.x(), upper_index.y(), voxel.z() ),
-            distance( voxel.x(), voxel.y(), upper_index.z() ) };
-        Vector3f lower_values{ distance( lower_index.x(), voxel.y(), voxel.z() ),
-            distance( voxel.x(), lower_index.y(), voxel.z() ),
-            distance( voxel.x(), voxel.y(), lower_index.z() ) };
-        
-        normal = upper_values - lower_values;
-        normal.normalize();
     }
     
     /**
@@ -506,26 +517,31 @@ namespace phd {
      */
     void TSDFVolume::get_interpolation_bounds( const Eigen::Vector3f & point, Eigen::Vector3i & lower_bounds, Eigen::Vector3i & upper_bounds ) const {
         using namespace Eigen;
-
+        
         // Obtain current voxel
-        Vector3i current_voxel;
-        point_to_voxel(point, current_voxel);
+        bool in_grid;
+        Vector3i current_voxel = point_to_voxel(point, in_grid);
         
-        // And central point
-        Vector3f voxel_centre = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
-        
-        // For each coordinate axis, determine whether point is below or above and
-        // select the appropriate bounds
-        for( int i=0; i<3; i++ ) {
-            if( point[i] < voxel_centre[i] ) {
-                // Point is left/below/nearer so UPPER bound in this direction is current_voxel
-                upper_bounds[i] = current_voxel[i];
-                lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
-            } else {
-                // Point is right/above/further so LOWER bound in this direction is current_voxel
-                lower_bounds[i] = current_voxel[i];
-                upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
+        if( in_grid ) {
+            
+            // And central point
+            Vector3f voxel_centre = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
+            
+            // For each coordinate axis, determine whether point is below or above and
+            // select the appropriate bounds
+            for( int i=0; i<3; i++ ) {
+                if( point[i] < voxel_centre[i] ) {
+                    // Point is left/below/nearer so UPPER bound in this direction is current_voxel
+                    upper_bounds[i] = current_voxel[i];
+                    lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
+                } else {
+                    // Point is right/above/further so LOWER bound in this direction is current_voxel
+                    lower_bounds[i] = current_voxel[i];
+                    upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
+                }
             }
+        } else {
+            std::cerr << "get_interpolation_bounds called for point outside of grid " << point << std::endl;
         }
     }
     
@@ -544,7 +560,7 @@ namespace phd {
         Vector3i lower_bounds;
         Vector3i upper_bounds;
         get_interpolation_bounds(point, lower_bounds, upper_bounds);
-
+        
         // Compute uvw
         Vector3f centre_of_lower_bound = centre_of_voxel_at(lower_bounds.x(), lower_bounds.y() , lower_bounds.z() );
         Vector3f uvw = (point - centre_of_lower_bound).array() / m_physical_size.array();
@@ -573,7 +589,7 @@ namespace phd {
         float c01 = c001 * u_prime + c101 * u;
         float c10 = c010 * u_prime + c110 * u;
         float c11 = c011 * u_prime + c111 * u;
-
+        
         // Interpolate Y
         float c0 = c00 * v_prime + c10 * v;
         float c1 = c01 * v_prime + c11 * v;
@@ -624,12 +640,23 @@ namespace phd {
         
         if( is_intersected_by_ray_2( ray_start, ray_direction, current_point, t ) ) {
             
-            Vector3i current_voxel;
+            bool in_grid;
+            Vector3i current_voxel = point_to_voxel( current_point, in_grid );
+            // Handle the case where the point is -just- outside the grid
+            if( !in_grid ) {
+                if( std::fabsf( current_point.x() + m_offset.x() - m_physical_size.x() ) > 0.1 ||
+                    std::fabsf( current_point.y() + m_offset.y() - m_physical_size.y() ) > 0.1 ||
+                    std::fabsf( current_point.z() + m_offset.z() - m_physical_size.z() ) > 0.1 ) {
+                        std::cerr << "walk_ray ray intersection is outside of grid by more than margins " << current_point << std::endl;
+                        return false;
+                    }
+            }
+            
+            
             Vector3i previous_voxel;
-
+            
             Vector3f previous_position = current_point;
             
-            point_to_voxel( current_point, current_voxel );
             float dist =distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
             
             float step_size = m_truncation_distance;
@@ -646,7 +673,8 @@ namespace phd {
                     
                     // Check we're still in bounds
                     if( point_is_in_tsdf(new_position) ) {
-                        point_to_voxel( new_position, current_voxel );
+                        bool in_grid;
+                        current_voxel = point_to_voxel( new_position, in_grid );
                         
                         float distance_to_surface = distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
                         

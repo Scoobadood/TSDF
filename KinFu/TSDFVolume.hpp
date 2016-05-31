@@ -97,11 +97,12 @@ namespace phd
         Eigen::Vector3f centre_of_volume(  ) const;
         
         /**
-         * Convert a point in the TSDF volume into the corresponding voxel
+         * Convert a point in global coordinates into voxel coordinates
          * @param point The point to obtain as a voxel
-         * @param voxel The voxel coordinate containing that point
+         * @param in_grid Set to true if the voxel is in the grid, otherwise false
+         * @return voxel The voxel coordinate containing that point
          */
-        void point_to_voxel( const Eigen::Vector3f & point, Eigen::Vector3i & voxel ) const;
+        Eigen::Vector3i point_to_voxel( const Eigen::Vector3f & point, bool & in_grid ) const;
         
         /**
          * @return the size of this space in voxels.
