@@ -84,10 +84,12 @@ namespace phd {
             float cx = m_physical_size[0] / m_size[0];
             float cy = m_physical_size[1] / m_size[1];
             float cz = m_physical_size[2] / m_size[2];
-            m_truncation_distance = 4.1f * std::max (cx, std::max (cy, cz));
             
             m_voxel_size = Eigen::Vector3f( cx, cy, cz );
-            
+
+            // Set t > diagonal of voxel
+            m_truncation_distance = 1.1f * m_voxel_size.norm();
+
             // Create the volume storage
             m_voxels  = new float[volume_x * volume_y * volume_z];
             m_weights = new float[volume_x * volume_y * volume_z];
@@ -240,7 +242,7 @@ namespace phd {
     void TSDFVolume::clear( ) {
         size_t maxIdx = m_size[0] * m_size[1] * m_size[2];
         for( size_t idx = 0; idx < maxIdx; idx ++ ) {
-            m_voxels[idx] = -1.0f;
+            m_voxels[idx] =  0.0f;
             m_weights[idx] = 0.0f;
         }
     }
@@ -606,7 +608,7 @@ namespace phd {
         // For each pixel u ∈ output image do
         for( uint16_t y=0; y<height; y++ ) {
             for( uint16_t x =0; x<width; x++ ) {
-        
+                
                 // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
                 Vector2f camera_coord = camera.pixel_to_image_plane(x, y);
                 Vector3f ray_next = camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 } );
@@ -742,7 +744,7 @@ namespace phd {
                 }
             }
             std::cout << std::endl;
-
+            
         } else {
             // File not found or wouldn't open
             std::cerr << "File error " << file_name << std::endl;
