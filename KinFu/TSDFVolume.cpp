@@ -21,6 +21,11 @@
 
 namespace phd {
     
+    /**
+     * Predefined bad vertex
+     */
+    static const Eigen::Vector3f BAD_VERTEX{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
+    
     TSDFVolume::~TSDFVolume() {
         if( m_voxels ) {
             delete [] m_voxels;
@@ -702,21 +707,20 @@ namespace phd {
         for( uint16_t y=0; y<height; y++ ) {
             for( uint16_t x =0; x<width; x++ ) {
                 
+                // Obtain a unit vector in the direction of the ray
                 // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
                 Vector2f camera_coord = camera.pixel_to_image_plane(x, y);
                 Vector3f ray_next = camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 } );
-                
-                // Obtain a unit vector in the direction of the ray
                 Vector3f ray_direction = (ray_next - ray_start).normalized();
                 
                 // Walk the ray to obtain vertex and normal values
                 Vector3f normal;
                 Vector3f vertex;
-                
                 bool ray_insersects_surface = walk_ray( ray_start, ray_direction, vertex, normal);
                 
+                // If the ray doesn't intersect, create a BAD_VERTEX
                 if( !ray_insersects_surface ) {
-                    vertex = ray_start + 8000 * ray_direction;
+                    vertex = BAD_VERTEX;
                     normal = Vector3f::Zero();
                 }
                 
