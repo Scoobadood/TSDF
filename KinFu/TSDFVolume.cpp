@@ -165,29 +165,37 @@ namespace phd {
     
     /**
      * Convert a point in global coordinates into voxel coordinates
+     * Logs an error if the point is outside of the grid by a sufficient margin
      * @param point The point to obtain as a voxel
-     * @param in_grid Set to true if the voxel is in the grid, otherwise false
      * @return voxel The voxel coordinate containing that point
      */
-    Eigen::Vector3i TSDFVolume::point_to_voxel( const Eigen::Vector3f & point, bool & in_grid ) const {
+    Eigen::Vector3i TSDFVolume::point_to_voxel( const Eigen::Vector3f & point) const {
         
         // Convert from global to Volume coords
-        Eigen::Vector3f adjusted_point = point - m_offset;
+        Eigen::Vector3f grid_point = point - m_offset;
         
         // FRactional voxel
-        adjusted_point = adjusted_point.array() / m_voxel_size.array();
+        Eigen::Vector3f fractional_voxel = grid_point.array() / m_voxel_size.array();
         
         Eigen::Vector3i voxel;
-        voxel.x() = std::floor( adjusted_point.x() );
-        voxel.y() = std::floor( adjusted_point.y() );
-        voxel.z() = std::floor( adjusted_point.z() );
+        voxel.x() = std::floor( fractional_voxel.x() );
+        voxel.y() = std::floor( fractional_voxel.y() );
+        voxel.z() = std::floor( fractional_voxel.z() );
         
-        in_grid = true;
+        bool bad_point = false;
         for( int i=0; i<3; i++ ) {
-            if( voxel[i] < 0 || voxel[i] >= m_size[i]) {
-                in_grid = false;
+            if( ( grid_point[i] < -0.01) || ( grid_point[i] > m_physical_size[i] + 0.01 ) ) {
+                bad_point = true;
                 break;
             }
+        }
+        
+        if( ! bad_point ) {
+            for( int i=0; i<3; i++ ) {
+                voxel [i] = std::min( std::max( 0, voxel[i]), m_size[i] - 1);
+            }
+        } else {
+            std::cerr << "point_to_voxel called for a point too far outside volume " << point << std::endl ;
         }
         
         return voxel;
@@ -418,10 +426,8 @@ namespace phd {
     void TSDFVolume::normal_at_point( const Eigen::Vector3f & point, Eigen::Vector3f & normal ) const {
         using namespace Eigen;
         
-        bool in_grid;
-        Vector3i voxel = point_to_voxel( point, in_grid );
+        Vector3i voxel = point_to_voxel( point );
         
-        if( in_grid ) {
             Vector3i lower_index;
             Vector3i upper_index;
             for( int i=0; i<3; i++ ) {
@@ -438,9 +444,6 @@ namespace phd {
             
             normal = upper_values - lower_values;
             normal.normalize();
-        } else {
-            std::cerr << "normal_at_point called for point outside of grid " << point << std::endl;
-        }
     }
     
     /**
@@ -519,11 +522,9 @@ namespace phd {
         using namespace Eigen;
         
         // Obtain current voxel
-        bool in_grid;
-        Vector3i current_voxel = point_to_voxel(point, in_grid);
+        Vector3i current_voxel = point_to_voxel(point);
         
-        if( in_grid ) {
-            
+        
             // And central point
             Vector3f voxel_centre = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
             
@@ -540,9 +541,6 @@ namespace phd {
                     upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
                 }
             }
-        } else {
-            std::cerr << "get_interpolation_bounds called for point outside of grid " << point << std::endl;
-        }
     }
     
     /**
@@ -639,22 +637,7 @@ namespace phd {
         Vector3f current_point;
         if( is_intersected_by_ray( ray_start, ray_direction, current_point, t ) ) {
             
-            bool in_grid;
-            Vector3i current_voxel = point_to_voxel( current_point, in_grid );
-            // Handle the case where the point is -just- outside the grid
-            if( !in_grid ) {
-                if( ( ( std::fabsf( current_point.x() - m_offset.x() - m_physical_size.x() ) > 0.1) && ( current_point.x() < 0 ) ) ||
-                    ( ( std::fabsf( current_point.y() - m_offset.y() - m_physical_size.y() ) > 0.1) && ( current_point.y() < 0 ) ) ||
-                    ( ( std::fabsf( current_point.z() - m_offset.z() - m_physical_size.z() ) > 0.1) && ( current_point.z() < 0 ) ) ) {
-                        std::cerr << "walk_ray ray intersection is outside of grid by more than margins " << current_point << std::endl;
-                        return false;
-                } else {
-                    // We need to nudge the current_voxel back into the grid
-                    for( int i=0; i<3; i++ ) {
-                        current_voxel[i] = std::max( std::min(current_voxel[i], m_size[i]-1), 0 );
-                    }
-                }
-            }
+            Vector3i current_voxel = point_to_voxel( current_point);
             
             // Walk the ray until we hit a zero crossing or fall out of the grid
             Vector3i previous_voxel;
@@ -681,7 +664,7 @@ namespace phd {
                     if( point_is_in_tsdf(new_position) ) {
                         
                         // Get voxel containing this point as current and extract the distance
-                        current_voxel = point_to_voxel( new_position, in_grid );
+                        current_voxel = point_to_voxel( new_position );
                         distance_to_surface = distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
                         
                         // If the distance is negative, we've had a zero crossing
