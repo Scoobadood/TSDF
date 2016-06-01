@@ -34,20 +34,20 @@ struct {
     { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.427815.png", {1.284070, 0.623464, 1.589476, 0.661726, 0.624201, -0.290800, -0.296526}},
     { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.462395.png", {1.280648, 0.627129, 1.578073, 0.662090, 0.625917, -0.290794, -0.292069}},
     { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.494271.png", {1.254294, 0.627271, 1.558543, 0.663700, 0.629278, -0.284166, -0.287683} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.526330.png", {1.238252, 0.632818, 1.555590, 0.664967, 0.632747, -0.277169, -0.283951} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.562224.png", {1.223685, 0.628649, 1.548521, 0.666343, 0.630651, -0.274921, -0.287549} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.594158.png", {1.220404, 0.625367, 1.539421, 0.666832, 0.628663, -0.275898, -0.289822} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.626818.png", {1.217731, 0.623185, 1.528533, 0.666335, 0.628441, -0.276938, -0.290457} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.663273.png", {1.205526, 0.623843, 1.519896, 0.667511, 0.628343, -0.276176, -0.288688} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.695165.png", {1.202711, 0.624060, 1.508244, 0.668394, 0.626923, -0.277292, -0.288663} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.728423.png", {1.193503, 0.630835, 1.497742, 0.668160, 0.628311, -0.276110, -0.287316} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.763549.png", {1.185448, 0.631389, 1.487746, 0.669018, 0.628258, -0.273096, -0.288315} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.794978.png", {1.176852, 0.634599, 1.478039, 0.669657, 0.628210, -0.270747, -0.289150} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.828537.png", {1.165553, 0.632181, 1.469138, 0.669721, 0.628905, -0.266464, -0.291460} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.862808.png", {1.160138, 0.630265, 1.458932, 0.668689, 0.628908, -0.265691, -0.294513} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.894167.png", {1.153575, 0.625835, 1.449607, 0.668317, 0.629068, -0.264450, -0.296129} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.926851.png", {1.147986, 0.612716, 1.440107, 0.666125, 0.631064, -0.264441, -0.296828} },
-//    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.962137.png", {1.135779, 0.612160, 1.419704, 0.666560, 0.631448, -0.273130, -0.287005} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.526330.png", {1.238252, 0.632818, 1.555590, 0.664967, 0.632747, -0.277169, -0.283951} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.562224.png", {1.223685, 0.628649, 1.548521, 0.666343, 0.630651, -0.274921, -0.287549} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.594158.png", {1.220404, 0.625367, 1.539421, 0.666832, 0.628663, -0.275898, -0.289822} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.626818.png", {1.217731, 0.623185, 1.528533, 0.666335, 0.628441, -0.276938, -0.290457} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.663273.png", {1.205526, 0.623843, 1.519896, 0.667511, 0.628343, -0.276176, -0.288688} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.695165.png", {1.202711, 0.624060, 1.508244, 0.668394, 0.626923, -0.277292, -0.288663} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.728423.png", {1.193503, 0.630835, 1.497742, 0.668160, 0.628311, -0.276110, -0.287316} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.763549.png", {1.185448, 0.631389, 1.487746, 0.669018, 0.628258, -0.273096, -0.288315} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.794978.png", {1.176852, 0.634599, 1.478039, 0.669657, 0.628210, -0.270747, -0.289150} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.828537.png", {1.165553, 0.632181, 1.469138, 0.669721, 0.628905, -0.266464, -0.291460} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.862808.png", {1.160138, 0.630265, 1.458932, 0.668689, 0.628908, -0.265691, -0.294513} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.894167.png", {1.153575, 0.625835, 1.449607, 0.668317, 0.629068, -0.264450, -0.296129} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.926851.png", {1.147986, 0.612716, 1.440107, 0.666125, 0.631064, -0.264441, -0.296828} },
+    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.962137.png", {1.135779, 0.612160, 1.419704, 0.666560, 0.631448, -0.273130, -0.287005} },
 };
 
 
@@ -61,7 +61,7 @@ void helper_move_look( float vars[7], Eigen::Vector3f & move_to, Eigen::Vector3f
     Eigen::Quaternionf qq{ vars[6], vars[3], vars[4], vars[5] };
     
     Eigen::Matrix3f r = qq.toRotationMatrix();
-    Eigen::Matrix<float,1,3> c{ 0.0, 0.0, 1.0 };
+    Eigen::Matrix<float,1,3> c{ 0.0, 0.0, -1.0 };
     
     c = c * r;
     
@@ -80,8 +80,8 @@ TEST( TSDF_Integration, givenManyImages ) {
     
     /*** SET PARAMETERS HERE ***/
     
-    uint16_t voxels = 64;
-    uint16_t num_images = 1;
+    uint16_t voxels = 256;
+    uint16_t num_images = 10;
     bool     save = true;
     bool     raycast = true;
     bool     filter = false;
@@ -89,7 +89,7 @@ TEST( TSDF_Integration, givenManyImages ) {
     
     // Make volume
     float vw, vh, vd;
-    TSDFVolume volume = construct_volume(voxels, voxels, voxels, 3200, 3200, 3200, vw, vh, vd);
+    TSDFVolume volume = construct_volume(voxels, voxels, voxels, 4000, 4000, 4000, vw, vh, vd);
     
     // And camera
     Camera camera = make_kinect();
@@ -140,7 +140,7 @@ TEST( TSDF_Integration, givenManyImages ) {
     // ... and render ...
     if( raycast ) {
         if( (width > 0) && (height > 0 ) ){
-            Vector3f light_source{ 3200, 3200, 6400 };
+            Vector3f light_source{ 10000, 6600, -10000 };
             Vector3f * vertices = new Vector3f[ width * height ];
             Vector3f * normals  = new Vector3f[ width * height ];
             
