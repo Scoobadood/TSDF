@@ -451,7 +451,7 @@ namespace phd {
      * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
      * @return true if the ray intersects the TSDF otherwise false
      */
-    bool TSDFVolume::is_intersected_by_ray_2( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
+    bool TSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
         float t_near = std::numeric_limits<float>::lowest( );
         float t_far = std::numeric_limits<float>::max();
         
@@ -638,7 +638,7 @@ namespace phd {
         float t;
         Vector3f current_point;
         
-        if( is_intersected_by_ray_2( ray_start, ray_direction, current_point, t ) ) {
+        if( is_intersected_by_ray( ray_start, ray_direction, current_point, t ) ) {
             
             bool in_grid;
             Vector3i current_voxel = point_to_voxel( current_point, in_grid );
@@ -657,9 +657,7 @@ namespace phd {
                 }
             }
             
-            
             Vector3i previous_voxel;
-            
             Vector3f previous_position = current_point;
             
             float dist =distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
@@ -713,8 +711,8 @@ namespace phd {
                         done = true;
                     }
                 } while( !done );
-            }
-        }
+            } // Starting distance was valid
+        } // Ray doesn't intersect Volume
         
         return values_returned;
     }

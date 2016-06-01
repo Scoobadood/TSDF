@@ -263,7 +263,7 @@ namespace phd
          * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
          * @return true if the ray intersects the TSDF otherwise false
          */
-        bool is_intersected_by_ray_2( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const;
+        bool is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const;
 
         /**
          * Generate a raycast surface

@@ -27,7 +27,7 @@ TEST( TSDF_Raycasting, givenRayToLeftOfVolumeWhenIntersectingThenReturnsFalse ) 
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
 
     EXPECT_FALSE( is );
 }
@@ -43,7 +43,7 @@ TEST( TSDF_Raycasting, givenRayToRightOfVolumeWhenIntersectingThenReturnsFalse )
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -59,7 +59,7 @@ TEST( TSDF_Raycasting, givenRayToTopOfVolumeWhenIntersectingThenReturnsFalse ) {
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -75,7 +75,7 @@ TEST( TSDF_Raycasting, givenRayToBottomOfVolumeWhenIntersectingThenReturnsFalse 
     Vector3f direction{ 0.0, 0.0, 1.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -91,7 +91,7 @@ TEST( TSDF_Raycasting, givenRayToFrontOfVolumeWhenIntersectingThenReturnsFalse )
     Vector3f direction{ 0.0, 1.0, 0.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -107,7 +107,7 @@ TEST( TSDF_Raycasting, givenRayToBackOfVolumeWhenIntersectingThenReturnsFalse ) 
     Vector3f direction{ 0.0, 1.0, 0.0 };
     Vector3f actual_entry_point;
     float actual_t;
-    bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+    bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
     
     EXPECT_FALSE( is );
 }
@@ -130,7 +130,7 @@ TEST( TSDF_Raycasting, givenRayFrontToBackOfVolumeWhenIntersectingThenReturnsTru
         
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
         
     
             EXPECT_TRUE( is );
@@ -158,7 +158,7 @@ TEST( TSDF_Raycasting, givenRayBackToFrontOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -187,7 +187,7 @@ TEST( TSDF_Raycasting, givenRayLeftToRightOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -215,7 +215,7 @@ TEST( TSDF_Raycasting, givenRayRightToLeftOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -244,7 +244,7 @@ TEST( TSDF_Raycasting, givenRayTopToBottomOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
@@ -272,7 +272,7 @@ TEST( TSDF_Raycasting, givenRayBottomToTopOfVolumeWhenIntersectingThenReturnsTru
             
             Vector3f actual_entry_point;
             float actual_t;
-            bool is = volume.is_intersected_by_ray_2( origin , direction, actual_entry_point, actual_t );
+            bool is = volume.is_intersected_by_ray( origin , direction, actual_entry_point, actual_t );
             
             
             EXPECT_TRUE( is );
