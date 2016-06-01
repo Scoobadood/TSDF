@@ -80,7 +80,7 @@ TEST( TSDF_Integration, givenManyImages ) {
     
     /*** SET PARAMETERS HERE ***/
     
-    uint16_t voxels = 256;
+    uint16_t voxels = 128;
     uint16_t num_images = 10;
     bool     save = true;
     bool     raycast = true;

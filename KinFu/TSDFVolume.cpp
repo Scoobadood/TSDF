@@ -365,17 +365,13 @@ namespace phd {
                             
                             // Get the voxel centre in cam coords
                             Vector3f voxel_centre_in_cam = camera.world_to_camera(centre_of_voxel);
-                            float voxel_distance = std::fabs(voxel_centre_in_cam.z());
+                            float voxel_distance = voxel_centre_in_cam.norm();
                             
-                            // Compute conversion factor
-                            Vector2f pixel_in_cam = camera.pixel_to_image_plane(voxel_pixel_x, voxel_pixel_y);
-                            float lambda = std::sqrt( pixel_in_cam.x()*pixel_in_cam.x() + pixel_in_cam.y()*pixel_in_cam.y() + 1 );
-                            
-                            // Convert voxel distance to a depth
-                            float voxel_depth = voxel_distance / lambda;
+                            Vector3f surface_vertex = vertices[ voxel_image_index];
+                            float surface_distance = surface_vertex.norm();
                             
                             // SDF is the difference between them.
-                            float sdf = surface_depth - voxel_depth;
+                            float sdf = surface_distance - voxel_distance;
                             
                             // Truncate
                             float tsdf;
