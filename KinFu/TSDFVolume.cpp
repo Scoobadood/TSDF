@@ -563,7 +563,7 @@ namespace phd {
         
         // Compute uvw
         Vector3f centre_of_lower_bound = centre_of_voxel_at(lower_bounds.x(), lower_bounds.y() , lower_bounds.z() );
-        Vector3f uvw = (point - centre_of_lower_bound).array() / m_physical_size.array();
+        Vector3f uvw = (point - centre_of_lower_bound).array() / m_voxel_size.array();
         
         
         // Local vars for clarity
@@ -637,7 +637,6 @@ namespace phd {
         // Find the point at which the ray enters the grid - if it does
         float t;
         Vector3f current_point;
-        
         if( is_intersected_by_ray( ray_start, ray_direction, current_point, t ) ) {
             
             bool in_grid;
@@ -657,41 +656,50 @@ namespace phd {
                 }
             }
             
+            // Walk the ray until we hit a zero crossing or fall out of the grid
             Vector3i previous_voxel;
             Vector3f previous_position = current_point;
-            
-            float dist =distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
-            
             float step_size = m_truncation_distance;
-            if( dist >= 0 ) {
+            
+            // Only do this if the current distnce is positive
+            float distance_to_surface =distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
+            if( distance_to_surface >= 0 ) {
                 bool done = false;
+                
+                
+                
+                // Ray walking loop
                 do {
-                    
                     previous_voxel = current_voxel;
-                    // Update ray
-                    t = t + step_size;
                     
-                    // Convert to new global position
+                    
+                    // Step along ray to get new global position
+                    t = t + step_size;
                     Vector3f new_position = ray_start + (ray_direction * t );
                     
-                    // Check we're still in bounds
+                    // If we go out of bounds, end. Otherwise...
                     if( point_is_in_tsdf(new_position) ) {
-                        bool in_grid;
+                        
+                        // Get voxel containing this point as current and extract the distance
                         current_voxel = point_to_voxel( new_position, in_grid );
+                        distance_to_surface = distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
                         
-                        float distance_to_surface = distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
-                        
-                        // Was zero crossing found?
+                        // If the distance is negative, we've had a zero crossing
                         if( distance_to_surface < 0 ) {
                             
-                            float sdf_new = trilinearly_interpolate_sdf_at( new_position);
+                            // Obtain more precise distances for last and current position using trilinear interp
+                            float sdf_current = trilinearly_interpolate_sdf_at( new_position);
+                            float sdf_previous = trilinearly_interpolate_sdf_at( previous_position );
                             
-                            // recompute prior point
-                            float sdf_old = trilinearly_interpolate_sdf_at( previous_position );
+                            // Our assumption is that sdf_current is -ve and sdf_previous is positive
+                            if( sdf_current >= 0 || sdf_previous <=0 ) {
+                                std::cerr << "Ray walking found sdfs with incorrect signs" << std::endl;
+                            }
                             
-                            // Linear interpiolate across this
-                            float step_back = step_size * ( sdf_old / ( sdf_new - sdf_old ));
-                            t -= (step_size + step_back);
+                            // Now perform linear interpolation between these values
+                            float step_forward = step_size * ( sdf_previous / ( sdf_previous - sdf_current ));
+                            t -= step_size; // undo the last step we took
+                            t += step_forward; // and step forward again slightly less
                             
                             // Compute vertex
                             vertex = ray_start + (t * ray_direction);
@@ -699,17 +707,21 @@ namespace phd {
                                 normal_at_point(vertex, normal );
                                 values_returned = true;
                             }
+                            
+                            // And we're done
                             done = true;
-                        } else { // distance to surface is positive or 0
+                        } else { // distance to surface was positive or 0
+                            // So long as it's not zero, set up the step size
                             if( distance_to_surface > 0 ) {
                                 step_size = (distance_to_surface * m_truncation_distance);
                             }
                         }
-                        
-                        previous_position = new_position;
                     } else { // Point no longer inside grid
                         done = true;
                     }
+
+                    // Save the position
+                    previous_position = new_position;
                 } while( !done );
             } // Starting distance was valid
         } // Ray doesn't intersect Volume
