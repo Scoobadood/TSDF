@@ -643,9 +643,9 @@ namespace phd {
             Vector3i current_voxel = point_to_voxel( current_point, in_grid );
             // Handle the case where the point is -just- outside the grid
             if( !in_grid ) {
-                if( std::fabsf( current_point.x() + m_offset.x() - m_physical_size.x() ) > 0.1 ||
-                    std::fabsf( current_point.y() + m_offset.y() - m_physical_size.y() ) > 0.1 ||
-                    std::fabsf( current_point.z() + m_offset.z() - m_physical_size.z() ) > 0.1 ) {
+                if( ( ( std::fabsf( current_point.x() - m_offset.x() - m_physical_size.x() ) > 0.1) && ( current_point.x() < 0 ) ) ||
+                    ( ( std::fabsf( current_point.y() - m_offset.y() - m_physical_size.y() ) > 0.1) && ( current_point.y() < 0 ) ) ||
+                    ( ( std::fabsf( current_point.z() - m_offset.z() - m_physical_size.z() ) > 0.1) && ( current_point.z() < 0 ) ) ) {
                         std::cerr << "walk_ray ray intersection is outside of grid by more than margins " << current_point << std::endl;
                         return false;
                 } else {
@@ -693,7 +693,7 @@ namespace phd {
                             
                             // Our assumption is that sdf_current is -ve and sdf_previous is positive
                             if( sdf_current >= 0 || sdf_previous <=0 ) {
-                                std::cerr << "Ray walking found sdfs with incorrect signs" << std::endl;
+                                //std::cerr << "Ray walking found sdfs with incorrect signs" << std::endl;
                             }
                             
                             // Now perform linear interpolation between these values
