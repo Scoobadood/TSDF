@@ -44,13 +44,14 @@
 		559CF1491CD8107F00EE563B /* libpcl_io.1.8.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */; };
 		55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
 		55A722CC1CF663B0007E4407 /* Test_TSDF_Load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A722CB1CF663B0007E4407 /* Test_TSDF_Load.cpp */; };
+		55AD7BD11D01B42700E603F3 /* Definitions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558FF5B11D00D410005B2D00 /* Definitions.cpp */; };
+		55AD7BD21D01B44900E603F3 /* Raycaster.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55974E781D002A3B0057DBD0 /* Raycaster.cpp */; };
 		55D02C911CD5EF53005561CE /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C901CD5EF53005561CE /* main.cpp */; };
 		55D02C9A1CD5EF8C005561CE /* TSDFVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */; };
 		55DB8E0F1CF6A99700BFD72E /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55DB8E0E1CF6A99700BFD72E /* main.cpp */; };
 		55DB8E131CF6AA0100BFD72E /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
 		55DB8E141CF6AA0100BFD72E /* PngUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */; };
 		55DB8E151CF6AA0100BFD72E /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
-		55DB8E161CF6AA0100BFD72E /* MarchingCubes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554FE7721CDD527C008C287B /* MarchingCubes.cpp */; };
 		55DB8E171CF6AA0100BFD72E /* TSDFVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */; };
 		55DB8E181CF6AA3700BFD72E /* TestHelpers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 555C4E4E1CE9372700D92070 /* TestHelpers.cpp */; };
 		55DB8E191CF6AA4300BFD72E /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
@@ -200,16 +201,16 @@
 		555C61FB1CD6B98E0071FBF3 /* Utility */ = {
 			isa = PBXGroup;
 			children = (
-				55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */,
 				55414A691CFB8F4400ABDB59 /* BilateralFilter.hpp */,
+				55414A681CFB8F4400ABDB59 /* BilateralFilter.cpp */,
 				555C61FF1CD6BA0A0071FBF3 /* PngUtilities.hpp */,
 				555C62001CD6BA0A0071FBF3 /* PngUtilities.cpp */,
-				55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */,
 				55A51F401CDB1B3400E87D4A /* PgmUtilities.hpp */,
-				554FE7721CDD527C008C287B /* MarchingCubes.cpp */,
+				55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */,
 				554FE7731CDD527C008C287B /* MarchingCubes.hpp */,
-				5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */,
+				554FE7721CDD527C008C287B /* MarchingCubes.cpp */,
 				5595348E1CE5A3E8007E5EF2 /* Cubic.hpp */,
+				5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */,
 			);
 			name = Utility;
 			sourceTree = "<group>";
@@ -253,8 +254,8 @@
 			children = (
 				55974E791D002A3B0057DBD0 /* Raycaster.hpp */,
 				55974E781D002A3B0057DBD0 /* Raycaster.cpp */,
-				558FF5B11D00D410005B2D00 /* Definitions.cpp */,
 				558FF5B21D00D410005B2D00 /* Definitions.hpp */,
+				558FF5B11D00D410005B2D00 /* Definitions.cpp */,
 			);
 			name = Raycaster;
 			sourceTree = "<group>";
@@ -482,11 +483,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				55AD7BD21D01B44900E603F3 /* Raycaster.cpp in Sources */,
+				55AD7BD11D01B42700E603F3 /* Definitions.cpp in Sources */,
 				55DB8E181CF6AA3700BFD72E /* TestHelpers.cpp in Sources */,
 				55DB8E131CF6AA0100BFD72E /* Camera.cpp in Sources */,
 				55DB8E141CF6AA0100BFD72E /* PngUtilities.cpp in Sources */,
 				55DB8E151CF6AA0100BFD72E /* PgmUtilities.cpp in Sources */,
-				55DB8E161CF6AA0100BFD72E /* MarchingCubes.cpp in Sources */,
 				55DB8E171CF6AA0100BFD72E /* TSDFVolume.cpp in Sources */,
 				55DB8E0F1CF6A99700BFD72E /* main.cpp in Sources */,
 			);

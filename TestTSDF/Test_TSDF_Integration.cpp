@@ -78,8 +78,9 @@ TEST( TSDF_Integration, givenManyImages ) {
     
     /*** SET PARAMETERS HERE ***/
     
-    uint16_t voxels = 256;
-    uint16_t num_images = 10;
+    uint16_t voxels = 425
+    ;
+    uint16_t num_images = 1;
     bool     save = true;
     bool     raycast = true;
     bool     filter = false;
@@ -87,7 +88,7 @@ TEST( TSDF_Integration, givenManyImages ) {
     
     // Make volume
     float vw, vh, vd;
-    TSDFVolume volume = construct_volume(voxels, voxels, voxels, 5120, 5120, 5120, vw, vh, vd);
+    TSDFVolume volume = construct_volume(voxels, voxels, voxels, 5000, 5000, 5000, vw, vh, vd);
     
     // And camera
     Camera camera = make_kinect();
