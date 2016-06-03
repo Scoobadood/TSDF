@@ -6,6 +6,7 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 
+#include <cmath>
 #include "Camera.hpp"
 #include "Definitions.hpp"
 
