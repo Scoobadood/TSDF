@@ -9,6 +9,7 @@
 #include <Eigen/Core>
 #include "TSDFVolume.hpp"
 #include "TestHelpers.hpp"
+#include "Raycaster.hpp"
 
 
 
@@ -20,7 +21,7 @@ int main(int argc, const char * argv[]) {
     
     std::cout << "Loading voxel grid..." << std::endl;
     
-    volume.load_from_file( "/Users/Dave/Desktop/512_512_TSDF@3200_3200_6400.txt" );
+    volume.load_from_file( "/Users/Dave/Desktop/TSDF_32.txt" );
     
     std::cout << "Read file. Rendering." << std::endl;
     
@@ -30,17 +31,18 @@ int main(int argc, const char * argv[]) {
     Vector3f * vertices = new Vector3f[ width * height ];
     Vector3f * normals = new Vector3f[ width * height ];
     
-    Vector3f light_source{ 0, 0, 0 };
+    Vector3f light_source{ 8000, 8000, -8000 };
     
     Camera cam = make_kinect();
     
-    cam.move_to( 3200, 3200, 6400 );
-    cam.look_at( 3200,3200,3200);
+    cam.move_to( 1300, 650, 1300 );
+    cam.look_at( 1300, 1300, 1500);
     
-    
-    volume.raycast(cam, 640, 480, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/load_front_left_normals.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/load_front_left_render.png", width, height, vertices, normals, cam, light_source);
+
+    phd::Raycaster r{ 640, 480};
+    r.raycast(volume, cam, vertices, normals);
+    save_normals_as_colour_png("/Users/Dave/Desktop/nnn.png", width, height, normals);
+    save_rendered_scene_as_png("/Users/Dave/Desktop/vvv.png", width, height, vertices, normals, cam, light_source);
 
     return 0;
 }
