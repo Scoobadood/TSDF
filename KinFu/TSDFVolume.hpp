@@ -207,8 +207,8 @@ namespace phd
          * @param z The depth coord (0-depth - 1)
          * @return te coordinate of the centre of the given voxel in world coords (m)
          */
-        inline size_t index( uint16_t x, uint16_t y, uint16_t z ) const {
-            size_t idx = z * m_xy_slice_size + y * m_x_size + x;
+        inline uint64_t index( uint16_t x, uint16_t y, uint16_t z ) const {
+            uint64_t idx = z * m_xy_slice_size + y * m_x_size + x;
             
             return idx;
         }

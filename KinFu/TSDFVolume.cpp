@@ -7,7 +7,6 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 
-#include <pcl/io/ply_io.h>
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
@@ -16,8 +15,6 @@
 #include <boost/weak_ptr.hpp>
 
 #include "TSDFVolume.hpp"
-#include "MarchingCubes.hpp"
-#include "Cubic.hpp"
 #include "Definitions.hpp"
 
 namespace phd {
@@ -94,10 +91,15 @@ namespace phd {
             
             // Create the volume storage
             m_voxels  = new float[volume_x * volume_y * volume_z];
+            if( !m_voxels) {
+                throw std::bad_alloc( );
+            }
             m_weights = new float[volume_x * volume_y * volume_z];
+            if( !m_weights ) {
+                delete [] m_voxels;
+                throw std::bad_alloc( );
+            }
             
-            assert( m_voxels );
-            assert( m_weights );
             clear();
             
             // Max weight for integrating depth images
@@ -262,6 +264,15 @@ namespace phd {
      * @return true if the ray intersects the TSDF otherwise false
      */
     bool TSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
+        // Check for the case where the origin is inside the voxel grid
+        if( point_is_in_tsdf(origin) ) {
+            entry_point = origin;
+            t = 0.0f;
+            return true;
+        }
+        
+        
+        
         float t_near = std::numeric_limits<float>::lowest( );
         float t_far = std::numeric_limits<float>::max();
         
