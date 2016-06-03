@@ -11,6 +11,7 @@
 
 #include <Eigen/Dense>
 #include <deque>
+#include <stdint.h>
 
 namespace phd {
     
