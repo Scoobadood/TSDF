@@ -61,7 +61,6 @@
 		55EB4DD51CE43DE300E35EA0 /* libpng16.16.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C62021CD6BC080071FBF3 /* libpng16.16.dylib */; };
 		55EB4DD61CE43DE600E35EA0 /* libboost_system.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 555C61F91CD6B8BA0071FBF3 /* libboost_system.dylib */; };
 		55EB4DD71CE43DFC00E35EA0 /* TSDFVolume.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55D02C981CD5EF8C005561CE /* TSDFVolume.cpp */; };
-		55EB4DD81CE43E1B00E35EA0 /* MarchingCubes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 554FE7721CDD527C008C287B /* MarchingCubes.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -507,7 +506,6 @@
 				55A722CC1CF663B0007E4407 /* Test_TSDF_Load.cpp in Sources */,
 				555C4E491CE6B19100D92070 /* PngUtilities.cpp in Sources */,
 				555C4E451CE679E100D92070 /* Cubic.cpp in Sources */,
-				55EB4DD81CE43E1B00E35EA0 /* MarchingCubes.cpp in Sources */,
 				55EB4DD71CE43DFC00E35EA0 /* TSDFVolume.cpp in Sources */,
 				558917411CED4B2300DD5452 /* Test_Camera.cpp in Sources */,
 				558B95081CF0082300B42E13 /* Test_TSDF_Integration.cpp in Sources */,
