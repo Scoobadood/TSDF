@@ -63,9 +63,11 @@ namespace phd {
      */
     bool Raycaster::walk_ray( const TSDFVolume & volume, const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const {
         using namespace Eigen;
+
+        // Set if we intersect ISO surface along this ray
+        bool found_intersection = false;
         
-        bool values_returned = false;
-        
+        // Maximum (default) step size is less than truncation distance
         float max_step_size = volume.truncation_distance() * TRUNC_DIST_PROPORTION_PER_STEP;
         
         // Find the point at which the ray enters the grid - if it does
@@ -73,50 +75,46 @@ namespace phd {
         Vector3f current_point;
         if( volume.is_intersected_by_ray( ray_start, ray_direction, current_point, t ) ) {
             
-            Vector3i current_voxel = volume.point_to_voxel( current_point);
-            
-            // Walk the ray until we hit a zero crossing or fall out of the grid
-            Vector3i previous_voxel;
-            Vector3f previous_position = current_point;
+            // Assume default step
             float step_size = max_step_size;
             
+            // Walk the ray until we hit a zero crossing or fall out of the grid
+            float current_sdf = volume.trilinearly_interpolate_sdf_at( current_point );
+            
+            // Store previous point
+            float    previous_sdf   = current_sdf;
+            
+
+
             // Only do this if the current distnce is positive
-            float distance_to_surface = volume.distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
-            if( distance_to_surface >= 0 ) {
+            if( current_sdf >= 0 ) {
                 bool done = false;
-                
-                
                 
                 // Ray walking loop
                 do {
-                    previous_voxel = current_voxel;
-                    
+                    previous_sdf = current_sdf;
                     
                     // Step along ray to get new global position
                     t = t + step_size;
-                    Vector3f new_position = ray_start + (ray_direction * t );
+                    current_point = ray_start + (ray_direction * t );
                     
                     // If we go out of bounds, end. Otherwise...
-                    if( volume.point_is_in_tsdf(new_position) ) {
+                    if( volume.point_is_in_tsdf( current_point) ) {
                         
                         // Get voxel containing this point as current and extract the distance
-                        current_voxel = volume.point_to_voxel( new_position );
-                        distance_to_surface = volume.distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
+                        current_sdf = volume.trilinearly_interpolate_sdf_at( current_point );
                         
                         // If the distance is negative, we've had a zero crossing
-                        if( distance_to_surface < 0 ) {
-                            
-                            // Obtain more precise distances for last and current position using trilinear interp
-                            float sdf_current = volume.trilinearly_interpolate_sdf_at( new_position);
-                            float sdf_previous = volume.trilinearly_interpolate_sdf_at( previous_position );
+                        if( current_sdf < 0 ) {
                             
                             // Our assumption is that sdf_current is -ve and sdf_previous is positive
-                            if( sdf_current >= 0 || sdf_previous <=0 ) {
-                                //std::cerr << "Ray walking found sdfs with incorrect signs" << std::endl;
+                            if( previous_sdf < 0 ) {
+                                std::cerr << "Ray walking found sdfs with incorrect signs" << std::endl;
+                                done = true;
                             }
                             
                             // Now perform linear interpolation between these values
-                            float step_forward = step_size * ( sdf_previous / ( sdf_previous - sdf_current ));
+                            float step_forward = step_size * ( previous_sdf / ( previous_sdf - current_sdf ));
                             t -= step_size; // undo the last step we took
                             t += step_forward; // and step forward again slightly less
                             
@@ -124,28 +122,25 @@ namespace phd {
                             vertex = ray_start + (t * ray_direction);
                             if( volume.point_is_in_tsdf(vertex)) {
                                 normal_at_point(volume, vertex, normal );
-                                values_returned = true;
+                                found_intersection = true;
                             }
                             
                             // And we're done
                             done = true;
                         } else { // distance to surface was positive or 0
                             // So long as it's not zero, set up the step size
-                            if( distance_to_surface > 0 ) {
-                                step_size = (distance_to_surface * max_step_size);
+                            if( current_sdf > 0 ) {
+                                step_size = (current_sdf * max_step_size);
                             }
                         }
                     } else { // Point no longer inside grid
                         done = true;
                     }
-                    
-                    // Save the position
-                    previous_position = new_position;
                 } while( !done );
             } // Starting distance was valid
         } // Ray doesn't intersect Volume
         
-        return values_returned;
+        return found_intersection;
     }
     
     
