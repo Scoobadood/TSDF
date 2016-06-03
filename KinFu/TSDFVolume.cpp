@@ -38,7 +38,8 @@ namespace phd {
      * @param size
      * @param physical_size
      */
-    TSDFVolume::TSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size ) : m_offset{ Eigen::Vector3f::Zero()}{
+    TSDFVolume::TSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size ) : m_offset{ Eigen::Vector3f::Zero()}, m_voxels{NULL}, m_weights{NULL}
+    {
         if( ( size.x() > 0 ) && ( size.y() > 0 ) && ( size.z() > 0 ) && ( physical_size.x() > 0 ) && ( physical_size.y() > 0 ) && ( physical_size.z() > 0 ) ) {
             set_size( size.x(), size.y(), size.z() , physical_size.x(), physical_size.y(), physical_size.z() );
         } else {
@@ -545,20 +546,6 @@ namespace phd {
             }
         }
     }
-    
-    
-    
-    
-    
-    /**
-     * Extract the ISO Surface corresponding to the 0 crossing
-     * as a mesh
-     */
-    pcl::PolygonMesh TSDFVolume::extractSISOSurface( ) const {
-        return do_marching_cubes(*this);
-    }
-    
-
     
 #pragma mark - Import/Export
     

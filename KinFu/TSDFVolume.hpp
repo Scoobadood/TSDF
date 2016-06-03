@@ -12,12 +12,10 @@
 #define TSDFVolume_hpp
 
 #include <iostream>
-#include <pcl/pcl_macros.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/surface/organized_fast_mesh.h>
 #include <Eigen/Dense>
 #include <vector>
+#include <cstdint>
+
 #include "Camera.hpp" 
 
 namespace phd
@@ -43,8 +41,8 @@ namespace phd
         float           m_max_weight;
         
         // Voxel data
-        float           *m_voxels = 0;
-        float           *m_weights = 0;
+        float           *m_voxels;
+        float           *m_weights;
         
         // Convenience values for speeing up index calculation
         size_t          m_x_size;
@@ -241,12 +239,6 @@ namespace phd
          * @param camera The camera from which the depth_map was taken
          */
         void integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera );
-        
-        /**
-         * Extract the ISO Surface corresponding to the 0 crossing
-         * as a mesh
-         */
-        pcl::PolygonMesh extractSISOSurface( ) const;
         
 #pragma mark - Import/Export
 
