@@ -147,6 +147,16 @@ namespace phd
                     ( ( voxel.z() >= 0 ) && ( voxel.z() < m_size.z() ) );
         }
         
+        /**
+         * Find the point where the given ray first intersects the TSDF space in global coordinates
+         * @param origin The r=source of the ray
+         * @param ray_direction A unit vector in the direction of the ray
+         * @param entry_point The point at which the ray enters the TSDF which may be the origin
+         * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
+         * @return true if the ray intersects the TSDF otherwise false
+         */
+        bool is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const;
+        
 #pragma mark - Data access
         /**
          * Clear the voxel and weight data
@@ -205,6 +215,23 @@ namespace phd
             return idx;
         }
         
+        /**
+         * Get the upper and lower bounding voxels for a trilinear interpolation at the given point in
+         * global space.
+         * @param point The point in global coordinates
+         * @param lower_bound The voxel forming the lower, left, near bound
+         * @param upper_bound The voxel forming the upper, right, far bound
+         */
+        void get_interpolation_bounds( const Eigen::Vector3f & point, Eigen::Vector3i & lower_bounds, Eigen::Vector3i & upper_bounds ) const;
+        
+        /**
+         * Trilinearly interpolate the point p in the voxel grid using the tsdf values
+         * of the surrounding voxels. At edges we assume that the voxel values continue
+         * @param point the point
+         * @return the interpolated value
+         */
+        float trilinearly_interpolate_sdf_at( const Eigen::Vector3f & point ) const;
+        
 #pragma mark - Integrate new depth data
         /**
          * Integrate a range map into the TSDF
@@ -221,63 +248,6 @@ namespace phd
          */
         pcl::PolygonMesh extractSISOSurface( ) const;
         
-#pragma mark - Ray casting
-        /**
-         * Get the upper and lower bounding voxels for a trilinear interpolation at the given point in
-         * global space.
-         * @param point The point in global coordinates
-         * @param lower_bound The voxel forming the lower, left, near bound
-         * @param upper_bound The voxel forming the upper, right, far bound
-         */
-        void get_interpolation_bounds( const Eigen::Vector3f & point, Eigen::Vector3i & lower_bounds, Eigen::Vector3i & upper_bounds ) const;
-
-        /**
-         * Trilinearly interpolate the point p in the voxel grid using the tsdf values
-         * of the surrounding voxels. At edges we assume that the voxel values continue
-         * @param point the point
-         * @return the interpolated value
-         */
-        float trilinearly_interpolate_sdf_at( const Eigen::Vector3f & point ) const;
-        
-        /**
-         * Compute the bormal to the ISO surface at the given point
-         * Based on http://www.cs.technion.ac.il/~veredc/openfusion/OpenFusionReport.pdf
-         * @param point The point; should be inside the TSDF
-         * @param normal The returned normal
-         */
-        void normal_at_point( const Eigen::Vector3f & point, Eigen::Vector3f & normal ) const;
-
-        
-        /**
-         * Walk ray from start to end seeking intersection with the ISO surface in this TSDF
-         * If an intersection is found, return the coordinates in vertex and the surface normal
-         * in normal
-         */
-        bool walk_ray( const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const;
-        
-        /**
-         * Find the point where the given ray first intersects the TSDF space in global coordinates
-         * @param origin The r=source of the ray
-         * @param ray_direction A unit vector in the direction of the ray
-         * @param entry_point The point at which the ray enters the TSDF which may be the origin
-         * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
-         * @return true if the ray intersects the TSDF otherwise false
-         */
-        bool is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const;
-
-        /**
-         * Generate a raycast surface
-         * @param camera The camera doing the rendering
-         * @param width The width of the output image
-         * @param height The height of the output image
-         * @param vertex_map A pointer to an array of width * height vertices in frame of reference of camera
-         * @param normal_map A pointer to an array of width * height normals in frame of reference of camera
-         */
-        void raycast( const Camera & camera, uint16_t width, uint16_t height,
-                                 Eigen::Vector3f * vertex_map,
-                                 Eigen::Vector3f * normal_map) const;
-
-
 #pragma mark - Import/Export
 
         /**

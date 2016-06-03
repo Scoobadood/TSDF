@@ -7,15 +7,13 @@
 //
 
 #include <gtest/gtest.h>
+
 #include "TSDFVolume.hpp"
+#include "Raycaster.hpp"
 #include "Camera.hpp"
 #include "TestHelpers.hpp"
 #include "PngUtilities.hpp"
 #include "BilateralFilter.hpp"
-#pragma mark - Construction
-
-
-
 
 struct {
     std::string     file_name;
@@ -80,8 +78,8 @@ TEST( TSDF_Integration, givenManyImages ) {
     
     /*** SET PARAMETERS HERE ***/
     
-    uint16_t voxels = 512;
-    uint16_t num_images = 20;
+    uint16_t voxels = 128;
+    uint16_t num_images = 10;
     bool     save = true;
     bool     raycast = true;
     bool     filter = false;
@@ -144,7 +142,6 @@ TEST( TSDF_Integration, givenManyImages ) {
             Vector3f * vertices = new Vector3f[ width * height ];
             Vector3f * normals  = new Vector3f[ width * height ];
             
-            
             std::cout << "Rendering" << std::endl;
             
             // Set location
@@ -152,8 +149,10 @@ TEST( TSDF_Integration, givenManyImages ) {
             camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
             camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
             
+            Raycaster raycaster{640, 480};
+            
             // Raycast volume
-            volume.raycast(camera, width, height, vertices, normals);
+            raycaster.raycast(volume, camera, vertices, normals);
             
             save_normals_as_colour_png("/Users/Dave/Desktop/normals.png", width, height, normals);
             save_rendered_scene_as_png("/Users/Dave/Desktop/vertices.png", width, height, vertices, normals, camera, light_source);

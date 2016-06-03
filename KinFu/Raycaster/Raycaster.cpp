@@ -1,0 +1,195 @@
+//
+//  Raycaster.cpp
+//  KinFu
+//
+//  Created by Dave on 2/06/2016.
+//  Copyright © 2016 Sindesso. All rights reserved.
+//
+
+#include "Raycaster.hpp"
+#include "Definitions.hpp"
+
+namespace phd {
+    
+    const float TRUNC_DIST_PROPORTION_PER_STEP = 0.8f;
+    
+#pragma mark - Raycasting
+    
+    /**
+     * Compute the normal to the ISO surface at the given point
+     * Based on http://www.cs.technion.ac.il/~veredc/openfusion/OpenFusionReport.pdf
+     * @param point The point; should be inside the TSDF
+     * @param normal The returned normal
+     */
+    void Raycaster::normal_at_point( const TSDFVolume & volume, const Eigen::Vector3f & point, Eigen::Vector3f & normal ) const {
+        using namespace Eigen;
+        
+        Vector3i voxel = volume.point_to_voxel( point );
+        
+        Vector3i lower_index;
+        Vector3i upper_index;
+        for( int i=0; i<3; i++ ) {
+            lower_index[i] = std::max( voxel[i]-1, 0);
+            upper_index[i] = std::min( voxel[i]+1, volume.size()[i] - 1);
+        }
+        
+        Vector3f upper_values{
+            volume.distance( upper_index.x(), voxel.y(), voxel.z() ),
+            volume.distance( voxel.x(), upper_index.y(), voxel.z() ),
+            volume.distance( voxel.x(), voxel.y(), upper_index.z() ) };
+        
+        Vector3f lower_values{
+            volume.distance( lower_index.x(), voxel.y(), voxel.z() ),
+            volume.distance( voxel.x(), lower_index.y(), voxel.z() ),
+            volume.distance( voxel.x(), voxel.y(), lower_index.z() ) };
+        
+        normal = upper_values - lower_values;
+        if( normal.norm() != 0 ) {
+            normal.normalize();
+        }
+    }
+    
+    
+    /**
+     * Walk ray from start to end seeking intersection with the ISO surface in this TSDF
+     * If an intersection is found, return the coordnates in vertex and the surface normal
+     * in normal
+     * @param volume The volume to be rendered
+     * @param ray_start The origin of the ray to be traced
+     * @param ray_directioon The direction of the ray to be traced
+     * @param vertex The returned vertex
+     * @param normal The returned normal
+     * @return true if the ray intersects the ISOSurface in which case vertex and normal are populated or else false if not
+     */
+    bool Raycaster::walk_ray( const TSDFVolume & volume, const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const {
+        using namespace Eigen;
+        
+        bool values_returned = false;
+        
+        float max_step_size = volume.truncation_distance() * TRUNC_DIST_PROPORTION_PER_STEP;
+        
+        // Find the point at which the ray enters the grid - if it does
+        float t;
+        Vector3f current_point;
+        if( volume.is_intersected_by_ray( ray_start, ray_direction, current_point, t ) ) {
+            
+            Vector3i current_voxel = volume.point_to_voxel( current_point);
+            
+            // Walk the ray until we hit a zero crossing or fall out of the grid
+            Vector3i previous_voxel;
+            Vector3f previous_position = current_point;
+            float step_size = max_step_size;
+            
+            // Only do this if the current distnce is positive
+            float distance_to_surface = volume.distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
+            if( distance_to_surface >= 0 ) {
+                bool done = false;
+                
+                
+                
+                // Ray walking loop
+                do {
+                    previous_voxel = current_voxel;
+                    
+                    
+                    // Step along ray to get new global position
+                    t = t + step_size;
+                    Vector3f new_position = ray_start + (ray_direction * t );
+                    
+                    // If we go out of bounds, end. Otherwise...
+                    if( volume.point_is_in_tsdf(new_position) ) {
+                        
+                        // Get voxel containing this point as current and extract the distance
+                        current_voxel = volume.point_to_voxel( new_position );
+                        distance_to_surface = volume.distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
+                        
+                        // If the distance is negative, we've had a zero crossing
+                        if( distance_to_surface < 0 ) {
+                            
+                            // Obtain more precise distances for last and current position using trilinear interp
+                            float sdf_current = volume.trilinearly_interpolate_sdf_at( new_position);
+                            float sdf_previous = volume.trilinearly_interpolate_sdf_at( previous_position );
+                            
+                            // Our assumption is that sdf_current is -ve and sdf_previous is positive
+                            if( sdf_current >= 0 || sdf_previous <=0 ) {
+                                //std::cerr << "Ray walking found sdfs with incorrect signs" << std::endl;
+                            }
+                            
+                            // Now perform linear interpolation between these values
+                            float step_forward = step_size * ( sdf_previous / ( sdf_previous - sdf_current ));
+                            t -= step_size; // undo the last step we took
+                            t += step_forward; // and step forward again slightly less
+                            
+                            // Compute vertex
+                            vertex = ray_start + (t * ray_direction);
+                            if( volume.point_is_in_tsdf(vertex)) {
+                                normal_at_point(volume, vertex, normal );
+                                values_returned = true;
+                            }
+                            
+                            // And we're done
+                            done = true;
+                        } else { // distance to surface was positive or 0
+                            // So long as it's not zero, set up the step size
+                            if( distance_to_surface > 0 ) {
+                                step_size = (distance_to_surface * max_step_size);
+                            }
+                        }
+                    } else { // Point no longer inside grid
+                        done = true;
+                    }
+                    
+                    // Save the position
+                    previous_position = new_position;
+                } while( !done );
+            } // Starting distance was valid
+        } // Ray doesn't intersect Volume
+        
+        return values_returned;
+    }
+    
+    
+    /**
+     * Raycast the TSDF and store discovered vertices and normals in the ubput arrays
+     * @param volume The volume to cast
+     * @param camera The camera
+     * @param vertices The vertices discovered
+     * @param normals The normals
+     */
+    void Raycaster::raycast( const TSDFVolume & volume, const Camera & camera, Eigen::Vector3f * vertices, Eigen::Vector3f * normals ) const {
+        using namespace Eigen;
+        
+        // Ray origin is at camera position in world coords
+        Vector3f ray_start = camera.position();
+        
+        // For each pixel u ∈ output image do
+        size_t pixel_index = 0;
+        for( uint16_t y=0; y<m_height; y++ ) {
+            for( uint16_t x =0; x<m_width; x++ ) {
+                
+                // Obtain a unit vector in the direction of the ray
+                // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
+                Vector2f camera_coord = camera.pixel_to_image_plane(x, y);
+                Vector3f ray_next = camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 } );
+                Vector3f ray_direction = (ray_next - ray_start).normalized();
+                
+                // Walk the ray to obtain vertex and normal values
+                Vector3f normal;
+                Vector3f vertex;
+                bool ray_insersects_surface = walk_ray( volume, ray_start, ray_direction, vertex, normal);
+                
+                // If the ray doesn't intersect, create a BAD_VERTEX
+                if( !ray_insersects_surface ) {
+                    vertex = BAD_VERTEX;
+                    normal = Vector3f::Zero();
+                }
+                
+                // Transform normal and vertex back into pose space
+                vertices[ pixel_index ] = vertex;
+                normals[ pixel_index ] = normal;
+                pixel_index++;
+            } // End for Y
+        } // End For X
+    } // End function
+    
+}

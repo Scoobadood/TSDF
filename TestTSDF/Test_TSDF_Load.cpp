@@ -9,7 +9,10 @@
 #include <fstream>
 #include <gtest/gtest.h>
 #include <Eigen/Core>
+
 #include "TSDFVolume.hpp"
+#include "Raycaster.hpp"
+
 #include "TestHelpers.hpp"
 
 #pragma mark - Construction
@@ -42,8 +45,8 @@ TEST( TSDF_Load, givenFileLoadData ) {
     cam.move_to( 0, 3200, 6400 );
     cam.look_at( 3200,3200,3200);
     
-    
-    volume.raycast(cam, 640, 480, vertices, normals);
+    Raycaster raycaster{ 640, 480 };
+    raycaster.raycast( volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/load_front_left_normals.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/load_front_left_render.png", width, height, vertices, normals, cam, light_source);
 }

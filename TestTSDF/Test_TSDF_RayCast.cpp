@@ -8,7 +8,10 @@
 
 #include <stdio.h>
 #include <gtest/gtest.h>
+
 #include "TSDFVolume.hpp"
+#include "Raycaster.hpp"
+
 #include "PngUtilities.hpp"
 #include "TestHelpers.hpp"
 
@@ -298,13 +301,15 @@ TEST( TSDF_Raycasting, givenRaysFromFrontToBackWhenRenderingWallThenNoValues ) {
     
     Vector3f direction{ 0.0, 0.0, -1.0 };
     
+    Raycaster raycaster{640, 480};
+    
     for( int x=0; x<num_voxels; x++ ) {
         for( int y=0; y<num_voxels; y++ ) {
             Vector3f origin{ x * vw, y * vh, 450.0 };
             
             Eigen::Vector3f vertex;
             Eigen::Vector3f normal;
-            bool values = volume.walk_ray( origin, direction, vertex, normal);
+            bool values = raycaster.walk_ray( volume, origin, direction, vertex, normal);
             
             EXPECT_FALSE( values );
         }
@@ -324,13 +329,15 @@ TEST( TSDF_Raycasting, givenRaysFromBackToFrontWhenRenderingWallThenZVertexIs40N
     
     Vector3f direction{ 0.0, 0.0, 1.0 };
 
+    Raycaster raycaster{640, 480};
+    
     for( int x=0; x<num_voxels; x++ ) {
         for( int y=0; y<num_voxels; y++ ) {
             Vector3f origin{ x * vw, y * vh, -150.0 };
             
             Eigen::Vector3f vertex;
             Eigen::Vector3f normal;
-            bool values = volume.walk_ray( origin, direction, vertex, normal);
+            bool values = raycaster.walk_ray( volume, origin, direction, vertex, normal);
             
             EXPECT_TRUE( values );
 
@@ -373,7 +380,9 @@ TEST( TSDF_Raycasting, testRayCast_150_150_450 ) {
     cam.move_to( 150, 150, 450 );
     cam.look_at( 150, 150, 150);
     
-    volume.raycast(cam, 640, 480, vertices, normals);
+    Raycaster raycaster{640, 480};
+    
+    raycaster.raycast(volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_rear.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_rear.png", width, height, vertices, normals, cam, light_source);
 }
@@ -400,11 +409,13 @@ TEST( TSDF_Raycasting, testRayCast_450_150_450 ) {
     cam.move_to( 450, 150, 450 );
     cam.look_at( 150,150,150);
     
+    Raycaster raycaster{640, 480};
     
-    volume.raycast(cam, 640, 480, vertices, normals);
+    raycaster.raycast(volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_rear_right.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_rear_right.png", width, height, vertices, normals, cam, light_source);
 }
+
 // Right on positive X axis
 TEST( TSDF_Raycasting, testRayCast_450_150_150 ) {
     using namespace phd;
@@ -427,7 +438,9 @@ TEST( TSDF_Raycasting, testRayCast_450_150_150 ) {
     cam.move_to( 450, 150, 150 );
     cam.look_at( 150,150,150);
     
-    volume.raycast(cam, 640, 480, vertices, normals);
+    Raycaster raycaster{640, 480};
+    
+    raycaster.raycast(volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_right.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_right.png", width, height, vertices, normals, cam, light_source);
 }
@@ -453,7 +466,10 @@ TEST( TSDF_Raycasting, testRayCast_450_150_m150 ) {
     cam.move_to( 450, 150, -150 );
     cam.look_at( 150,150,150);
     
-    volume.raycast(cam, 640, 480, vertices, normals);
+    Raycaster raycaster{640, 480};
+    
+    raycaster.raycast(volume, cam, vertices, normals);
+    
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_front_right.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_front_right.png", width, height, vertices, normals, cam, light_source);
 }
@@ -479,8 +495,9 @@ TEST( TSDF_Raycasting, testRayCast_150_150_m150 ) {
     cam.move_to( 150, 150, -150 );
     cam.look_at( 150,150,150);
     
+    Raycaster raycaster{640, 480};
     
-    volume.raycast(cam, 640, 480, vertices, normals);
+    raycaster.raycast(volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_front.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_front.png", width, height, vertices, normals, cam, light_source);
 }
@@ -506,8 +523,9 @@ TEST( TSDF_Raycasting, testRayCast_m150_150_m150 ) {
     cam.move_to( -150, 150, -150 );
     cam.look_at( 150,150,150);
     
+    Raycaster raycaster{640, 480};
     
-    volume.raycast(cam, 640, 480, vertices, normals);
+    raycaster.raycast(volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_front_left.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_front_left.png", width, height, vertices, normals, cam, light_source);
 }
@@ -531,9 +549,10 @@ TEST( TSDF_Raycasting, testRayCast_m150_150_150 ) {
     Camera cam = make_kinect();
     cam.move_to( -150, 150, 150 );
     cam.look_at( 150,150,150);
+
+    Raycaster raycaster{640, 480};
     
-    
-    volume.raycast(cam, 640, 480, vertices, normals);
+    raycaster.raycast(volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_left.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_left.png", width, height, vertices, normals, cam, light_source);
 }
@@ -558,8 +577,9 @@ TEST( TSDF_Raycasting, testRayCast_m150_150_450 ) {
     cam.move_to( -150, 150, 450 );
     cam.look_at( 150,150,150);
     
+    Raycaster raycaster{640, 480};
     
-    volume.raycast(cam, 640, 480, vertices, normals);
+    raycaster.raycast(volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/normals_rear_left.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/render_rear_left.png", width, height, vertices, normals, cam, light_source);
 }

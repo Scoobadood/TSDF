@@ -36,7 +36,11 @@
 		558917421CED4B5A00DD5452 /* Camera.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5589173C1CED288600DD5452 /* Camera.cpp */; };
 		558917431CEE815000DD5452 /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
 		558B95081CF0082300B42E13 /* Test_TSDF_Integration.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558B95071CF0082300B42E13 /* Test_TSDF_Integration.cpp */; };
+		558FF5B31D00D410005B2D00 /* Definitions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558FF5B11D00D410005B2D00 /* Definitions.cpp */; };
+		558FF5B41D00D6BE005B2D00 /* Raycaster.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55974E781D002A3B0057DBD0 /* Raycaster.cpp */; };
+		558FF5B51D00D6BE005B2D00 /* Definitions.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 558FF5B11D00D410005B2D00 /* Definitions.cpp */; };
 		5595348F1CE5A3E8007E5EF2 /* Cubic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */; };
+		55974E7A1D002A3B0057DBD0 /* Raycaster.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55974E781D002A3B0057DBD0 /* Raycaster.cpp */; };
 		559CF1491CD8107F00EE563B /* libpcl_io.1.8.0.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */; };
 		55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */; };
 		55A722CC1CF663B0007E4407 /* Test_TSDF_Load.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 55A722CB1CF663B0007E4407 /* Test_TSDF_Load.cpp */; };
@@ -120,8 +124,12 @@
 		5589173D1CED288600DD5452 /* Camera.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Camera.hpp; path = Camera/Camera.hpp; sourceTree = "<group>"; };
 		558917401CED4B2300DD5452 /* Test_Camera.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_Camera.cpp; sourceTree = "<group>"; };
 		558B95071CF0082300B42E13 /* Test_TSDF_Integration.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Test_TSDF_Integration.cpp; sourceTree = "<group>"; };
+		558FF5B11D00D410005B2D00 /* Definitions.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Definitions.cpp; sourceTree = "<group>"; };
+		558FF5B21D00D410005B2D00 /* Definitions.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Definitions.hpp; sourceTree = "<group>"; };
 		5595348D1CE5A3E8007E5EF2 /* Cubic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Cubic.cpp; sourceTree = "<group>"; };
 		5595348E1CE5A3E8007E5EF2 /* Cubic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = Cubic.hpp; sourceTree = "<group>"; };
+		55974E781D002A3B0057DBD0 /* Raycaster.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Raycaster.cpp; path = Raycaster/Raycaster.cpp; sourceTree = "<group>"; };
+		55974E791D002A3B0057DBD0 /* Raycaster.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = Raycaster.hpp; path = Raycaster/Raycaster.hpp; sourceTree = "<group>"; };
 		559CF1481CD8107F00EE563B /* libpcl_io.1.8.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libpcl_io.1.8.0.dylib; path = ../../../../../../../../../usr/local/Cellar/pcl/HEAD/lib/libpcl_io.1.8.0.dylib; sourceTree = "<group>"; };
 		55A51F3F1CDB1B3400E87D4A /* PgmUtilities.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = PgmUtilities.cpp; sourceTree = "<group>"; };
 		55A51F401CDB1B3400E87D4A /* PgmUtilities.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = PgmUtilities.hpp; sourceTree = "<group>"; };
@@ -241,6 +249,17 @@
 			name = GTest;
 			sourceTree = "<group>";
 		};
+		55974E771D002A1C0057DBD0 /* Raycaster */ = {
+			isa = PBXGroup;
+			children = (
+				55974E791D002A3B0057DBD0 /* Raycaster.hpp */,
+				55974E781D002A3B0057DBD0 /* Raycaster.cpp */,
+				558FF5B11D00D410005B2D00 /* Definitions.cpp */,
+				558FF5B21D00D410005B2D00 /* Definitions.hpp */,
+			);
+			name = Raycaster;
+			sourceTree = "<group>";
+		};
 		55D02C841CD5EF53005561CE = {
 			isa = PBXGroup;
 			children = (
@@ -271,6 +290,7 @@
 		55D02C8F1CD5EF53005561CE /* KinFu */ = {
 			isa = PBXGroup;
 			children = (
+				55974E771D002A1C0057DBD0 /* Raycaster */,
 				5589173B1CED286700DD5452 /* Camera */,
 				555C61FB1CD6B98E0071FBF3 /* Utility */,
 				55D02C971CD5EF67005561CE /* TSDF */,
@@ -450,7 +470,9 @@
 				555C62011CD6BA0A0071FBF3 /* PngUtilities.cpp in Sources */,
 				55414A6A1CFB8F4400ABDB59 /* BilateralFilter.cpp in Sources */,
 				5589173E1CED288600DD5452 /* Camera.cpp in Sources */,
+				558FF5B31D00D410005B2D00 /* Definitions.cpp in Sources */,
 				55A51F411CDB1B3400E87D4A /* PgmUtilities.cpp in Sources */,
+				55974E7A1D002A3B0057DBD0 /* Raycaster.cpp in Sources */,
 				55D02C9A1CD5EF8C005561CE /* TSDFVolume.cpp in Sources */,
 				5595348F1CE5A3E8007E5EF2 /* Cubic.cpp in Sources */,
 				55D02C911CD5EF53005561CE /* main.cpp in Sources */,
@@ -475,6 +497,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				558FF5B41D00D6BE005B2D00 /* Raycaster.cpp in Sources */,
+				558FF5B51D00D6BE005B2D00 /* Definitions.cpp in Sources */,
 				552AA05A1CFC305C005D4A10 /* BilateralFilter.cpp in Sources */,
 				55EB4DC91CE43BCF00E35EA0 /* gtest-all.cc in Sources */,
 				555C4E461CE67AEA00D92070 /* gtest_main.cc in Sources */,

@@ -18,13 +18,9 @@
 #include "TSDFVolume.hpp"
 #include "MarchingCubes.hpp"
 #include "Cubic.hpp"
+#include "Definitions.hpp"
 
 namespace phd {
-    
-    /**
-     * Predefined bad vertex
-     */
-    static const Eigen::Vector3f BAD_VERTEX{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
     
     TSDFVolume::~TSDFVolume() {
         if( m_voxels ) {
@@ -256,6 +252,69 @@ namespace phd {
         return is_in;
     }
     
+    /**
+     * Find the point where the given ray first intersects the TSDF space in global coordinates
+     * @param origin The source of the ray
+     * @param ray_direction A unit vector in the direction of the ray
+     * @param entry_point The point at which the ray enters the TSDF which may be the origin
+     * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
+     * @return true if the ray intersects the TSDF otherwise false
+     */
+    bool TSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
+        float t_near = std::numeric_limits<float>::lowest( );
+        float t_far = std::numeric_limits<float>::max();
+        
+        bool intersects = true;
+        
+        for ( int dim=0; dim<3; dim++ ) {
+            if(  ray_direction[dim] == 0 ) {
+                if( ( origin[dim] < m_offset[dim] ) || ( origin[dim] > (m_offset[dim] + m_physical_size[dim] ) ) ) {
+                    intersects = false;
+                    break;
+                }
+            } else {
+                // compute intersection distance of the planes
+                float t1 = ( m_offset[dim]                        - origin[dim] ) / ray_direction[dim];
+                float t2 = ( m_offset[dim] + m_physical_size[dim] - origin[dim] ) / ray_direction[dim];
+                
+                // If t1 > t2 swap (t1, t2) since t1 intersection with near plane
+                if( t1 > t2 ) {
+                    float temp_t = t1;
+                    t1 = t2;
+                    t2 = temp_t;
+                }
+                
+                // if t1 > t_near set t_near = t1 : We want largest t_near
+                if( t1 > t_near ) {
+                    t_near = t1;
+                }
+                
+                //If t2 < t_far set t_far="t2"  want smallest t_far
+                if( t2 < t_far ) {
+                    t_far = t2;
+                }
+                
+                // If Tnear > Tfar box is missed so return false
+                if( t_near > t_far ) {
+                    intersects = false;
+                    break;
+                }
+                
+                
+                // If Tfar < 0 box is behind ray return false end
+                if( t_far < 0 ) {
+                    intersects = false;
+                    break;
+                }
+            }
+        } // end of all dims
+        // If Box survived all above tests, return true with intersection point Tnear and exit point Tfar.
+        t = t_near;
+        entry_point = origin + ( t * ray_direction);
+        
+        return intersects;
+    }
+    
     
 #pragma mark - Data access
     /**
@@ -322,6 +381,94 @@ namespace phd {
         return m_size[0] * m_size[1] * m_size[2];
     }
     
+    
+    /**
+     * Get the upper and lower bounding voxels for a trilinear interpolation at the given point in
+     * global space.
+     * @param point The point in global coordinates
+     * @param lower_bound The voxel forming the lower, left, near bound
+     * @param upper_bound The voxel forming the upper, right, far bound
+     */
+    void TSDFVolume::get_interpolation_bounds( const Eigen::Vector3f & point, Eigen::Vector3i & lower_bounds, Eigen::Vector3i & upper_bounds ) const {
+        using namespace Eigen;
+        
+        // Obtain current voxel
+        Vector3i current_voxel = point_to_voxel(point);
+        
+        
+        // And central point
+        Vector3f voxel_centre = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
+        
+        // For each coordinate axis, determine whether point is below or above and
+        // select the appropriate bounds
+        for( int i=0; i<3; i++ ) {
+            if( point[i] < voxel_centre[i] ) {
+                // Point is left/below/nearer so UPPER bound in this direction is current_voxel
+                upper_bounds[i] = current_voxel[i];
+                lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
+            } else {
+                // Point is right/above/further so LOWER bound in this direction is current_voxel
+                lower_bounds[i] = current_voxel[i];
+                upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
+            }
+        }
+    }
+    
+    /**
+     * Trilinearly interpolate the point p in the voxel grid using the tsdf values
+     * of the surrounding voxels. At edges we assume that the voxel values continue
+     * @param point the point
+     * @return the interpolated value
+     */
+    float TSDFVolume::trilinearly_interpolate_sdf_at( const Eigen::Vector3f & point ) const {
+        using namespace Eigen;
+        
+        float value = 0;
+        
+        // Determine which voxels bound this point
+        Vector3i lower_bounds;
+        Vector3i upper_bounds;
+        get_interpolation_bounds(point, lower_bounds, upper_bounds);
+        
+        // Compute uvw
+        Vector3f centre_of_lower_bound = centre_of_voxel_at(lower_bounds.x(), lower_bounds.y() , lower_bounds.z() );
+        Vector3f uvw = (point - centre_of_lower_bound).array() / m_voxel_size.array();
+        
+        
+        // Local vars for clarity
+        float u = uvw[0];
+        float v = uvw[1];
+        float w = uvw[2];
+        
+        float u_prime = 1.0f - u;
+        float v_prime = 1.0f - v;
+        float w_prime = 1.0f - w;
+        
+        float c000 = distance( lower_bounds.x(), lower_bounds.y(), lower_bounds.z() );
+        float c001 = distance( lower_bounds.x(), lower_bounds.y(), upper_bounds.z() );
+        float c010 = distance( lower_bounds.x(), upper_bounds.y(), lower_bounds.z() );
+        float c011 = distance( lower_bounds.x(), upper_bounds.y(), upper_bounds.z() );
+        float c100 = distance( upper_bounds.x(), lower_bounds.y(), lower_bounds.z() );
+        float c101 = distance( upper_bounds.x(), lower_bounds.y(), upper_bounds.z() );
+        float c110 = distance( upper_bounds.x(), upper_bounds.y(), lower_bounds.z() );
+        float c111 = distance( upper_bounds.x(), upper_bounds.y(), upper_bounds.z() );
+        
+        // Interpolate X
+        float c00 = c000 * u_prime + c100 * u;
+        float c01 = c001 * u_prime + c101 * u;
+        float c10 = c010 * u_prime + c110 * u;
+        float c11 = c011 * u_prime + c111 * u;
+        
+        // Interpolate Y
+        float c0 = c00 * v_prime + c10 * v;
+        float c1 = c01 * v_prime + c11 * v;
+        
+        // Interpolate Z
+        value = c0 * w_prime + c1 * w;
+        
+        return value;
+    }
+
 #pragma mark - Integrate new depth data
     /**
      * Integrate a range map into the TSDF
@@ -411,348 +558,7 @@ namespace phd {
         return do_marching_cubes(*this);
     }
     
-#pragma mark - Raycasting
-    
-    /**
-     * Compute the normal to the ISO surface at the given point
-     * Based on http://www.cs.technion.ac.il/~veredc/openfusion/OpenFusionReport.pdf
-     * @param point The point; should be inside the TSDF
-     * @param normal The returned normal
-     */
-    void TSDFVolume::normal_at_point( const Eigen::Vector3f & point, Eigen::Vector3f & normal ) const {
-        using namespace Eigen;
-        
-        Vector3i voxel = point_to_voxel( point );
-        
-            Vector3i lower_index;
-            Vector3i upper_index;
-            for( int i=0; i<3; i++ ) {
-                lower_index[i] = std::max( voxel[i]-1, 0);
-                upper_index[i] = std::min( voxel[i]+1, m_size[i] - 1);
-            }
-            
-            Vector3f upper_values{ distance( upper_index.x(), voxel.y(), voxel.z() ),
-                distance( voxel.x(), upper_index.y(), voxel.z() ),
-                distance( voxel.x(), voxel.y(), upper_index.z() ) };
-            Vector3f lower_values{ distance( lower_index.x(), voxel.y(), voxel.z() ),
-                distance( voxel.x(), lower_index.y(), voxel.z() ),
-                distance( voxel.x(), voxel.y(), lower_index.z() ) };
-            
-            normal = upper_values - lower_values;
-            normal.normalize();
-    }
-    
-    /**
-     * Find the point where the given ray first intersects the TSDF space in global coordinates
-     * @param origin The source of the ray
-     * @param ray_direction A unit vector in the direction of the ray
-     * @param entry_point The point at which the ray enters the TSDF which may be the origin
-     * @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
-     * @return true if the ray intersects the TSDF otherwise false
-     */
-    bool TSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
-        float t_near = std::numeric_limits<float>::lowest( );
-        float t_far = std::numeric_limits<float>::max();
-        
-        bool intersects = true;
-        
-        for ( int dim=0; dim<3; dim++ ) {
-            if(  ray_direction[dim] == 0 ) {
-                if( ( origin[dim] < m_offset[dim] ) || ( origin[dim] > (m_offset[dim] + m_physical_size[dim] ) ) ) {
-                    intersects = false;
-                    break;
-                }
-            } else {
-                // compute intersection distance of the planes
-                float t1 = ( m_offset[dim]                        - origin[dim] ) / ray_direction[dim];
-                float t2 = ( m_offset[dim] + m_physical_size[dim] - origin[dim] ) / ray_direction[dim];
-                
-                // If t1 > t2 swap (t1, t2) since t1 intersection with near plane
-                if( t1 > t2 ) {
-                    float temp_t = t1;
-                    t1 = t2;
-                    t2 = temp_t;
-                }
-                
-                // if t1 > t_near set t_near = t1 : We want largest t_near
-                if( t1 > t_near ) {
-                    t_near = t1;
-                }
-                
-                //If t2 < t_far set t_far="t2"  want smallest t_far
-                if( t2 < t_far ) {
-                    t_far = t2;
-                }
-                
-                // If Tnear > Tfar box is missed so return false
-                if( t_near > t_far ) {
-                    intersects = false;
-                    break;
-                }
-                
-                
-                // If Tfar < 0 box is behind ray return false end
-                if( t_far < 0 ) {
-                    intersects = false;
-                    break;
-                }
-            }
-        } // end of all dims
-        // If Box survived all above tests, return true with intersection point Tnear and exit point Tfar.
-        t = t_near;
-        entry_point = origin + ( t * ray_direction);
-        
-        return intersects;
-    }
-    
-    
-    
-    /**
-     * Get the upper and lower bounding voxels for a trilinear interpolation at the given point in
-     * global space.
-     * @param point The point in global coordinates
-     * @param lower_bound The voxel forming the lower, left, near bound
-     * @param upper_bound The voxel forming the upper, right, far bound
-     */
-    void TSDFVolume::get_interpolation_bounds( const Eigen::Vector3f & point, Eigen::Vector3i & lower_bounds, Eigen::Vector3i & upper_bounds ) const {
-        using namespace Eigen;
-        
-        // Obtain current voxel
-        Vector3i current_voxel = point_to_voxel(point);
-        
-        
-            // And central point
-            Vector3f voxel_centre = centre_of_voxel_at( current_voxel.x(), current_voxel.y(), current_voxel.z() );
-            
-            // For each coordinate axis, determine whether point is below or above and
-            // select the appropriate bounds
-            for( int i=0; i<3; i++ ) {
-                if( point[i] < voxel_centre[i] ) {
-                    // Point is left/below/nearer so UPPER bound in this direction is current_voxel
-                    upper_bounds[i] = current_voxel[i];
-                    lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
-                } else {
-                    // Point is right/above/further so LOWER bound in this direction is current_voxel
-                    lower_bounds[i] = current_voxel[i];
-                    upper_bounds[i] = std::min( current_voxel[i] + 1, m_size[i] - 1);
-                }
-            }
-    }
-    
-    /**
-     * Trilinearly interpolate the point p in the voxel grid using the tsdf values
-     * of the surrounding voxels. At edges we assume that the voxel values continue
-     * @param point the point
-     * @return the interpolated value
-     */
-    float TSDFVolume::trilinearly_interpolate_sdf_at( const Eigen::Vector3f & point ) const {
-        using namespace Eigen;
-        
-        float value = 0;
-        
-        // Determine which voxels bound this point
-        Vector3i lower_bounds;
-        Vector3i upper_bounds;
-        get_interpolation_bounds(point, lower_bounds, upper_bounds);
-        
-        // Compute uvw
-        Vector3f centre_of_lower_bound = centre_of_voxel_at(lower_bounds.x(), lower_bounds.y() , lower_bounds.z() );
-        Vector3f uvw = (point - centre_of_lower_bound).array() / m_voxel_size.array();
-        
-        
-        // Local vars for clarity
-        float u = uvw[0];
-        float v = uvw[1];
-        float w = uvw[2];
-        
-        float u_prime = 1.0f - u;
-        float v_prime = 1.0f - v;
-        float w_prime = 1.0f - w;
-        
-        float c000 = distance( lower_bounds.x(), lower_bounds.y(), lower_bounds.z() );
-        float c001 = distance( lower_bounds.x(), lower_bounds.y(), upper_bounds.z() );
-        float c010 = distance( lower_bounds.x(), upper_bounds.y(), lower_bounds.z() );
-        float c011 = distance( lower_bounds.x(), upper_bounds.y(), upper_bounds.z() );
-        float c100 = distance( upper_bounds.x(), lower_bounds.y(), lower_bounds.z() );
-        float c101 = distance( upper_bounds.x(), lower_bounds.y(), upper_bounds.z() );
-        float c110 = distance( upper_bounds.x(), upper_bounds.y(), lower_bounds.z() );
-        float c111 = distance( upper_bounds.x(), upper_bounds.y(), upper_bounds.z() );
-        
-        // Interpolate X
-        float c00 = c000 * u_prime + c100 * u;
-        float c01 = c001 * u_prime + c101 * u;
-        float c10 = c010 * u_prime + c110 * u;
-        float c11 = c011 * u_prime + c111 * u;
-        
-        // Interpolate Y
-        float c0 = c00 * v_prime + c10 * v;
-        float c1 = c01 * v_prime + c11 * v;
-        
-        // Interpolate Z
-        value = c0 * w_prime + c1 * w;
-        
-        return value;
-    }
-    
-    /**
-     * Walk ray from start to end seeking intersection with the ISO surface in this TSDF
-     * If an intersection is found, return the coordnates in vertex and the surface normal
-     * in normal
-     
-     
-     for each pixel u ∈ output image in parallel do
-     raystart ← back project [u, 0]; convert to grid pos
-     raynext ← back project [u, 1]; convert to grid pos
-     raydir ← normalize (raynext − raystart)
-     raylen ← 0
-     g ← first voxel along raydir
-     m ← convert global mesh vertex to grid pos mdist ← ||raystart − m||
-     
-     while voxel g within volume bounds do
-     raylen ← raylen + 1
-     gprev ← g
-     g ← traverse next voxel along raydir
-     if zero crossing from g to gprev then
-     p ← extract trilinear interpolated grid position
-     v ← convert p from grid to global 3D position
-     n ← extract surface gradient as ∇tsdf (p)
-     shade pixel for oriented point (v, n) or
-     follow secondary ray (shadows, reflections, etc)
-     
-     if raylen > mdist then
-     shade pixel using inputed mesh maps or
-     follow secondary ray (shadows, reflections, etc)
-     */
-    bool TSDFVolume::walk_ray( const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const {
-        using namespace Eigen;
-        
-        bool values_returned = false;
-        
-        // Find the point at which the ray enters the grid - if it does
-        float t;
-        Vector3f current_point;
-        if( is_intersected_by_ray( ray_start, ray_direction, current_point, t ) ) {
-            
-            Vector3i current_voxel = point_to_voxel( current_point);
-            
-            // Walk the ray until we hit a zero crossing or fall out of the grid
-            Vector3i previous_voxel;
-            Vector3f previous_position = current_point;
-            float step_size = m_truncation_distance;
-            
-            // Only do this if the current distnce is positive
-            float distance_to_surface =distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
-            if( distance_to_surface >= 0 ) {
-                bool done = false;
-                
-                
-                
-                // Ray walking loop
-                do {
-                    previous_voxel = current_voxel;
-                    
-                    
-                    // Step along ray to get new global position
-                    t = t + step_size;
-                    Vector3f new_position = ray_start + (ray_direction * t );
-                    
-                    // If we go out of bounds, end. Otherwise...
-                    if( point_is_in_tsdf(new_position) ) {
-                        
-                        // Get voxel containing this point as current and extract the distance
-                        current_voxel = point_to_voxel( new_position );
-                        distance_to_surface = distance(current_voxel.x(), current_voxel.y(), current_voxel.z() );
-                        
-                        // If the distance is negative, we've had a zero crossing
-                        if( distance_to_surface < 0 ) {
-                            
-                            // Obtain more precise distances for last and current position using trilinear interp
-                            float sdf_current = trilinearly_interpolate_sdf_at( new_position);
-                            float sdf_previous = trilinearly_interpolate_sdf_at( previous_position );
-                            
-                            // Our assumption is that sdf_current is -ve and sdf_previous is positive
-                            if( sdf_current >= 0 || sdf_previous <=0 ) {
-                                //std::cerr << "Ray walking found sdfs with incorrect signs" << std::endl;
-                            }
-                            
-                            // Now perform linear interpolation between these values
-                            float step_forward = step_size * ( sdf_previous / ( sdf_previous - sdf_current ));
-                            t -= step_size; // undo the last step we took
-                            t += step_forward; // and step forward again slightly less
-                            
-                            // Compute vertex
-                            vertex = ray_start + (t * ray_direction);
-                            if( point_is_in_tsdf(vertex)) {
-                                normal_at_point(vertex, normal );
-                                values_returned = true;
-                            }
-                            
-                            // And we're done
-                            done = true;
-                        } else { // distance to surface was positive or 0
-                            // So long as it's not zero, set up the step size
-                            if( distance_to_surface > 0 ) {
-                                step_size = (distance_to_surface * m_truncation_distance);
-                            }
-                        }
-                    } else { // Point no longer inside grid
-                        done = true;
-                    }
 
-                    // Save the position
-                    previous_position = new_position;
-                } while( !done );
-            } // Starting distance was valid
-        } // Ray doesn't intersect Volume
-        
-        return values_returned;
-    }
-    
-    
-    /**
-     * Generate a raycast surface
-     * @param camera The camera doing the rendering
-     * @param width The width of the output image
-     * @param height The height of the output image
-     * @param vertex_map A pointer to an array of width * height vertices in World Coordinate system
-     * @param normal_map A pointer to an array of width * height normals in World Coordinate system
-     */
-    void TSDFVolume::raycast( const Camera & camera, uint16_t width, uint16_t height,
-                             Eigen::Vector3f * vertex_map,
-                             Eigen::Vector3f * normal_map) const {
-        using namespace Eigen;
-        
-        // Ray origin is at camera position in world coords
-        Vector3f ray_start = camera.position();
-        
-        // For each pixel u ∈ output image do
-        for( uint16_t y=0; y<height; y++ ) {
-            for( uint16_t x =0; x<width; x++ ) {
-                
-                // Obtain a unit vector in the direction of the ray
-                // Backproject the pixel (x, y, 1mm) into global space - NB Z axis is negative in front of camera
-                Vector2f camera_coord = camera.pixel_to_image_plane(x, y);
-                Vector3f ray_next = camera.camera_to_world( Vector3f{ camera_coord.x(), camera_coord.y(), -1 } );
-                Vector3f ray_direction = (ray_next - ray_start).normalized();
-                
-                // Walk the ray to obtain vertex and normal values
-                Vector3f normal;
-                Vector3f vertex;
-                bool ray_insersects_surface = walk_ray( ray_start, ray_direction, vertex, normal);
-                
-                // If the ray doesn't intersect, create a BAD_VERTEX
-                if( !ray_insersects_surface ) {
-                    vertex = BAD_VERTEX;
-                    normal = Vector3f::Zero();
-                }
-                
-                
-                // Transform normal and vertex back into pose space
-                vertex_map[ y * width + x ] = vertex;
-                normal_map[ y * width + x ] = normal;
-            } // End for Y
-        } // End For X
-    } // End function
     
 #pragma mark - Import/Export
     

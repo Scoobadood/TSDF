@@ -7,13 +7,9 @@
 //
 
 #include "Camera.hpp"
+#include "Definitions.hpp"
 
 namespace phd {
-    
-    /**
-     * Predefined bad vertex
-     */
-    Eigen::Vector3f BAD_VERTEX{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
     
     /**
      * Common construction code
