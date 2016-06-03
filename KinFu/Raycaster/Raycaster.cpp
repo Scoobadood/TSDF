@@ -105,7 +105,7 @@ namespace phd {
                         current_sdf = volume.trilinearly_interpolate_sdf_at( current_point );
                         
                         // If the distance is negative, we've had a zero crossing
-                        if( current_sdf < 0 ) {
+                        if( current_sdf <= 0 ) {
                             
                             // Our assumption is that sdf_current is -ve and sdf_previous is positive
                             if( previous_sdf < 0 ) {
@@ -130,7 +130,7 @@ namespace phd {
                         } else { // distance to surface was positive or 0
                             // So long as it's not zero, set up the step size
                             if( current_sdf > 0 ) {
-                                step_size = (current_sdf * max_step_size);
+                                step_size = std::max( 1.0f, (current_sdf * max_step_size) );
                             }
                         }
                     } else { // Point no longer inside grid
