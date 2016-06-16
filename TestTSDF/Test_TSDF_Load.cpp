@@ -11,7 +11,7 @@
 #include <Eigen/Core>
 
 #include "TSDFVolume.hpp"
-#include "Raycaster.hpp"
+#include "CPURaycaster.hpp"
 
 #include "TestHelpers.hpp"
 
@@ -45,7 +45,7 @@ TEST( TSDF_Load, givenFileLoadData ) {
     cam.move_to( 0, 3200, 6400 );
     cam.look_at( 3200,3200,3200);
     
-    Raycaster raycaster{ 640, 480 };
+    CPURaycaster raycaster{ 640, 480 };
     raycaster.raycast( volume, cam, vertices, normals);
     save_normals_as_colour_png("/Users/Dave/Desktop/load_front_left_normals.png", width, height, normals);
     save_rendered_scene_as_png("/Users/Dave/Desktop/load_front_left_render.png", width, height, vertices, normals, cam, light_source);

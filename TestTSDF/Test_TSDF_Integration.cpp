@@ -9,7 +9,7 @@
 #include <gtest/gtest.h>
 
 #include "TSDFVolume.hpp"
-#include "Raycaster.hpp"
+#include "CPURaycaster.hpp"
 #include "Camera.hpp"
 #include "TestHelpers.hpp"
 #include "PngUtilities.hpp"
@@ -150,7 +150,7 @@ TEST( TSDF_Integration, givenManyImages ) {
             camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
             camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
             
-            Raycaster raycaster{640, 480};
+            CPURaycaster raycaster{640, 480};
             
             // Raycast volume
             raycaster.raycast(volume, camera, vertices, normals);

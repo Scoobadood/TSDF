@@ -1,4 +1,14 @@
 //
+//  CPURaycaster.cpp
+//  KinFu
+//
+//  Created by Dave on 16/06/2016.
+//  Copyright © 2016 Sindesso. All rights reserved.
+//
+
+#include "CPURaycaster.hpp"
+
+//
 //  Raycaster.cpp
 //  KinFu
 //
@@ -6,7 +16,7 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 
-#include "Raycaster.hpp"
+#include "CPURaycaster.hpp"
 #include "Definitions.hpp"
 
 namespace phd {
@@ -21,7 +31,7 @@ namespace phd {
      * @param point The point; should be inside the TSDF
      * @param normal The returned normal
      */
-    void Raycaster::normal_at_point( const TSDFVolume & volume, const Eigen::Vector3f & point, Eigen::Vector3f & normal ) const {
+    void CPURaycaster::normal_at_point( const TSDFVolume & volume, const Eigen::Vector3f & point, Eigen::Vector3f & normal ) const {
         using namespace Eigen;
         
         Vector3i voxel = volume.point_to_voxel( point );
@@ -61,9 +71,9 @@ namespace phd {
      * @param normal The returned normal
      * @return true if the ray intersects the ISOSurface in which case vertex and normal are populated or else false if not
      */
-    bool Raycaster::walk_ray( const TSDFVolume & volume, const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const {
+    bool CPURaycaster::walk_ray( const TSDFVolume & volume, const Eigen::Vector3f & ray_start, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & vertex, Eigen::Vector3f & normal) const {
         using namespace Eigen;
-
+        
         // Set if we intersect ISO surface along this ray
         bool found_intersection = false;
         
@@ -84,8 +94,8 @@ namespace phd {
             // Store previous point
             float    previous_sdf   = current_sdf;
             
-
-
+            
+            
             // Only do this if the current distnce is positive
             if( current_sdf >= 0 ) {
                 bool done = false;
@@ -151,7 +161,7 @@ namespace phd {
      * @param vertices The vertices discovered
      * @param normals The normals
      */
-    void Raycaster::raycast( const TSDFVolume & volume, const Camera & camera, Eigen::Vector3f * vertices, Eigen::Vector3f * normals ) const {
+    void CPURaycaster::raycast( const TSDFVolume & volume, const Camera & camera, Eigen::Vector3f * vertices, Eigen::Vector3f * normals ) const {
         using namespace Eigen;
         
         // Ray origin is at camera position in world coords
