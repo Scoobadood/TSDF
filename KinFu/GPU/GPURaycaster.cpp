@@ -3,7 +3,7 @@
 #include "Raycaster_kernel.hpp"
 
 namespace phd {
-    
+
     /**
      * Raycast the TSDF and store discovered vertices and normals in the ubput arrays
      * @param volume The volume to cast

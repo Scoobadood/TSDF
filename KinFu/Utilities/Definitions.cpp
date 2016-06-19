@@ -11,5 +11,7 @@
 /**
  * Predefined bad vertex
  */
-const Eigen::Vector3f BAD_VERTEX{ std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max() };
+const Eigen::Vector3f BAD_VERTEX {
+    std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max()
+};
 

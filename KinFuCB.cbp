@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="KinFuCB" />
+		<Option pch_mode="2" />
+		<Option compiler="nvidia_nvcc_compiler" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/KinFuCB" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="nvidia_nvcc_compiler" />
+				<Compiler>
+					<Add option="-g" />
+					<Add option="-Wno-unknown-pragmas" />
+					<Add directory="/usr/include/eigen3" />
+				</Compiler>
+				<Linker>
+					<Add library="libpng" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/KinFuCB" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="nvidia_nvcc_compiler" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="KinFu/BilateralFilter.hpp" />
+		<Unit filename="KinFu/CPU/CPURaycaster.cpp" />
+		<Unit filename="KinFu/CPU/CPURaycaster.hpp" />
+		<Unit filename="KinFu/CPU/CPUTSDFVolume.cpp" />
+		<Unit filename="KinFu/CPU/CPUTSDFVolume.hpp" />
+		<Unit filename="KinFu/Camera.cpp" />
+		<Unit filename="KinFu/Camera.hpp" />
+		<Unit filename="KinFu/TSDFVolume.cpp" />
+		<Unit filename="KinFu/TSDFVolume.hpp" />
+		<Unit filename="KinFu/Utilities/Definitions.cpp" />
+		<Unit filename="KinFu/Utilities/Definitions.hpp" />
+		<Unit filename="KinFu/Utilities/PngUtilities.cpp" />
+		<Unit filename="KinFu/Utilities/PngUtilities.hpp" />
+		<Unit filename="KinFu/Utilities/PngWrapper.cpp" />
+		<Unit filename="KinFu/Utilities/PngWrapper.hpp" />
+		<Unit filename="KinFu/Utilities/TSDFLoader.cpp" />
+		<Unit filename="KinFu/Utilities/TSDFLoader.hpp" />
+		<Unit filename="KinFu/main.cpp" />
+		<Extensions>
+			<code_completion />
+			<debugger />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

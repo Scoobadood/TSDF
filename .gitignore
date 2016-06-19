@@ -35,3 +35,7 @@ xcuserdata/
 build/
 DerivedData/
 
+## Manual builds
+bin/
+obj/
+

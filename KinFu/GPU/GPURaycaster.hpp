@@ -10,14 +10,14 @@
 #define GPURaycaster_hpp
 
 #include <Eigen/Core>
-#include "Raycaster.hpp"
+#include "../Raycaster.hpp"
 
 
 namespace phd {
     class GPURaycaster : public Raycaster {
     public:
         GPURaycaster( int width=640, int height=480) : Raycaster{ width, height } {} ;
-        
+
         /**
          * Raycast the TSDF and store discovered vertices and normals in the ubput arrays
          * @param volume The volume to cast
@@ -25,7 +25,7 @@ namespace phd {
          * @param vertices The vertices discovered
          * @param normals The normals
          */
-        void raycast( const TSDFVolume & volume, const Camera & camera,
+        virtual void raycast( const TSDFVolume & volume, const Camera & camera,
                      Eigen::Matrix<float, 3, Eigen::Dynamic> & vertices,
                      Eigen::Matrix<float, 3, Eigen::Dynamic> & normals ) const;
     };

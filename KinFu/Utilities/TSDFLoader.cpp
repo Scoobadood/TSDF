@@ -1,26 +1,22 @@
 #include "TSDFLoader.hpp"
 #include "FileUtilities.hpp"
 
-namespace phd
-{
-TSDFLoader::TSDFLoader(  TSDFVolume * volume )
-{
+namespace phd {
+TSDFLoader::TSDFLoader(  TSDFVolume * volume ) {
     //ctor
     m_volume = volume;
 
     m_state = expect_voxel_size;
 }
 
-TSDFLoader::~TSDFLoader()
-{
+TSDFLoader::~TSDFLoader() {
     //dtor
 }
 
 /**
  * Read the voxel size
  */
-void TSDFLoader::process_voxel_size_line( const std::string & line )
-{
+void TSDFLoader::process_voxel_size_line( const std::string & line ) {
     std::stringstream iss(line);
     std::string voxel_size_prefix;
     std::getline(iss, voxel_size_prefix, '=');
@@ -31,8 +27,7 @@ void TSDFLoader::process_voxel_size_line( const std::string & line )
 /**
  * Read the physical size
  */
-void TSDFLoader::process_physical_size_line( const std::string & line )
-{
+void TSDFLoader::process_physical_size_line( const std::string & line ) {
     std::stringstream iss(line);
     std::string physical_size_prefix;
     std::getline(iss, physical_size_prefix, '=');
@@ -48,8 +43,7 @@ void TSDFLoader::process_physical_size_line( const std::string & line )
 /**
  * Read a line of distances
  */
-void TSDFLoader::process_distance_line( const std::string & line )
-{
+void TSDFLoader::process_distance_line( const std::string & line ) {
     std::stringstream iss(line);
     for( uint16_t z=0; z<m_size_z; z++ ) {
         float distance;
@@ -61,8 +55,7 @@ void TSDFLoader::process_distance_line( const std::string & line )
 /**
  * Read a line of weights
  */
-void TSDFLoader::process_weight_line( const std::string & line )
-{
+void TSDFLoader::process_weight_line( const std::string & line ) {
     std::stringstream iss(line);
     for( uint16_t z=0; z<m_size_z; z++ ) {
         float weight;
@@ -79,8 +72,7 @@ void TSDFLoader::process_weight_line( const std::string & line )
     }
 }
 
-bool TSDFLoader::load_from_file( const std::string & file_name )
-{
+bool TSDFLoader::load_from_file( const std::string & file_name ) {
     std::function<void( const std::string & )> f = std::bind(&phd::TSDFLoader::process_line, this, std::placeholders::_1 );
     process_file_by_lines( file_name, f);
 
@@ -90,8 +82,7 @@ bool TSDFLoader::load_from_file( const std::string & file_name )
 /**
    * Process the line
    */
-void TSDFLoader::process_line( const std::string & line )
-{
+void TSDFLoader::process_line( const std::string & line ) {
     // Fail empty lines
     if( line.size() == 0 ) return;
 
@@ -104,30 +95,30 @@ void TSDFLoader::process_line( const std::string & line )
 
     // Handle the remaininder depending on state
     switch( m_state ) {
-        case expect_voxel_size:
-            process_voxel_size_line(line);
-            break;
+    case expect_voxel_size:
+        process_voxel_size_line(line);
+        break;
 
-        case expect_physical_size:
-            process_physical_size_line(line);
-            break;
+    case expect_physical_size:
+        process_physical_size_line(line);
+        break;
 
-        case expect_weights:
-            process_weight_line( line );
-            break;
+    case expect_weights:
+        process_weight_line( line );
+        break;
 
-        case expect_distances:
-            process_distance_line( line );
-            break;
+    case expect_distances:
+        process_distance_line( line );
+        break;
 
-        case done:
-            // Shouldn' have data at this point
-            m_state = data_ignored;
-            break;
+    case done:
+        // Shouldn' have data at this point
+        m_state = data_ignored;
+        break;
 
-        case data_ignored:
-            // Compiler placating
-            break;
+    case data_ignored:
+        // Compiler placating
+        break;
     }
 }
 }

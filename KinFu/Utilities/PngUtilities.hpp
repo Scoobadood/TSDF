@@ -10,6 +10,7 @@
 #define PngUtilities_hpp
 
 #include <iostream>
+#include <Eigen/Dense>
 
 uint16_t * load_png_from_file( const std::string file_name, uint32_t & width, uint32_t & height );
 

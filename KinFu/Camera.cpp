@@ -8,16 +8,14 @@
 
 #include <cmath>
 #include "Camera.hpp"
-#include "Definitions.hpp"
+#include "Utilities/Definitions.hpp"
 
-namespace phd
-{
+namespace phd {
 
 /**
  * Common construction code
  */
-void Camera::init( )
-{
+void Camera::init( ) {
     m_k_inverse = m_k.inverse();
 
     set_pose( Eigen::Matrix4f::Identity() );
@@ -30,8 +28,7 @@ void Camera::init( )
  * @param centre_x The horizontal centre of the image in pixels
  * @param centre_y The vertical centre of the image in pixels
  */
-Camera::Camera( const float focal_x, const float focal_y, const float centre_x, const float centre_y )
-{
+Camera::Camera( const float focal_x, const float focal_y, const float centre_x, const float centre_y ) {
     m_k << focal_x, 0.0f, centre_x, 0.0f, focal_y, centre_y, 0.0f, 0.0f, 1.0f;
     init( );
 }
@@ -44,8 +41,7 @@ Camera::Camera( const float focal_x, const float focal_y, const float centre_x, 
  *
  * @param k The intrinsic paramters
  */
-Camera::Camera( const Eigen::Matrix3f & k )
-{
+Camera::Camera( const Eigen::Matrix3f & k ) {
     m_k = k;
     init( );
 }
@@ -57,8 +53,7 @@ Camera::Camera( const Eigen::Matrix3f & k )
  * @param fov_x The horizontal field of view in mm
  * @param fov_y The vertical field of view in mm
  */
-Camera::Camera( const int image_width, const int image_height, const float fov_x, const float fov_y )
-{
+Camera::Camera( const int image_width, const int image_height, const float fov_x, const float fov_y ) {
     float focal_x = -image_width / ( 2 * std::tan(fov_x / 2.0f ) );
     float focal_y = -image_height / ( 2 * std::tan(fov_y / 2.0f ) );
     m_k << -focal_x, 0.0f, (image_width / 2.0f), 0.0f, -focal_y, (image_height / 2.0f), 0.0f, 0.0f, 1.0f;
@@ -70,8 +65,7 @@ Camera::Camera( const int image_width, const int image_height, const float fov_x
 /**
  * @return the intrinsic parameter matrix K
  */
-const Eigen::Matrix3f Camera::k() const
-{
+const Eigen::Matrix3f Camera::k() const {
     return m_k;
 }
 
@@ -79,8 +73,7 @@ const Eigen::Matrix3f Camera::k() const
 /**
  * @return the inverse of k
  */
-const Eigen::Matrix3f Camera::kinv() const
-{
+const Eigen::Matrix3f Camera::kinv() const {
     return m_k_inverse;
 }
 
@@ -90,16 +83,14 @@ const Eigen::Matrix3f Camera::kinv() const
 /**
  * @return the pose of the camera as a 4x4 matrix
  */
-const Eigen::Matrix4f & Camera::pose( ) const
-{
+const Eigen::Matrix4f & Camera::pose( ) const {
     return m_pose;
 }
 
 /**
  * @param The new pose of the camera as a 4x4 matrix
  */
-void Camera::set_pose( const Eigen::Matrix4f & pose )
-{
+void Camera::set_pose( const Eigen::Matrix4f & pose ) {
     m_pose = pose;
     m_pose_inverse = m_pose.inverse();
 }
@@ -108,8 +99,7 @@ void Camera::set_pose( const Eigen::Matrix4f & pose )
  * Move the camera to the given global coordinates
  * @param world_coordinate The 3D world coordinate
  */
-void Camera::move_to( const Eigen::Vector3f & world_coordinate )
-{
+void Camera::move_to( const Eigen::Vector3f & world_coordinate ) {
     move_to(world_coordinate.x(), world_coordinate.y(), world_coordinate.z() );
 }
 
@@ -120,8 +110,7 @@ void Camera::move_to( const Eigen::Vector3f & world_coordinate )
  * @param wy World Y coordinate
  * @param wz World Z coordinate
  */
-void Camera::move_to( float wx, float wy, float wz )
-{
+void Camera::move_to( float wx, float wy, float wz ) {
     m_pose( 0, 3) = wx;
     m_pose( 1, 3) = wy;
     m_pose( 2, 3) = wz;
@@ -135,8 +124,7 @@ void Camera::move_to( float wx, float wy, float wz )
  * From gluLookat()
  * @param world_coordinate The 3D world coordinate
  */
-void Camera::look_at( const Eigen::Vector3f & world_coordinate )
-{
+void Camera::look_at( const Eigen::Vector3f & world_coordinate ) {
     using namespace Eigen;
 
     // Compute ray from current location to look_at point
@@ -184,8 +172,7 @@ void Camera::look_at( const Eigen::Vector3f & world_coordinate )
  * @param wy World Y coordinate
  * @param wz World Z coordinate
  */
-void Camera::look_at( float wx, float wy, float wz )
-{
+void Camera::look_at( float wx, float wy, float wz ) {
     look_at( Eigen::Vector3f { wx, wy, wz } );
 }
 
@@ -194,8 +181,7 @@ void Camera::look_at( float wx, float wy, float wz )
 /**
  * @return the position of the camera as a vector
  */
-Eigen::Vector3f Camera::position(  ) const
-{
+Eigen::Vector3f Camera::position(  ) const {
     return m_pose.block( 0, 3, 3, 1 );
 }
 
@@ -206,8 +192,7 @@ Eigen::Vector3f Camera::position(  ) const
  * @param image_coordinate The 2D coordinate in the image space
  * @return camera_coordinate The 2D coordinate in camera image plane
  */
-Eigen::Vector2f Camera::pixel_to_image_plane( const Eigen::Vector2i & image_coordinate ) const
-{
+Eigen::Vector2f Camera::pixel_to_image_plane( const Eigen::Vector2i & image_coordinate ) const {
     using namespace Eigen;
 
     return pixel_to_image_plane(image_coordinate.x(), image_coordinate.y() );
@@ -219,8 +204,7 @@ Eigen::Vector2f Camera::pixel_to_image_plane( const Eigen::Vector2i & image_coor
  * @param image_y The y coordinate in the image space
  * @return camera_coordinate The 2D coordinate in camera image plane
  */
-Eigen::Vector2f Camera::pixel_to_image_plane( const uint16_t x, const uint16_t y ) const
-{
+Eigen::Vector2f Camera::pixel_to_image_plane( const uint16_t x, const uint16_t y ) const {
     using namespace Eigen;
 
     // Multiply the (homgeous) point by the intrinsic matrix
@@ -236,8 +220,7 @@ Eigen::Vector2f Camera::pixel_to_image_plane( const uint16_t x, const uint16_t y
  * @param camera_coordinate The 2D coordinate in camera image plane
  * @return image_coordinate The 2D coordinate in the image space
  */
-Eigen::Vector2i Camera::image_plane_to_pixel( const Eigen::Vector2f & camera_coordinate ) const
-{
+Eigen::Vector2i Camera::image_plane_to_pixel( const Eigen::Vector2f & camera_coordinate ) const {
     using namespace Eigen;
 
     Vector3f cam_h { camera_coordinate.x(), camera_coordinate.y(), 1.0f };
@@ -256,8 +239,7 @@ Eigen::Vector2i Camera::image_plane_to_pixel( const Eigen::Vector2f & camera_coo
  * @param camera_coordinate The 3D pointin camera space
  * @return world_coordinate The 3D point in world space
  */
-Eigen::Vector3f Camera::camera_to_world( const Eigen::Vector3f & camera_coordinate ) const
-{
+Eigen::Vector3f Camera::camera_to_world( const Eigen::Vector3f & camera_coordinate ) const {
     using namespace Eigen;
 
     Vector4f cam_h { camera_coordinate.x(), camera_coordinate.y(), camera_coordinate.z(), 1.0f};
@@ -271,8 +253,7 @@ Eigen::Vector3f Camera::camera_to_world( const Eigen::Vector3f & camera_coordina
  * @param world_normal The 3D normal in world space
  * @return camera_normal The 3D normal camera space
  */
-Eigen::Vector3f Camera::world_to_camera_normal( const Eigen::Vector3f & world_normal ) const
-{
+Eigen::Vector3f Camera::world_to_camera_normal( const Eigen::Vector3f & world_normal ) const {
     return m_pose_inverse.block( 0, 0, 3, 3) * world_normal;
 }
 
@@ -282,8 +263,7 @@ Eigen::Vector3f Camera::world_to_camera_normal( const Eigen::Vector3f & world_no
  * @param world_coordinate The 3D point in world space
  * @return camera_coordinate The 3D pointin camera space
  */
-Eigen::Vector3f Camera::world_to_camera( const Eigen::Vector3f & world_coordinate ) const
-{
+Eigen::Vector3f Camera::world_to_camera( const Eigen::Vector3f & world_coordinate ) const {
     using namespace Eigen;
 
     Vector4f world_h { world_coordinate.x(), world_coordinate.y(), world_coordinate.z(), 1.0f};
@@ -298,8 +278,7 @@ Eigen::Vector3f Camera::world_to_camera( const Eigen::Vector3f & world_coordinat
  * @param world_coordinate The 3D point in world space
  * @return pixel_coordinate The 2D point in pixel space
  */
-Eigen::Vector2i Camera::world_to_pixel( const Eigen::Vector3f & world_coordinate ) const
-{
+Eigen::Vector2i Camera::world_to_pixel( const Eigen::Vector3f & world_coordinate ) const {
     using namespace Eigen;
 
     // To cam coordinate space
@@ -327,8 +306,7 @@ Eigen::Vector2i Camera::world_to_pixel( const Eigen::Vector3f & world_coordinate
  * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
  * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
  */
-void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image,const uint32_t width,const uint32_t height,  std::deque<Eigen::Vector3f> & vertices,  std::deque<Eigen::Vector3f> & normals ) const
-{
+void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image,const uint32_t width,const uint32_t height,  std::deque<Eigen::Vector3f> & vertices,  std::deque<Eigen::Vector3f> & normals ) const {
     using namespace Eigen;
 
     // Run from bottom right corner so we can create normal sin the same pass

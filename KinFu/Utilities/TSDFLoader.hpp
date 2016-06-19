@@ -1,12 +1,10 @@
 #ifndef TSDFLOADER_H
 #define TSDFLOADER_H
 
-#include "TSDFVolume.hpp"
+#include "../TSDFVolume.hpp"
 
-namespace phd
-{
-class TSDFLoader
-{
+namespace phd {
+class TSDFLoader {
 public:
     TSDFLoader( TSDFVolume * volume );
     virtual ~TSDFLoader();
@@ -16,7 +14,7 @@ protected:
     void process_voxel_size_line( const std::string & line );
     void process_physical_size_line( const std::string & line );
     void process_distance_line( const std::string & line );
-        void process_weight_line( const std::string & line );
+    void process_weight_line( const std::string & line );
 
 private:
     TSDFVolume  *m_volume;
@@ -25,8 +23,7 @@ private:
     uint16_t    m_x, m_y;
 
 
-    enum
-    {
+    enum {
         expect_voxel_size,
         expect_physical_size,
         expect_weights,

@@ -1,5 +1,5 @@
-#include "TSDFVolume.hpp"
-#include "Camera.hpp"
+#include "../../TSDFVolume.hpp"
+#include "../../Camera.hpp"
 #include <Eigen/Core>
 
 void cast(	const phd::TSDFVolume & volume,

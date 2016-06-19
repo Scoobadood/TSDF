@@ -13,11 +13,9 @@
 #include <deque>
 #include <cstdint>
 
-namespace phd
-{
+namespace phd {
 
-class Camera
-{
+class Camera {
 private:
     // The intrinsic matrix
     Eigen::Matrix3f     m_k;
