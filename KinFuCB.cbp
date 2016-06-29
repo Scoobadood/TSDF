@@ -8,6 +8,7 @@
 		<Build>
 			<Target title="Debug">
 				<Option output="bin/Debug/KinFuCB" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="../../../Code" />
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="nvidia_nvcc_compiler" />
@@ -32,10 +33,117 @@
 					<Add option="-s" />
 				</Linker>
 			</Target>
+			<Target title="Test">
+				<Option output="KinFuTests" prefix_auto="1" extension_auto="1" />
+				<Option type="1" />
+				<Option compiler="nvidia_nvcc_compiler" />
+			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="GoogleTest/include/gtest/gtest-death-test.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest-message.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest-param-test.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest-printers.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest-spi.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest-test-part.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest-typed-test.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest_pred_impl.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/gtest_prod.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/custom/gtest-port.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/custom/gtest-printers.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/custom/gtest.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-death-test-internal.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-filepath.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-internal.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-linked_ptr.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-param-util-generated.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-param-util.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-port-arch.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-port.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-string.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-tuple.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/include/gtest/internal/gtest-type-util.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-all.cc">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-death-test.cc">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-filepath.cc">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-internal-inl.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-port.cc">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-printers.cc">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-test-part.cc">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest-typed-test.cc">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest.cc">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="GoogleTest/src/gtest_main.cc">
+			<Option target="Test" />
+		</Unit>
 		<Unit filename="KinFu/BilateralFilter.hpp" />
 		<Unit filename="KinFu/CPU/CPURaycaster.cpp" />
 		<Unit filename="KinFu/CPU/CPURaycaster.hpp" />
@@ -43,17 +151,65 @@
 		<Unit filename="KinFu/CPU/CPUTSDFVolume.hpp" />
 		<Unit filename="KinFu/Camera.cpp" />
 		<Unit filename="KinFu/Camera.hpp" />
+		<Unit filename="KinFu/GPU/GPURaycaster.cpp" />
+		<Unit filename="KinFu/GPU/GPURaycaster.hpp" />
+		<Unit filename="KinFu/GPU/GPUTSDFVolume.cu">
+			<Option compile="1" />
+			<Option link="1" />
+		</Unit>
+		<Unit filename="KinFu/GPU/GPUTSDFVolume.cuh" />
+		<Unit filename="KinFu/GPU/GPUTSDFVolume.hpp" />
+		<Unit filename="KinFu/GPU/Raycaster_kernel.cu">
+			<Option compile="1" />
+			<Option link="1" />
+		</Unit>
+		<Unit filename="KinFu/GPU/Raycaster_kernel.hpp" />
+		<Unit filename="KinFu/GPU/TSDF_kernel.cu">
+			<Option compile="1" />
+			<Option link="1" />
+		</Unit>
+		<Unit filename="KinFu/GPU/TSDF_kernel.hpp" />
+		<Unit filename="KinFu/GPU/cu_common.hpp" />
 		<Unit filename="KinFu/TSDFVolume.cpp" />
 		<Unit filename="KinFu/TSDFVolume.hpp" />
 		<Unit filename="KinFu/Utilities/Definitions.cpp" />
 		<Unit filename="KinFu/Utilities/Definitions.hpp" />
+		<Unit filename="KinFu/Utilities/DepthMapUtilities.cpp" />
+		<Unit filename="KinFu/Utilities/DepthMapUtilities.hpp" />
+		<Unit filename="KinFu/Utilities/FileUtilities.cpp" />
+		<Unit filename="KinFu/Utilities/FileUtilities.hpp" />
+		<Unit filename="KinFu/Utilities/PgmUtilities.cpp" />
+		<Unit filename="KinFu/Utilities/PgmUtilities.hpp" />
 		<Unit filename="KinFu/Utilities/PngUtilities.cpp" />
 		<Unit filename="KinFu/Utilities/PngUtilities.hpp" />
 		<Unit filename="KinFu/Utilities/PngWrapper.cpp" />
 		<Unit filename="KinFu/Utilities/PngWrapper.hpp" />
+		<Unit filename="KinFu/Utilities/RenderUtilities.cpp" />
+		<Unit filename="KinFu/Utilities/RenderUtilities.hpp" />
 		<Unit filename="KinFu/Utilities/TSDFLoader.cpp" />
 		<Unit filename="KinFu/Utilities/TSDFLoader.hpp" />
 		<Unit filename="KinFu/main.cpp" />
+		<Unit filename="TestTSDF/TestHelpers.cpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="TestTSDF/TestHelpers.hpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="TestTSDF/Test_CPUTSDFMetrics.cpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="TestTSDF/Test_Camera.cpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="TestTSDF/Test_TSDF_Integration.cpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="TestTSDF/Test_TSDF_Load.cpp">
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="TestTSDF/Test_TSDF_RayCast.cpp">
+			<Option target="Test" />
+		</Unit>
 		<Extensions>
 			<code_completion />
 			<debugger />

@@ -8,8 +8,7 @@
  * @param processor Pointer to function taking a single string argument to process
  * @return true if processing was successful
  */
-bool process_file_by_lines( std::string file_name, std::function<void(const std::string & )> processor)
-{
+bool process_file_by_lines( std::string file_name, std::function<void(const std::string & )> processor) {
     // Open file
     std::ifstream f( file_name );
 

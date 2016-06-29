@@ -54,7 +54,7 @@ public:
      * Dtor
      * Release volume
      */
-    ~CPUTSDFVolume();
+    virtual ~CPUTSDFVolume();
 
     /**
      * Set the size of the volume. This will delete any existing values and resize the volume, clearing it when done.
@@ -193,6 +193,21 @@ public:
     void set_weight( int x, int y, int z, float weight );
 
     /**
+     * Return pointer to distance data
+     * @return Pointer to distance data
+     */
+    inline const float *  distance_data() const {
+        return m_voxels;
+    }
+
+    /**
+     * Return pointer to weight data
+     * @return Pointer to weight data
+     */
+    inline const float  * weight_data() const {
+        return m_weights;
+    };
+    /**
      * @return the size (number of elements) in this space. Used to index
      * raw data returned by other member functions
      */
@@ -260,7 +275,7 @@ public:
     bool load_from_file( const std::string & file_name);
 
 #pragma mark - Rendering
-    void raycast( uint16_t width, uint16_t height, Camera camera, Eigen::Matrix<float, 3, Eigen::Dynamic>vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>normals ) const;
+    void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const;
 
 };
 }

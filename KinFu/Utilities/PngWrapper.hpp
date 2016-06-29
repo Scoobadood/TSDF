@@ -6,7 +6,8 @@
 class PngWrapper {
 public:
     enum PNG_TYPE {
-        GREYSCALE,
+        GREYSCALE_8,
+        GREYSCALE_16,
         COLOUR
     };
 
@@ -21,12 +22,13 @@ public:
 
 protected:
 private:
-    uint32_t    m_width;
-    uint32_t    m_height;
+    uint32_t        m_width;
+    uint32_t        m_height;
 
-    const uint16_t    *m_data;
+    const uint8_t  *m_data;
 
-    PNG_TYPE    m_type;
+    PNG_TYPE        m_type;
+
 };
 
 #endif // PNGWRAPPER_H

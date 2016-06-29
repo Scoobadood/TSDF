@@ -158,6 +158,9 @@ void CPURaycaster::raycast( const CPUTSDFVolume & volume, const Camera & camera,
                             Eigen::Matrix<float, 3, Eigen::Dynamic> & normals ) const {
     using namespace Eigen;
 
+    vertices.resize( 3, m_width * m_height );
+    normals.resize( 3, m_width * m_height );
+
     // Ray origin is at camera position in world coords
     Vector3f ray_start = camera.position();
 

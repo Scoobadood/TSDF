@@ -7,6 +7,8 @@
 //
 
 #include <cmath>
+#include <iostream>
+
 #include "Camera.hpp"
 #include "Utilities/Definitions.hpp"
 
@@ -166,6 +168,31 @@ void Camera::look_at( const Eigen::Vector3f & world_coordinate ) {
 }
 
 /**
+ * Move the camera and set it's orientation based on
+ * 7 float parameters (as provided by TUM groundtruth data)
+ * @param vars 0, 1 and 2 are a translation
+ * @param vars 3,4,5,6 are x,y,z, w components of a quaternion dewscribing the facing
+ */
+void Camera::set_pose( float vars[7] ) {
+    Eigen::Vector3f tx { vars[0], vars[1], vars[2]};
+    tx = tx * 1000.0f;
+
+    Eigen::Quaternionf qq { vars[6], vars[3], vars[4], vars[5] };
+
+    Eigen::Matrix3f r = qq.toRotationMatrix();
+    Eigen::Matrix<float,1,3> c { 0.0, 0.0, -1.0 };
+
+    c = c * r;
+
+    Eigen::Vector3f lx = tx + ( 1000 * c.transpose() );
+
+    move_to( tx.x(), tx.y(), tx.z() );
+    look_at( lx.x(), lx.y(), lx.z() );
+}
+
+
+
+/**
  * Adjust the camera pose so that it faces the given point
  * assumes that 'up' is in the direction of the +ve Y axis
  * @param wx World X coordinate
@@ -306,8 +333,12 @@ Eigen::Vector2i Camera::world_to_pixel( const Eigen::Vector3f & world_coordinate
  * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
  * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
  */
-void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image,const uint32_t width,const uint32_t height,  std::deque<Eigen::Vector3f> & vertices,  std::deque<Eigen::Vector3f> & normals ) const {
+void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image, const uint32_t width, const uint32_t height, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const {
     using namespace Eigen;
+
+    // Allocate storage for vertx and norms
+    vertices.resize( 3, width * height );
+    normals.resize( 3, width * height );
 
     // Run from bottom right corner so we can create normal sin the same pass
     int32_t src_idx = (width * height) - 1;
@@ -331,8 +362,8 @@ void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image,co
                     // We have adjacent vertex to right and below that we can extract
                     // Vector[0] is the element to the right of this one
                     // Vector[width] is the element below
-                    Vector3f right_neighbour = vertices[0];
-                    Vector3f below_neighbour = vertices[width];
+                    Vector3f right_neighbour { vertices(0, src_idx + 1),     vertices(1, src_idx + 1),     vertices(2, src_idx + 1) };
+                    Vector3f below_neighbour { vertices(0, src_idx + width), vertices(1, src_idx + width), vertices(2, src_idx + width) };
 
                     // If they are both not BAD
                     if( ( right_neighbour != BAD_VERTEX) && ( below_neighbour != BAD_VERTEX ) ) {
@@ -348,8 +379,10 @@ void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image,co
             }
 
             // Store
-            vertices.push_front( vertex );
-            normals.push_front( normal );
+            for( int i=0; i<3; i++ ) {
+                vertices(i, src_idx) = vertex[i];
+                normals(i, src_idx) = normal[i];
+            }
 
             src_idx--;
         }

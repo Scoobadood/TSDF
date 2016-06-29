@@ -15,7 +15,7 @@
 namespace phd {
 class CPURaycaster {
 public:
-    CPURaycaster( int width=640, int height=480) {};
+    CPURaycaster( uint16_t width=640, uint16_t height=480) :m_width{width}, m_height{height}{};
 
     /**
      * Compute the normal to the ISO surface at the given point

@@ -1,11 +1,10 @@
 #include "Raycaster_kernel.hpp"
 #include "math_constants.h"
 
+#include "cu_common.hpp"
+
 #include <iomanip>
 
-static inline int divUp(int total, int grain) {
-    return (total + grain - 1) / grain;
-}
 
 // We make this column major in order to mimic default Eigen settings
 typedef struct {
@@ -639,7 +638,7 @@ float3 * get_vertices(  const phd::TSDFVolume&  volume,
     check_cuda_error( "TSDF alloc failed " , err );
 
     // Copy TSDF data to device
-    err = cudaMemcpy( d_tsdf_values, volume.data(), tsdf_data_size, cudaMemcpyHostToDevice );
+    err = cudaMemcpy( d_tsdf_values, volume.distance_data(), tsdf_data_size, cudaMemcpyHostToDevice );
     check_cuda_error( "TSDF Memcpy failed ", err);
 
     // Allocate storage for vertcies on device

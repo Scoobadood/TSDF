@@ -519,8 +519,8 @@ void CPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
     using namespace Eigen;
 
     // First convert the depth_map into CAMERA space
-    std::deque<Vector3f> vertices;
-    std::deque<Vector3f> normals;
+    Matrix<float, 3, Dynamic> vertices;
+    Matrix<float, 3, Dynamic> normals;
     camera.depth_image_to_vertices_and_normals(depth_map, width, height, vertices, normals);
 
     // For each voxel in the space
@@ -550,7 +550,7 @@ void CPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
                         Vector3f voxel_centre_in_cam = camera.world_to_camera(centre_of_voxel);
                         float voxel_distance = voxel_centre_in_cam.norm();
 
-                        Vector3f surface_vertex = vertices[ voxel_image_index];
+                        Vector3f surface_vertex{ vertices( 0, voxel_image_index), vertices( 1, voxel_image_index), vertices(2, voxel_image_index) };
                         float surface_distance = surface_vertex.norm();
 
                         // SDF is the difference between them.
@@ -636,7 +636,17 @@ bool CPUTSDFVolume::load_from_file( const std::string & file_name) {
 }
 
 #pragma mark - Rendering
-void CPUTSDFVolume::raycast( uint16_t width, uint16_t height, Camera camera, Eigen::Matrix<float, 3, Eigen::Dynamic>vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>normals ) const {
+/**
+ * @param width The width of the camera view
+ * @param height The height of the camera view
+ * @param camera The camera
+ * @param vertices A Dynamic matrix of 3D vectors represnting the vertices of the object
+ * @param normals  A Dynamic matrix of 3D vectors represnting the vertices of the object
+ */
+void CPUTSDFVolume::raycast( uint16_t width, uint16_t height,
+                             const Camera& camera,
+                             Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices,
+                             Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const {
     CPURaycaster raycaster( width, height );
     raycaster.raycast(*this, camera, vertices, normals);
 }

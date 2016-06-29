@@ -87,6 +87,14 @@ public:
     void set_pose( const Eigen::Matrix4f & pose );
 
     /**
+     * Move the camera and set it's orientation based on
+     * 7 float parameters (as provided by TUM groundtruth data)
+     * @param vars 0, 1 and 2 are a translation
+     * @param vars 3,4,5,6 are x,y,z, w components of a quaternion dewscribing the facing
+     */
+    void set_pose( float vars[7] );
+
+    /**
      * Move the camera to the given global coordinates
      * @param world_coordinate The 3D world coordinate
      */
@@ -186,7 +194,9 @@ public:
      * @param vertices A width x height array of Vector3f representing the vertices in the depth image in camera space
      * @param normals A width x height array of Vector3f representing the vertices in the depth image in camera space
      */
-    void depth_image_to_vertices_and_normals(const uint16_t * depth_image, const uint32_t width, const uint32_t height,std::deque<Eigen::Vector3f> & vertices,std::deque<Eigen::Vector3f> & normals ) const;
+    void depth_image_to_vertices_and_normals(const uint16_t * depth_image, const uint32_t width, const uint32_t height,
+            Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices,
+            Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const;
 };
 }
 #endif /* Camera_hpp */

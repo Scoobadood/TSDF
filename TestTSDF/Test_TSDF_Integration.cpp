@@ -8,12 +8,11 @@
 
 #include <gtest/gtest.h>
 
-#include "TSDFVolume.hpp"
-#include "CPURaycaster.hpp"
-#include "Camera.hpp"
+#include "../KinFu/TSDFVolume.hpp"
+#include "../KinFu/Camera.hpp"
 #include "TestHelpers.hpp"
-#include "PngUtilities.hpp"
-#include "BilateralFilter.hpp"
+#include "../KinFu/Utilities/PngUtilities.hpp"
+#include "../KinFu/BilateralFilter.hpp"
 
 struct {
     std::string     file_name;
@@ -49,116 +48,94 @@ struct {
 };
 
 
-
-void helper_move_look( float vars[7], Eigen::Vector3f & move_to, Eigen::Vector3f & look_at ) {
-    move_to.x() = vars[0];
-    move_to.y() = vars[1];
-    move_to.z() = vars[2];
-    move_to = move_to * 1000;
-    
-    Eigen::Quaternionf qq{ vars[6], vars[3], vars[4], vars[5] };
-    
-    Eigen::Matrix3f r = qq.toRotationMatrix();
-    Eigen::Matrix<float,1,3> c{ 0.0, 0.0, -1.0 };
-    
-    c = c * r;
-    
-    look_at = move_to + ( 1000 * c.transpose() );
-    
-    std::cout << "Move To : (" << move_to.x() << ", " << move_to.y() << ", " << move_to.z() << ")" << std::endl;
-    std::cout << "Look At : (" << look_at.x() << ", " << look_at.y() << ", " << look_at.z() << ")" << std::endl;
-    
-    
-}
-
 TEST( TSDF_Integration, givenManyImages ) {
     // Set up
     using namespace phd;
     using namespace Eigen;
-    
+
     /*** SET PARAMETERS HERE ***/
-    
+
     uint16_t voxels = 128;
     uint16_t num_images = 1;
     bool     save = true;
     bool     raycast = true;
     bool     filter = false;
-    
-    
+
+
     // Make volume
-    float vw, vh, vd;
-    TSDFVolume volume = construct_volume(voxels, voxels, voxels, 5000, 5000, 5000, vw, vh, vd);
-    
+    TSDFVolume * volume = TSDFVolume::make_volume( TSDFVolume::GPU, voxels, voxels, voxels, 5000, 5000, 5000);
+
     // And camera
     Camera camera = make_kinect();
-    
+
     // Load depth image
     uint32_t width{0};
     uint32_t height{0};
     Vector3f camera_location;
     Vector3f camera_focus;
-    
-    
+
+
     BilateralFilter bf{ 2, 2};
-    
+
     for( int i=0; i < num_images; i++ ) {
         std::cout << "Integrating " << i << std::endl;
-        
+
         // Read it
         uint16_t * depthmap = read_tum_depth_map( g_data[i].file_name, width, height);
-        
-        
+
+
         // Filter it (optionally)
         if( filter ) {
             std::cout << "Filtering" << std::endl;
             bf.filter(depthmap, width, height);
         }
-        
-        
+
+
         // Set location
         helper_move_look(g_data[i].ground_truth, camera_location, camera_focus);
-        
+
         camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
         camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
-        
-        volume.integrate(depthmap, width, height, camera);
+
+        volume->integrate(depthmap, width, height, camera);
         delete [] depthmap;
     }
-    
-    
+
+
     // Now save ...
     if( save ) {
         std::cout << "Saving" << std::endl;
         std::ostringstream file_name;
         file_name << "/Users/Dave/Desktop/TSDF_" << voxels << ".txt";
-        volume.save_to_file( file_name.str());
+        volume->save_to_file( file_name.str());
     }
-    
-    
+
+
     // ... and render ...
     if( raycast ) {
         if( (width > 0) && (height > 0 ) ){
             Vector3f light_source{ 10000, 6600, -10000 };
-            Vector3f * vertices = new Vector3f[ width * height ];
-            Vector3f * normals  = new Vector3f[ width * height ];
-            
+            Eigen::Matrix<float, 3, Eigen::Dynamic> vertices;
+            Eigen::Matrix<float, 3, Eigen::Dynamic> normals;
+
             std::cout << "Rendering" << std::endl;
-            
+
             // Set location
             helper_move_look(g_data[0].ground_truth, camera_location, camera_focus);
             camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
             camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
-            
-            CPURaycaster raycaster{640, 480};
-            
+
             // Raycast volume
-            raycaster.raycast(volume, camera, vertices, normals);
-            
-            save_normals_as_colour_png("/Users/Dave/Desktop/normals.png", width, height, normals);
-            save_rendered_scene_as_png("/Users/Dave/Desktop/vertices.png", width, height, vertices, normals, camera, light_source);
-            
-            delete [] vertices;
-            delete[] normals;
+            volume->raycast( width, height, camera, vertices, normals);
+
+            PngWrapper * p = normals_as_png(width, height, normals);
+            p->save_to( "/Users/Dave/Desktop/normals.png");
+            delete p;
+
+            p = scene_as_png(width, height, vertices, normals, camera, light_source);
+            p->save_to("/Users/Dave/Desktop/vertices.png");
+            delete p;
+
         } else {
             std::cerr << "Width or height not set. Can't render" << std::endl;
         }

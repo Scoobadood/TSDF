@@ -24,9 +24,7 @@ protected:
     /**
      * Default constructor does nothing
      */
-    TSDFVolume( ){};
-
-
+    TSDFVolume( ) {} ;
 public:
     /**
      * Known volume types
@@ -40,12 +38,31 @@ public:
          * Dtor
          * Release volume
          */
-    virtual ~TSDFVolume(){};
+    virtual ~TSDFVolume() {};
+
+    /**
+    * Factory method to return a CPU or GPU based volume
+    * @param volume_x X dimension in voxels
+    * @param volume_y Y dimension in voxels
+    * @param volume_z Z dimension in voxels
+    * @param psize_x Physical size in X dimension in mm
+    * @param psize_y Physical size in Y dimension in mm
+    * @param psize_z Physical size in Z dimension in mm
+    */
+    static TSDFVolume *make_volume( TSDFVolume::volume_type type,
+                                    const Eigen::Vector3i& voxel_size = Eigen::Vector3i {64, 64, 64},
+                                    const Eigen::Vector3f& physical_size = Eigen::Vector3f { 3000, 3000, 3000} );
 
     /**
      * Factory method to return a CPU or GPU based volume
+     * @param volume_x X dimension in voxels
+     * @param volume_y Y dimension in voxels
+     * @param volume_z Z dimension in voxels
+     * @param psize_x Physical size in X dimension in mm
+     * @param psize_y Physical size in Y dimension in mm
+     * @param psize_z Physical size in Z dimension in mm
      */
-    static TSDFVolume *make_volume( volume_type type );
+    static TSDFVolume *make_volume( volume_type type, uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z );
 
     /**
      * Set the size of the volume. This will delete any existing values and resize the volume, clearing it when done.
@@ -133,6 +150,19 @@ public:
      */
     virtual void set_weight( int x, int y, int z, float weight ) = 0;
 
+    /**
+     * Return pointer to distance data
+     * @return Pointer to distance data
+     */
+    virtual const float *  distance_data() const = 0;
+
+    /**
+     * Return pointer to weight data
+     * @return Pointer to weight data
+     */
+    virtual const float  * weight_data() const = 0;
+
+
 #pragma mark - Integrate new depth data
     /**
      * Integrate a range map into the TSDF
@@ -160,7 +190,14 @@ public:
     virtual bool load_from_file( const std::string & file_name) = 0;
 
 #pragma mark - Rendering
-    virtual void raycast( uint16_t width, uint16_t height, Camera camera, Eigen::Matrix<float, 3, Eigen::Dynamic>vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>normals ) const = 0;
+    /**
+     * Raycast the TSDF and store discovered vertices and normals in the ubput arrays
+     * @param volume The volume to cast
+     * @param camera The camera
+     * @param vertices The vertices discovered
+     * @param normals The normals
+     */
+    virtual void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const = 0;
 };
 }
 
