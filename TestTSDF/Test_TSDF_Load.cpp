@@ -12,6 +12,8 @@
 
 #include "../KinFu/TSDFVolume.hpp"
 #include "../KinFu/Utilities/PngWrapper.hpp"
+#include "../KinFu/Utilities/DepthMapUtilities.hpp"
+#include "../KinFu/Utilities/RenderUtilities.hpp"
 
 #include "TestHelpers.hpp"
 

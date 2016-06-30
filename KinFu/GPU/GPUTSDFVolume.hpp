@@ -14,6 +14,30 @@
 
 namespace phd {
 class GPUTSDFVolume : public TSDFVolume {
+protected:
+    // Size of voxel grid
+    dim3 m_size;
+
+    // Physical size of space represented
+    float3 m_physical_size;
+
+    // Offset of physical grid in world coordinates
+    float3 m_offset;
+
+    // Voxel memory on device
+    float * m_voxels;
+
+    //  Voxel weight data on device
+    float * m_weights;
+
+    // Size of a voxel
+    float3 m_voxel_size;
+
+    //  Truncaion distance
+    float m_truncation_distance;
+
+    // Max weight for a voxel
+    float m_max_weight;
 public:
     GPUTSDFVolume( const Eigen::Vector3i & size = Eigen::Vector3i {64, 64, 64}, const Eigen::Vector3f & physical_size = Eigen::Vector3f {3000.0f, 3000.0f, 3000.0f} );
     /**
@@ -132,63 +156,38 @@ public:
         return m_weights;
     }
 
+    virtual void set_distance_data( const float * distance_data );
+    virtual void set_weight_data( const float * weight_data );
 
 #pragma mark - Integrate new depth data
-    /**
-     * Integrate a range map into the TSDF
-     * @param depth_map Pointer to width*height depth values where 0 is an invalid depth and positive values are expressed in mm
-     * @param width The horiontal dimension of the depth_map
-     * @param height The height of the depth_map
-     * @param camera The camera from which the depth_map was taken
-     */
-    virtual void integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera );
+        /**
+         * Integrate a range map into the TSDF
+         * @param depth_map Pointer to width*height depth values where 0 is an invalid depth and positive values are expressed in mm
+         * @param width The horiontal dimension of the depth_map
+         * @param height The height of the depth_map
+         * @param camera The camera from which the depth_map was taken
+         */
+        virtual void integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera );
 
 #pragma mark - Import/Export
 
-    /**
-     * Save the TSDF to file
-     * @param The filename
-     * @return true if the file saved OK otherwise false.
-     */
-    virtual bool save_to_file( const std::string & file_name) const;
+        /**
+         * Save the TSDF to file
+         * @param The filename
+         * @return true if the file saved OK otherwise false.
+         */
+        virtual bool save_to_file( const std::string & file_name) const;
 
-    /**
-     * Load the given TSDF file
-     * @param The filename
-     * @return true if the file saved OK otherwise false.
-     */
-    virtual bool load_from_file( const std::string & file_name);
+        /**
+         * Load the given TSDF file
+         * @param The filename
+         * @return true if the file saved OK otherwise false.
+         */
+        virtual bool load_from_file( const std::string & file_name);
 
 #pragma mark - Rendering
-    virtual void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const ;
-
-
-protected:
-    // Size of voxel grid
-    dim3 m_size;
-
-    // Physical size of space represented
-    float3 m_physical_size;
-
-    // Offset of physical grid in world coordinates
-    float3 m_offset;
-
-    // Voxel memory on device
-    float * m_voxels;
-
-    //  Voxel weight data on device
-    float * m_weights;
-
-    // Size of a voxel
-    float3 m_voxel_size;
-
-    //  Truncaion distance
-    float m_truncation_distance;
-
-    // Max weight for a voxel
-    float m_max_weight;
-
-};
+        virtual void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const ;
+    };
 }
 
 #endif /* GPUTSDFVolume_hpp */

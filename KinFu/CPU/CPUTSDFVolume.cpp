@@ -505,6 +505,22 @@ const float * CPUTSDFVolume::data() const {
     return m_voxels;
 }
 
+    /**
+     * Set the data
+     */
+    void CPUTSDFVolume::set_distance_data( const float * distance_data ) {
+        size_t data_size = m_size[0] * m_size[1] * m_size[2];
+        memcpy( m_voxels, distance_data, data_size );
+    }
+    /**
+     * Set the data
+     */
+    void CPUTSDFVolume::set_weight_data( const float * weight_data ) {
+        size_t data_size = m_size[0] * m_size[1] * m_size[2];
+        memcpy( m_weights, weight_data, data_size );
+    }
+
+
 #pragma mark - Integrate new depth data
 /**
  * Integrate a range map into the TSDF

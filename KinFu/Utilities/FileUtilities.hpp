@@ -1,3 +1,5 @@
+#include <string>
+#include <functional>
 /**
  * Process file content line by line.
  * @param file_name The name of the file to be read

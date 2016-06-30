@@ -197,6 +197,15 @@ void GPUTSDFVolume::set_weight( int x, int y, int z, float weight ) {
     m_weights[ index(x, y, z) ] = weight;
 }
 
+void GPUTSDFVolume::set_distance_data( const float * distance_data ) {
+        size_t data_size = m_size.x * m_size.y * m_size.z;
+        cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
+}
+void GPUTSDFVolume::set_weight_data( const float * weight_data ) {
+        size_t data_size = m_size.x * m_size.y * m_size.z;
+        cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
+}
+
 /**
  * Clear the TSDF memory on the device
  */
@@ -285,6 +294,7 @@ bool GPUTSDFVolume::save_to_file( const std::string & file_name) const {
  * @return true if the file saved OK otherwise false.
  */
 bool GPUTSDFVolume::load_from_file( const std::string & file_name) {
+
     TSDFLoader loader( this );
     return loader.load_from_file( file_name );
 }

@@ -10,9 +10,13 @@
 
 #include "../KinFu/TSDFVolume.hpp"
 #include "../KinFu/Camera.hpp"
-#include "TestHelpers.hpp"
 #include "../KinFu/Utilities/PngUtilities.hpp"
 #include "../KinFu/BilateralFilter.hpp"
+#include "../KinFu/Utilities/RenderUtilities.hpp"
+#include "../KinFu/Utilities/DepthMapUtilities.hpp"
+
+
+#include "TestHelpers.hpp"
 
 struct {
     std::string     file_name;
@@ -20,12 +24,12 @@ struct {
 }  g_data[] =
 {
 //        { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg2_xyz/depth/1311867170.450076.png", {0.1554, -1.1425, 1.3593, -0.5691, 0.6454, -0.3662, 0.3541}},
-    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.160407.png", {1.344379, 0.627206, 1.661754, 0.658249, 0.611043, -0.294444, -0.326553}},
-    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.194330.png", {1.343641, 0.626458, 1.652408, 0.657327, 0.613265, -0.295150, -0.323593}},
-    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.226738.png", {1.338382, 0.625665, 1.641460, 0.657713, 0.615255, -0.294626, -0.319485}},
-    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.262886.png", {1.325627, 0.624485, 1.632561, 0.659141, 0.617445, -0.292536, -0.314195}},
-    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.295279.png", {1.312190, 0.625418, 1.625809, 0.660869, 0.619147, -0.290608, -0.308959}},
-    { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.329195.png", {1.301563, 0.623031, 1.616491, 0.662153, 0.619222, -0.290126, -0.306504}},
+    { "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.160407.png", {1.344379, 0.627206, 1.661754, 0.658249, 0.611043, -0.294444, -0.326553}},
+    { "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.194330.png", {1.343641, 0.626458, 1.652408, 0.657327, 0.613265, -0.295150, -0.323593}},
+    { "/mnt/hgfs/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.226738.png", {1.338382, 0.625665, 1.641460, 0.657713, 0.615255, -0.294626, -0.319485}},
+    { "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.262886.png", {1.325627, 0.624485, 1.632561, 0.659141, 0.617445, -0.292536, -0.314195}},
+    { "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.295279.png", {1.312190, 0.625418, 1.625809, 0.660869, 0.619147, -0.290608, -0.308959}},
+    { "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.329195.png", {1.301563, 0.623031, 1.616491, 0.662153, 0.619222, -0.290126, -0.306504}},
     { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.363013.png", {1.293270, 0.626161, 1.607816, 0.662227, 0.620410, -0.290893, -0.303198}},
     { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.394772.png", {1.284946, 0.625813, 1.599284, 0.661801, 0.622191, -0.291109, -0.300256}},
     { "/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.427815.png", {1.284070, 0.623464, 1.589476, 0.661726, 0.624201, -0.290800, -0.296526}},
@@ -56,14 +60,14 @@ TEST( TSDF_Integration, givenManyImages ) {
     /*** SET PARAMETERS HERE ***/
 
     uint16_t voxels = 128;
-    uint16_t num_images = 1;
+    uint16_t num_images = 6;
     bool     save = true;
     bool     raycast = true;
     bool     filter = false;
 
 
     // Make volume
-    TSDFVolume * volume = TSDFVolume::make_volume( TSDFVolume::GPU, voxels, voxels, voxels, 5000, 5000, 5000);
+    TSDFVolume * volume = TSDFVolume::make_volume( TSDFVolume::CPU, voxels, voxels, voxels, 5000, 5000, 5000);
 
     // And camera
     Camera camera = make_kinect();
@@ -92,10 +96,7 @@ TEST( TSDF_Integration, givenManyImages ) {
 
 
         // Set location
-        helper_move_look(g_data[i].ground_truth, camera_location, camera_focus);
-
-        camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
-        camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
+        camera.set_pose( g_data[i].ground_truth);
 
         volume->integrate(depthmap, width, height, camera);
         delete [] depthmap;
@@ -121,12 +122,11 @@ TEST( TSDF_Integration, givenManyImages ) {
             std::cout << "Rendering" << std::endl;
 
             // Set location
-            helper_move_look(g_data[0].ground_truth, camera_location, camera_focus);
-            camera.move_to( camera_location.x(), camera_location.y(), camera_location.z() );
-            camera.look_at( camera_focus.x(), camera_focus.y(), camera_focus.z() );
+            camera.set_pose( g_data[0].ground_truth );
 
             // Raycast volume
             volume->raycast( width, height, camera, vertices, normals);
+
 
             PngWrapper * p = normals_as_png(width, height, normals);
             p->save_to( "/Users/Dave/Desktop/normals.png");

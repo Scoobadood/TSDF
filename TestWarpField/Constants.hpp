@@ -12,9 +12,9 @@
 #include <iostream>
 #include <gtest/gtest.h>
 
-#include "Eigen/Core"
-#include "math.h"
-#include "Quaternion.hpp"
+#include <Eigen/Dense>
+#include <math.h>
+#include "../WarpField/Quaternion.hpp"
 
 extern const double EPS;
 extern const double HALF_ROOT_3;

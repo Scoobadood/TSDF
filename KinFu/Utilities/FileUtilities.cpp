@@ -1,5 +1,4 @@
 #include <fstream>
-#include <functional>
 
 #include "FileUtilities.hpp"
 /**

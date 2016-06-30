@@ -162,6 +162,16 @@ public:
      */
     virtual const float  * weight_data() const = 0;
 
+    /**
+     * Set the data
+     */
+    virtual void set_distance_data( const float * distance_data ) = 0;
+    /**
+     * Set the data
+     */
+    virtual void set_weight_data( const float * distance_data ) = 0;
+
+
 
 #pragma mark - Integrate new depth data
     /**

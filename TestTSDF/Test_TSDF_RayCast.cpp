@@ -13,6 +13,9 @@
 #include "../KinFu/TSDFVolume.hpp"
 #include "../KinFu/CPU/CPUTSDFVolume.hpp"
 #include "../KinFu/CPU/CPURaycaster.hpp"
+#include "../KinFu/Utilities/DepthMapUtilities.hpp"
+#include "../KinFu/Utilities/RenderUtilities.hpp"
+
 
 #include "TestHelpers.hpp"
 

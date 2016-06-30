@@ -248,6 +248,15 @@ public:
      */
     const float * data() const;
 
+    /**
+     * Set the data
+     */
+    virtual void set_distance_data( const float * distance_data );
+    /**
+     * Set the data
+     */
+    virtual void set_weight_data( const float * distance_data );
+
 #pragma mark - Integrate new depth data
     /**
      * Integrate a range map into the TSDF

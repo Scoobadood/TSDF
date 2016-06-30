@@ -8,6 +8,9 @@
 
 #include <gtest/gtest.h>
 #include "../KinFu/Camera.hpp"
+#include "../KinFu/Utilities/DepthMapUtilities.hpp"
+#include "../KinFu/Utilities/RenderUtilities.hpp"
+
 #include "TestHelpers.hpp"
 
 #pragma mark - Construction
@@ -468,7 +471,7 @@ TEST( Camera, givenDepthMapThenGenerateNormalMap ) {
     // Load depth image
     uint32_t width;
     uint32_t height;
-    uint16_t * depthmap = read_tum_depth_map("/Users/Dave/Library/Mobile Documents/com~apple~CloudDocs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.160407.png", width, height);
+    uint16_t * depthmap = read_tum_depth_map("/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.160407.png", width, height);
 
 
     Matrix<float, 3, Dynamic> vertices;
