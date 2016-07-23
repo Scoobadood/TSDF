@@ -9,11 +9,11 @@ BlockTSDFLoader::BlockTSDFLoader( ) {
 }
 
 BlockTSDFLoader::~BlockTSDFLoader() {
-    if( m_distance_data != nullptr ) {
+    if ( m_distance_data != nullptr ) {
         delete [] m_distance_data;
         m_distance_data = nullptr;
     }
-    if( m_weight_data != nullptr ) {
+    if ( m_weight_data != nullptr ) {
         delete [] m_weight_data;
         m_weight_data = nullptr;
     }
@@ -30,9 +30,9 @@ void BlockTSDFLoader::process_voxel_size_line( const std::string & line ) {
 
     // Allocate storage
     m_distance_data = new float[ m_size_x * m_size_y * m_size_z ];
-    if( m_distance_data != nullptr ) {
+    if ( m_distance_data != nullptr ) {
         m_weight_data = new float[ m_size_x * m_size_y * m_size_z ];
-        if( m_weight_data == nullptr) {
+        if ( m_weight_data == nullptr) {
             delete [] m_distance_data;
             throw std::bad_alloc();
         }
@@ -61,11 +61,12 @@ void BlockTSDFLoader::process_physical_size_line( const std::string & line ) {
  */
 void BlockTSDFLoader::process_distance_line( const std::string & line ) {
     std::stringstream iss(line);
-    for( uint16_t z=0; z<m_size_z; z++ ) {
+    for ( uint16_t z = 0; z < m_size_z; z++ ) {
         float distance;
         iss >> distance;
 
-        m_distance_data[ ((m_size_x * m_size_z) * m_y)  + (m_size_z * m_x) + z ] = distance;
+        size_t idx = ((m_size_x * m_size_y) * z)  + (m_size_x * m_y) + m_x;
+        m_distance_data[ idx ] = distance;
     }
     m_state = expect_weights;
 }
@@ -74,17 +75,18 @@ void BlockTSDFLoader::process_distance_line( const std::string & line ) {
  */
 void BlockTSDFLoader::process_weight_line( const std::string & line ) {
     std::stringstream iss(line);
-    for( uint16_t z=0; z<m_size_z; z++ ) {
+    for ( uint16_t z = 0; z < m_size_z; z++ ) {
         float weight;
         iss >> weight;
-        m_weight_data[ ((m_size_x * m_size_z) * m_y)  + (m_size_z * m_x) + z ] = weight;
 
+        size_t idx = ((m_size_x * m_size_y) * z)  + (m_size_x * m_y) + m_x;
+        m_weight_data[ idx ] = weight;
     }
 
     m_state = expect_distances;
-    if( ++m_x == m_size_x ) {
+    if ( ++m_x == m_size_x ) {
         m_x = 0;
-        if( ++m_y == m_size_y ) {
+        if ( ++m_y == m_size_y ) {
             m_state = done;
         }
     }
@@ -102,17 +104,17 @@ bool BlockTSDFLoader::load_from_file( const std::string & file_name ) {
    */
 void BlockTSDFLoader::process_line( const std::string & line ) {
     // Fail empty lines
-    if( line.size() == 0 ) return;
+    if ( line.size() == 0 ) return;
 
     // Ignore comments
-    if( line[0] == '#') return;
+    if ( line[0] == '#') return;
 
     // If I've done reading ignore this line
-    if( m_state == data_ignored ) return;
+    if ( m_state == data_ignored ) return;
 
 
     // Handle the remaininder depending on state
-    switch( m_state ) {
+    switch ( m_state ) {
     case expect_voxel_size:
         process_voxel_size_line(line);
         break;

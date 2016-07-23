@@ -1,271 +1,195 @@
 #include "TSDF_kernel.hpp"
+#include "TSDF_utilities.hpp"
+
+
+#include "math_constants.h"
+
+
 #include <cfloat>
 
+
+/**
+ * Convert a depth to a 3D vertex in camera space
+ */
+__device__
+float3 depth_to_vertex( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv ) {
+    float3 vertex{ CUDART_NAN_F , CUDART_NAN_F, CUDART_NAN_F };
+    if( depth != 0 ) {
+        // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
+        float3 cam_point{
+            kinv.m11 * x + kinv.m12 * y + kinv.m13,
+            kinv.m21 * x + kinv.m22 * y + kinv.m23,
+            kinv.m31 * x + kinv.m32 * y + kinv.m33
+        };
+
+        vertex.x = cam_point.x * -depth;
+        vertex.y = cam_point.y * -depth;
+        vertex.z = cam_point.z * -depth;
+    }
+
+    return vertex;
+
+}
+/**
+ * Convert a world coordinate into camera space in the camera image
+ * by multiplying by pose matrix inverse, then by K then dividing through by
+ * z coordinate to project down.
+ * @param world_coordinate The world coordinate to convert
+ * @param inv_pose The 4x4 inverse pose matrix
+ * @param K The camera intrinsic matrix
+ * @return a 2D integral pixel value (u,v)
+ */
+__device__
+int3 camera_to_pixel( const float3& camera_coordinate, const Mat33& k ) {
+    // Project
+    float3 image_coordinate {
+        camera_coordinate.x / camera_coordinate.z,
+        camera_coordinate.y / camera_coordinate.z,
+        1.0f
+    };
+
+    // Adjust by cam intrinsics
+    int3 pixel_coordinate {
+        static_cast<int>(floor( ( k.m11 * image_coordinate.x) + (k.m12 * image_coordinate.y) + k.m13 )),
+        static_cast<int>(floor( ( k.m21 * image_coordinate.x) + (k.m22 * image_coordinate.y) + k.m23 )),
+        1
+    };
+
+    return pixel_coordinate;
+}
+
+/**
+ * Convert a world coordinate into camera space by
+ * by multiplying by pose matrix inverse
+ * @param world_coordinate The world coordinate to convert
+ * @param inv_pose The 4x4 inverse pose matrix
+ * @return a 3D coordinate in camera space
+ */
+__device__
+float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) {
+    float3 cam_coordinate {
+        (inv_pose.m11 * world_coordinate.x ) + (inv_pose.m12 * world_coordinate.y) + (inv_pose.m13 * world_coordinate.z) + inv_pose.m14,
+        (inv_pose.m21 * world_coordinate.x ) + (inv_pose.m22 * world_coordinate.y) + (inv_pose.m23 * world_coordinate.z) + inv_pose.m24,
+        (inv_pose.m31 * world_coordinate.x ) + (inv_pose.m32 * world_coordinate.y) + (inv_pose.m33 * world_coordinate.z) + inv_pose.m34
+    };
+    float w = (inv_pose.m41 * world_coordinate.x ) + (inv_pose.m42 * world_coordinate.y) + (inv_pose.m43 * world_coordinate.z) + inv_pose.m44;
+
+    cam_coordinate.x /= w;
+    cam_coordinate.y /= w;
+    cam_coordinate.z /= w;
+
+    return cam_coordinate;
+}
+
+/**
+ * @param m_voxels The voxel values (in devcie memory) 
+ * @param m_weights The weight values (in device memory) 
+ * @param m_size The voxel size of the space
+ * @param m_physical_size The physical size of the space
+ * @param m_offset The offset of the front, bottom, left corner
+ * @param m_truncation_distance A distance, greater than the voxel diagonal, at which we truncate distance measures in the TSDF
+ * @param inv_pose Inverse of the camera pose matrix (maps world to camera coords) (4x4)
+ * @param k The caera's intrinsic parameters (3x3)
+ * @param kinv Invers eof k (3x3)
+ * @param width Width of the depth image
+ * @param height Height of the depth image
+ * @param d_depth_map Pointer to array of width*height uint16 types in devcie memory
+ */
 __global__
-void integrate_kernel(  float * m_voxels, const dim3& voxel_grid_size, const float3& voxel_space_size, const float3& offset,
-                        const Mat44& pose,
+void integrate_kernel(  float * m_voxels, float * m_weights,
+                        dim3 voxel_grid_size, float3 voxel_space_size, float3 offset, const float trunc_distance,
+                        Mat44 inv_pose, Mat33 k, Mat33 kinv,
                         uint32_t width, uint32_t height, const uint16_t * depth_map) {
 
-}
+    // TODO: Move this into parameter bock and pass in from Volume
+    const float m_max_weight = 100;
+
+    // Extract the voxel Y and Z coordinates we then iterate over X
+    int vy = threadIdx.y + blockIdx.y * blockDim.y;
+    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+
+    // If this thread is in range
+    if( vy < voxel_grid_size.y && vz < voxel_grid_size.z ) {
 
 
-#pragma mark - Coordinate manipulation
+        // The next (x_size) elements from here are the x coords
+        size_t base_voxel_index =  ((voxel_grid_size.x*voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
 
-/**
-* @param voxel The voxel to consider
-* @param lower_bounds Coordinates (in global) of rear left lower corner of voxel
-* @param upper_bounds Coordinates (in global) of front right upper corner of voxel
-* @throw std::invalid_argument if voxel coords are out of range
-*/
-__device__
-void voxel_bounds( const dim3& voxel, float3& lower_bounds, float3& upper_bounds ) {
-}
+        // Compute the voxel size
+        float3 voxel_size { voxel_space_size.x / voxel_grid_size.x, 
+                            voxel_space_size.y / voxel_grid_size.y, 
+                            voxel_space_size.z / voxel_grid_size.z  };
 
+        // We want to iterate over the entire voxel space
+        // Each thread should be a Y,Z coordinate with the thread iterating over x
+        size_t voxel_index = base_voxel_index;
+        for( int vx=0; vx<voxel_grid_size.x; vx++ ) {
 
-/**
-* @param x The horizontal coord (0-width-1)
-* @param y The vertical coord (0-height - 1)
-* @param z The depth coord (0-depth - 1)
-* @return The coordinate of the centre of the given voxel in world coords (mm)
-*/
-__device__
-float3 centre_of_voxel_at( const float3& voxel_size, const float3& offset, int x, int y, int z )  {
-    float3 centre {
-        (x + 0.5f) * voxel_size.x + offset.x,
-        (y + 0.5f) * voxel_size.y + offset.y,
-        (z + 0.5f) * voxel_size.z + offset.z
-    };
-    return centre;
-}
+            // Work out where in the image, the centre of this voxel projects
+            // This gives us a pixel in the depth map
 
-/**
-* @return The coordinate of the centre of the given voxel in world coords (mm)
-*/
-__device__
-float3 centre_of_volume( const float3& physical_size, const float3 offset ) {
-    return float3{
-               (physical_size.x / 2.0f) + offset.x,
-               (physical_size.y / 2.0f) + offset.y,
-               (physical_size.z / 2.0f) + offset.z
-           };
-}
+            // Convert voxel to world coords of centre
+            float3 centre_of_voxel        = centre_of_voxel_at( vx, vy, vz, voxel_size, offset );
 
+            // Convert world to camera coords
+            float3 centre_of_voxel_in_cam = world_to_camera( centre_of_voxel, inv_pose );
 
-/**
-* Convert a point in global coordinates into voxel coordinates
-* Logs an error if the point is outside of the grid by a sufficient margin
-* @param point The point to obtain as a voxel
-* @return voxel The voxel coordinate containing that point
-*/
-__device__
-dim3 point_to_voxel( const float3& m_physical_size, const int3& m_size, const float3& voxel_size,  const float3& point, const float3& offset) {
+            // Project into image plane
+            int3   centre_of_voxel_in_pix = camera_to_pixel( centre_of_voxel_in_cam, k );
 
-    // Convert from global to Volume coords
-    float3 grid_point{
-        point.x - offset.x,
-        point.y - offset.y,
-        point.z - offset.z
-    };
+            // if this point is in the camera view frustum...
+            if( ( centre_of_voxel_in_pix.x >=0 && centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height) ) {
 
-    // FRactional voxel
-    float3 fractional_voxel{
-        grid_point.x / voxel_size.x,
-        grid_point.y / voxel_size.y,
-        grid_point.z / voxel_size.z,
-    };
+                uint16_t voxel_pixel_x = static_cast<uint16_t>( centre_of_voxel_in_pix.x);
+                uint16_t voxel_pixel_y = static_cast<uint16_t>( centre_of_voxel_in_pix.y);
 
-    dim3 voxel{
-        static_cast<unsigned int>(floor( fractional_voxel.x )),
-        static_cast<unsigned int>(floor( fractional_voxel.y )),
-        static_cast<unsigned int>(floor( fractional_voxel.z ))
-    };
+                // Extract the depth to the surface at this point
+                uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
+                uint16_t surface_depth = depth_map[ voxel_image_index ];
 
-    bool bad_point = ( grid_point.x < -0.01) || ( grid_point.x > m_physical_size.x + 0.01 ) ||
-                     ( grid_point.y < -0.01) || ( grid_point.y > m_physical_size.y + 0.01 ) ||
-                     ( grid_point.z < -0.01) || ( grid_point.z > m_physical_size.z + 0.01 ) ;
+                // If the depth is valid
+                if( surface_depth > 0 ) {
+
+                    // Project depth entry to a vertex
+                    float3 surface_vertex = depth_to_vertex( surface_depth, voxel_pixel_x, voxel_pixel_y, kinv);
 
 
-    if( ! bad_point ) {
-        voxel.x = min( max( 0, voxel.x), m_size.x - 1 );
-        voxel.y = min( max( 0, voxel.y), m_size.y - 1 );
-        voxel.z = min( max( 0, voxel.z), m_size.z - 1 );
-    } else {
-        // Error point
-        voxel.x = voxel.y = voxel.z = INT_MAX;
+                    // First approach ot getting SDF is based on absolute difference in distance
+                    // float voxel_distance = sqrt( (centre_of_voxel_in_cam.x * centre_of_voxel_in_cam.x ) + (centre_of_voxel_in_cam.y * centre_of_voxel_in_cam.y ) + (centre_of_voxel_in_cam.z * centre_of_voxel_in_cam.z )  );
+                    //float surface_distance = sqrt( surface_vertex.x*surface_vertex.x + surface_vertex.y*surface_vertex.y + surface_vertex.z*surface_vertex.z);
+                    // float sdf = surface_distance - voxel_distance;
+
+
+                    // Alternatve approach is based on difference in Z coords only
+                    // Note that for RHS camera, we expect Z coords here to be -ve
+                    // So SDF is (-surface.z) - (-voxel.z)
+                    // which is voxel.z - surface.z hence inversion
+                    // We'd also expect that surface_vertex.z is the same as -ve depth
+                    float sdf = centre_of_voxel_in_cam.z - surface_vertex.z;
+
+                    // Truncate
+                    float tsdf;
+                    if( sdf > 0 ) {
+                        tsdf = min( 1.0, sdf / trunc_distance);
+                    } else {
+                        tsdf = max( -1.0, sdf / trunc_distance);
+                    }
+
+                    // Extract prior weight
+                    float prior_weight = m_weights[voxel_index];
+                    float current_weight = 1.0f;
+
+                    float prior_distance = m_voxels[voxel_index];
+
+                    float new_weight = min( prior_weight + current_weight, m_max_weight );
+                    float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
+
+                    m_weights[voxel_index] = new_weight;
+                    m_voxels[voxel_index] = new_distance; 
+                } // End of point in frustrum
+            } // Voxel depth <= 0
+
+            voxel_index++;
+        } // For all Xss
     }
-
-    return voxel;
 }
-
-/**
-* @retrun true if the given point is contained in this TSDF volume
-*/
-__device__ __forceinline__
-bool point_is_in_tsdf( const float3& m_offset, const float3& m_physical_size, const float3& point ) {
-    float3 gridmax { m_physical_size.x + m_offset.x,
-                     m_physical_size.y + m_offset.y,
-                     m_physical_size.z + m_offset.z};
-
-    bool is_in = (( point.x >= m_offset.x) && ( point.x <= gridmax.x) &&
-                  ( point.y >= m_offset.y) && ( point.y <= gridmax.y) &&
-                  ( point.z >= m_offset.z) && ( point.z <= gridmax.z));
-    return is_in;
-}
-
-
-__device__
-bool could_intersect( const float& m_offset, const float& m_physical_size, const float& origin, const float& ray_direction, float& t_near, float& t_far) {
-    bool could_intersect = true;
-
-    if(  ray_direction == 0 ) {
-        if( ( origin < m_offset ) || ( origin > (m_offset + m_physical_size ) ) ) {
-            could_intersect = false;
-        }
-    } else {
-        // compute intersection distance of the planes
-        float t1 = ( m_offset                   - origin ) / ray_direction;
-        float t2 = ( m_offset + m_physical_size - origin ) / ray_direction;
-
-        // If t1 > t2 swap (t1, t2) since t1 intersection with near plane
-        if( t1 > t2 ) {
-            float temp_t = t1;
-            t1 = t2;
-            t2 = temp_t;
-        }
-
-        // if t1 > t_near set t_near = t1 : We want largest t_near
-        if( t1 > t_near ) {
-            t_near = t1;
-        }
-
-        //If t2 < t_far set t_far="t2"  want smallest t_far
-        if( t2 < t_far ) {
-            t_far = t2;
-        }
-
-        // If Tnear > Tfar box is missed so return false
-        if( t_near > t_far ) {
-            could_intersect = false;
-        }
-
-
-        // If Tfar < 0 box is behind ray return false end
-        if( t_far < 0 ) {
-            could_intersect = false;
-        }
-    }
-
-    return could_intersect;
-}
-
-/**
-* Find the point where the given ray first intersects the TSDF space in global coordinates
-* @param origin The source of the ray
-* @param ray_direction A unit vector in the direction of the ray
-* @param entry_point The point at which the ray enters the TSDF which may be the origin
-* @param t The ray parameter for the intersection; entry_point = origin + (t * ray_direction)
-* @return true if the ray intersects the TSDF otherwise false
-*/
-__device__
-bool is_intersected_by_ray( const float3& m_offset, const float3& m_physical_size, const float3& origin, const float3& ray_direction, float3& entry_point, float& t )  {
-    bool intersects = false;
-
-
-    // Check for the case where the origin is inside the voxel grid
-    if( point_is_in_tsdf(m_offset, m_physical_size, origin) ) {
-        intersects = true;
-        entry_point = origin;
-        t = 0.0f;
-    } else {
-
-        float t_near = FLT_MIN;
-        float t_far = FLT_MAX;
-
-        // Check X
-        if ( could_intersect( m_offset.x, m_physical_size.x, origin.x, ray_direction.x, t_near, t_far ) &&
-                could_intersect( m_offset.y, m_physical_size.y, origin.y, ray_direction.y, t_near, t_far ) &&
-                could_intersect( m_offset.z, m_physical_size.z, origin.z, ray_direction.z, t_near, t_far )  ) {
-            intersects = true;
-            t = t_near;
-            entry_point.x = origin.x + ( t * ray_direction.x);
-            entry_point.y = origin.y + ( t * ray_direction.y);
-            entry_point.z = origin.z + ( t * ray_direction.z);
-        }
-    }
-
-    return intersects;
-}
-
-
-__device__
-/**
-* Clear the voxel and weight data
-*/
-void clear( ) {
-}
-
-/**
-* Get the upper and lower bounding voxels for a trilinear interpolation at the given point in
-* global space.
-* @param point The point in global coordinates
-* @param lower_bound The voxel forming the lower, left, near bound
-* @param upper_bound The voxel forming the upper, right, far bound
-*/
-__device__
-void get_interpolation_bounds( const float3& m_physical_size, const int3& m_size, const float3& voxel_size,  const float3& point, const float3& offset, dim3& lower_bounds, dim3 & upper_bounds ) {
-    // Obtain current voxel
-    dim3 current_voxel = point_to_voxel(m_physical_size, m_size, voxel_size,  point, offset );
-
-
-    // And central point
-    float3 voxel_centre = centre_of_voxel_at( m_physical_size, offset, current_voxel.x, current_voxel.y, current_voxel.z );
-
-    // For each coordinate axis, determine whether point is below or above and
-    // select the appropriate bounds
-    if( point.x < voxel_centre.x ) {
-        upper_bounds.x = current_voxel.x;
-        lower_bounds.x = max( 0, current_voxel.x - 1);
-    } else {
-        upper_bounds.x = min( m_size.x - 1, current_voxel.x + 1);
-        lower_bounds.x = current_voxel.x;
-    }
-
-    if( point.y < voxel_centre.y ) {
-        upper_bounds.y = current_voxel.y;
-        lower_bounds.y = max( 0, current_voxel.y - 1);
-    } else {
-        upper_bounds.y = min( m_size.y - 1, current_voxel.y + 1);
-        lower_bounds.y = current_voxel.y;
-    }
-
-    if( point.z < voxel_centre.z ) {
-        upper_bounds.z = current_voxel.z;
-        lower_bounds.z = max( 0, current_voxel.z - 1);
-    } else {
-        upper_bounds.z = min( m_size.z - 1, current_voxel.z + 1);
-        lower_bounds.z = current_voxel.z;
-    }
-
-}
-
-/**
-* Trilinearly interpolate the point p in the voxel grid using the tsdf values
-* of the surrounding voxels. At edges we assume that the voxel values continue
-* @param point the point
-* @return the interpolated value
-*/
-__device__
-float trilinearly_interpolate_sdf_at( const float3& point ) {
-    return 0.0f;
-}
-
-/**
-* Return a pointer to the TSDF data ordered Slice,Col,Row major
-* @return the data
-*/
-__device__
-const float * data()  {
-    return NULL;
-}
-
-

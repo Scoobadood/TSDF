@@ -61,7 +61,7 @@ PngWrapper * scene_as_png(uint16_t width, uint16_t height,
             Eigen::Vector3f n {normals(0,idx), normals(1,idx), normals(2,idx)};
 
             // Compute shade
-            float shade = std::fmax( 0.0, r.dot( n ) );
+            float shade = std::fmax( 0.0, n.dot( r ) );
             shade = ambient_coefficient + ( diffuse_coefficient * shade );
 
             image[idx] = std::floor( shade * 255  );

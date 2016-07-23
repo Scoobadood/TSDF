@@ -39,3 +39,6 @@ DerivedData/
 bin/
 obj/
 .objs/
+
+#data
+cpu_tsdf_128.txt

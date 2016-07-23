@@ -1,10 +1,17 @@
+#ifndef TSDF_BLOCK_LOADER_H
+#define TSDF_BLOCK_LOADER_H
+
 #include "../TSDFVolume.hpp"
 #include "../Utilities/FileUtilities.hpp"
 
-class TSDFVolume;
+
+
 
 namespace phd {
+class TSDFVolume;
+
 class BlockTSDFLoader {
+public:
     BlockTSDFLoader( );
     ~BlockTSDFLoader();
 
@@ -41,3 +48,4 @@ private:
 };
 }
 
+#endif
