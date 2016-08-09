@@ -49,6 +49,15 @@
 					<Add library="libpng" />
 				</Linker>
 			</Target>
+			<Target title="Warpfield">
+				<Option output="bin/Warpfield" prefix_auto="1" extension_auto="1" />
+				<Option type="0" />
+				<Option compiler="nvidia_nvcc_compiler" />
+				<Compiler>
+					<Add option="-Wno-unknown-pragmas" />
+					<Add directory="/usr/include/eigen3" />
+				</Compiler>
+			</Target>
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
@@ -155,51 +164,192 @@
 		<Unit filename="GoogleTest/src/gtest_main.cc">
 			<Option target="Test" />
 		</Unit>
-		<Unit filename="KinFu/BilateralFilter.cpp" />
-		<Unit filename="KinFu/BilateralFilter.hpp" />
-		<Unit filename="KinFu/CPU/CPURaycaster.cpp" />
-		<Unit filename="KinFu/CPU/CPURaycaster.hpp" />
-		<Unit filename="KinFu/CPU/CPUTSDFVolume.cpp" />
-		<Unit filename="KinFu/CPU/CPUTSDFVolume.hpp" />
-		<Unit filename="KinFu/Camera.cpp" />
-		<Unit filename="KinFu/Camera.hpp" />
-		<Unit filename="KinFu/GPU/GPURaycaster.cpp" />
-		<Unit filename="KinFu/GPU/GPURaycaster.hpp" />
+		<Unit filename="KinFu/BilateralFilter.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/BilateralFilter.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/CPU/CPURaycaster.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/CPU/CPURaycaster.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/CPU/CPUTSDFVolume.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/CPU/CPUTSDFVolume.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Camera.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Camera.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/GPU/GPURaycaster.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/GPU/GPURaycaster.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
 		<Unit filename="KinFu/GPU/GPUTSDFVolume.cu">
 			<Option compile="1" />
 			<Option link="1" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
 		</Unit>
-		<Unit filename="KinFu/GPU/GPUTSDFVolume.cuh" />
-		<Unit filename="KinFu/GPU/GPUTSDFVolume.hpp" />
+		<Unit filename="KinFu/GPU/GPUTSDFVolume.cuh">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/GPU/GPUTSDFVolume.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
 		<Unit filename="KinFu/GPU/Raycaster_kernel.cu">
 			<Option compile="1" />
 			<Option link="1" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
 		</Unit>
-		<Unit filename="KinFu/GPU/Raycaster_kernel.hpp" />
+		<Unit filename="KinFu/GPU/Raycaster_kernel.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
 		<Unit filename="KinFu/GPU/TSDF_kernel.cu">
 			<Option compile="1" />
 			<Option link="1" />
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
 		</Unit>
-		<Unit filename="KinFu/GPU/TSDF_kernel.hpp" />
-		<Unit filename="KinFu/GPU/cu_common.hpp" />
-		<Unit filename="KinFu/TSDFVolume.cpp" />
-		<Unit filename="KinFu/TSDFVolume.hpp" />
-		<Unit filename="KinFu/Utilities/Definitions.cpp" />
-		<Unit filename="KinFu/Utilities/Definitions.hpp" />
-		<Unit filename="KinFu/Utilities/DepthMapUtilities.cpp" />
-		<Unit filename="KinFu/Utilities/DepthMapUtilities.hpp" />
-		<Unit filename="KinFu/Utilities/FileUtilities.cpp" />
-		<Unit filename="KinFu/Utilities/FileUtilities.hpp" />
-		<Unit filename="KinFu/Utilities/PgmUtilities.cpp" />
-		<Unit filename="KinFu/Utilities/PgmUtilities.hpp" />
-		<Unit filename="KinFu/Utilities/PngUtilities.cpp" />
-		<Unit filename="KinFu/Utilities/PngUtilities.hpp" />
-		<Unit filename="KinFu/Utilities/PngWrapper.cpp" />
-		<Unit filename="KinFu/Utilities/PngWrapper.hpp" />
-		<Unit filename="KinFu/Utilities/RenderUtilities.cpp" />
-		<Unit filename="KinFu/Utilities/RenderUtilities.hpp" />
-		<Unit filename="KinFu/Utilities/TSDFLoader.cpp" />
-		<Unit filename="KinFu/Utilities/TSDFLoader.hpp" />
+		<Unit filename="KinFu/GPU/TSDF_kernel.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/GPU/cu_common.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/TSDFVolume.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/TSDFVolume.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/Definitions.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/Definitions.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/DepthMapUtilities.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/DepthMapUtilities.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/FileUtilities.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/FileUtilities.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/PgmUtilities.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/PgmUtilities.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/PngUtilities.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/PngUtilities.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/PngWrapper.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/PngWrapper.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/RenderUtilities.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/RenderUtilities.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/TSDFLoader.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
+		<Unit filename="KinFu/Utilities/TSDFLoader.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Test" />
+		</Unit>
 		<Unit filename="KinFu/main.cpp">
 			<Option target="Debug" />
 			<Option target="Release" />
@@ -224,6 +374,51 @@
 		</Unit>
 		<Unit filename="TestTSDF/Test_TSDF_RayCast.cpp">
 			<Option target="Test" />
+		</Unit>
+		<Unit filename="WarpField/DeformationNode.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/DeformationNode.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/DualQuaternion.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/DualQuaternion.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/Quaternion.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/Quaternion.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/WarpField.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/WarpField.hpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
+		</Unit>
+		<Unit filename="WarpField/main.cpp">
+			<Option target="Debug" />
+			<Option target="Release" />
+			<Option target="Warpfield" />
 		</Unit>
 		<Extensions>
 			<code_completion />

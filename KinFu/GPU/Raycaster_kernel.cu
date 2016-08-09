@@ -2,23 +2,9 @@
 #include "math_constants.h"
 
 #include "cu_common.hpp"
+#include "TSDF_utilities.hpp"
 
 #include <iomanip>
-
-
-// We make this column major in order to mimic default Eigen settings
-typedef struct {
-    float m11;
-    float m21;
-    float m31;
-    float m12;
-    float m22;
-    float m32;
-    float m13;
-    float m23;
-    float m33;
-} Mat33;
-
 
 
 /**
@@ -133,43 +119,6 @@ int3 voxel_for_point( const float3 point, const float3 voxel_size ) {
     return voxel;
 }
 
-
-
-/**
- * Compute the centre point of a voxel in voxel grid coordinates
- * @param voxel The voxel coordinate
- * @pram voxe_size The size of an individual voxel
- * @return The coordinate of the centre of the voxel
- */
-__device__
-float3 voxel_centre(const int3 voxel, const float3 voxel_size) {
-    float3 centre {
-        ((voxel.x + 0.5f) * voxel_size.x),
-        ((voxel.y + 0.5f) * voxel_size.y),
-        ((voxel.z + 0.5f) * voxel_size.z)
-    };
-    return centre;
-}
-
-/**
- * @param x The voxel x coord
- * @param y The voxel y coord
- * @param z The voxel z coord
- * @param tsdf_values The values
- * @param voxel_grid_size The size of the voxel grid
- * @return the value at voxel (x,y,z)
- */
-__device__
-float tsdf_value_at( uint16_t x, uint16_t y, uint16_t z, const float * const tsdf_values, const dim3 voxel_grid_size ) {
-    // Force out of bounds coords back in
-    x = min( max(x,0), voxel_grid_size.x-1);
-    y = min( max(y,0), voxel_grid_size.y-1);
-    z = min( max(z,0), voxel_grid_size.z-1);
-
-    size_t idx = voxel_grid_size.x * voxel_grid_size.y * z + voxel_grid_size.x * y + x;
-    return tsdf_values[idx];
-}
-
 /**
  * Perform trilinear interpolation of the TSDF value at a given point in volume space
  * @param point The point (0,0,0) -> (max_x, max_y, max_z)
@@ -191,7 +140,7 @@ float trilinearly_interpolate( const float3 point,
     }
 
     // Get the centre of the voxel
-    float3 v_centre = voxel_centre( voxel, voxel_size );
+    float3 v_centre = centre_of_voxel_at( voxel.x, voxel.y, voxel.z, voxel_size );
 
     // Set up the lower bound for trilinear interpolation
     int3 lower;
@@ -200,7 +149,7 @@ float trilinearly_interpolate( const float3 point,
     lower.z = (point.z < v_centre.z) ? voxel.z - 1 : voxel.z;
 
     // Compute u,v,w
-    float3 lower_centre = voxel_centre( lower, voxel_size );
+    float3 lower_centre = centre_of_voxel_at( lower.x, lower.y, lower.z, voxel_size );
     float3 uvw = f3_sub( point, lower_centre );
     uvw = f3_div_elem( uvw, voxel_size );
     float u = uvw.x;
@@ -472,7 +421,7 @@ void compute_normals( uint16_t width, uint16_t height, const float3 * vertices, 
     int imx = threadIdx.x + blockIdx.x * blockDim.x;
     int imy = threadIdx.y + blockIdx.y * blockDim.y;
 
-    // Terminat eearly if the index is out of bounds
+    // Terminate eearly if the index is out of bounds
     if ( imx >= width || imy >= height ) {
         return;
     }
@@ -566,16 +515,6 @@ void dump_matrix( const std::string& title, const Mat33& mat ) {
 
     std::cout.copyfmt(oldState);
 }
-
-__host__
-void check_cuda_error( const std::string& message, const cudaError_t err ) {
-    if( err != cudaSuccess ) {
-        std::cout << message << err << std::endl;
-        std::cout << cudaGetErrorString( err ) << std::endl;
-        exit( -1 );
-    }
-}
-
 
 
 /**

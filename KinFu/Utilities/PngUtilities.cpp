@@ -15,6 +15,8 @@ uint16_t * load_png_from_file( const std::string file_name, uint32_t & width, ui
     width = 0;
     height = 0;
 
+    png_structp png_ptr = NULL;
+    png_infop info_ptr = NULL;
     FILE *fp = std::fopen( file_name.c_str(), "rb");
     if (fp) {
 
@@ -25,15 +27,15 @@ uint16_t * load_png_from_file( const std::string file_name, uint32_t & width, ui
             if ( is_png ) {
                 // Setup structs for reading data
 
-                png_structp png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+                png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 
                 if (png_ptr) {
 
-                    png_infop info_ptr = png_create_info_struct(png_ptr);
+                    info_ptr = png_create_info_struct(png_ptr);
                     if (info_ptr) {
 
-                        png_infop end_info = png_create_info_struct(png_ptr);
-                        if (end_info) {
+                        // png_infop end_info = png_create_info_struct(png_ptr);
+                        // if (end_info) {
 
                             png_init_io(png_ptr, fp);
 
@@ -66,20 +68,20 @@ uint16_t * load_png_from_file( const std::string file_name, uint32_t & width, ui
                             } else {
                                 std::cerr << "Expected 16bpp greyscale file" << std::endl;
                             }
-                            png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
+                            png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
 
-                        } else {
-                            png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-                            std::cerr << "Problem reading file " << file_name << std::endl;
-                        }
+                        // } else {
+                        //     png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+                        //     std::cerr << "Problem reading file " << file_name << std::endl;
+                        // }
                     } else {
                         png_destroy_read_struct(&png_ptr,(png_infopp)NULL, (png_infopp)NULL);
-                        std::cerr << "Problem reading file " << file_name << std::endl;
+                        std::cerr << "Problem reading file (out of memory)" << file_name << std::endl;
                     }
 
 
                 } else {
-                    std::cerr << "Problem reading file " << file_name << std::endl;
+                    std::cerr << "Problem reading file (out of memory)" << file_name << std::endl;
                 }
             } else {
                 std::cerr << "File " << file_name << "is not a PNG" << std::endl;
@@ -90,6 +92,10 @@ uint16_t * load_png_from_file( const std::string file_name, uint32_t & width, ui
     } else {
         std::cerr << "Couldn't open file " << file_name << std::endl;
     }
+
+    // Free memory and structures used
+    png_free_data( png_ptr, info_ptr, PNG_FREE_ALL, -1);
+
 
     if( fp ) fclose(fp);
     return pixel_data;

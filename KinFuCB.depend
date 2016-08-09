@@ -7,13 +7,13 @@
 
 1464857008 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/BilateralFilter.hpp
 
-1467169795 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Camera.cpp
+1467331990 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Camera.cpp
 	<cmath>
 	<iostream>
 	"Camera.hpp"
 	"Utilities/Definitions.hpp"
 
-1467169795 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Camera.hpp
+1467331931 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Camera.hpp
 	<Eigen/Dense>
 	<deque>
 	<cstdint>
@@ -729,7 +729,7 @@
 
 1466156743 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/FileUtilities.hpp
 
-1467169795 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/main.cpp
+1467325224 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/main.cpp
 	<iostream>
 	<cmath>
 	"TSDFVolume.hpp"
@@ -864,9 +864,8 @@
 1467169795 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Utilities/TSDFLoader.hpp
 	"../TSDFVolume.hpp"
 
-1467169795 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Utilities/FileUtilities.cpp
+1467283595 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Utilities/FileUtilities.cpp
 	<fstream>
-	<functional>
 	"FileUtilities.hpp"
 
 1467283600 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/Utilities/FileUtilities.hpp
@@ -877,7 +876,7 @@
 	"TSDFLoader.hpp"
 	"FileUtilities.hpp"
 
-1467169795 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/GPU/GPUTSDFVolume.cu
+1467353291 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/GPU/GPUTSDFVolume.cu
 	"cu_common.hpp"
 	"GPUTSDFVolume.hpp"
 	"GPURaycaster.hpp"
@@ -892,7 +891,7 @@
 	"../TSDFVolume.hpp"
 	"vector_types.h"
 
-1467169795 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/GPU/TSDF_kernel.hpp
+1467354088 /mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/GPU/TSDF_kernel.hpp
 	<cstdint>
 
 1467169795 source:/mnt/hgfs/PhD/Code/KinFu/KinFu/KinFu/GPU/TSDF_kernel.cu

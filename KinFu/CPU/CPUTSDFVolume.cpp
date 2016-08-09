@@ -22,11 +22,11 @@ namespace phd {
 
 CPUTSDFVolume::~CPUTSDFVolume() {
     std::cout << "CPUTSDFVolume::dtor called. On entry m_voxels:= " << m_voxels << std::endl;
-    if( m_voxels ) {
+    if ( m_voxels ) {
         delete [] m_voxels;
         m_voxels = 0;
     }
-    if( m_weights ) {
+    if ( m_weights ) {
         delete [] m_weights;
         m_weights = 0;
     }
@@ -42,7 +42,7 @@ CPUTSDFVolume::CPUTSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3
 
     m_voxels = NULL;
     m_weights = NULL;
-    if( ( size.x() > 0 ) && ( size.y() > 0 ) && ( size.z() > 0 ) && ( physical_size.x() > 0 ) && ( physical_size.y() > 0 ) && ( physical_size.z() > 0 ) ) {
+    if ( ( size.x() > 0 ) && ( size.y() > 0 ) && ( size.z() > 0 ) && ( physical_size.x() > 0 ) && ( physical_size.y() > 0 ) && ( physical_size.z() > 0 ) ) {
         set_size( size.x(), size.y(), size.z() , physical_size.x(), physical_size.y(), physical_size.z() );
     } else {
         throw std::invalid_argument( "Attempt to construct CPUTSDFVolume with zero or negative size" );
@@ -65,15 +65,15 @@ CPUTSDFVolume::CPUTSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3
 void CPUTSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z) {
     using namespace Eigen;
     std::cout << "CPUTSDFVolume::set_size called. On entry m_voxels:= " << m_voxels << std::endl;
-    if( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
+    if ( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
 
 
         // Remove existing data
-        if( m_voxels ) {
+        if ( m_voxels ) {
             delete [] m_voxels;
             m_voxels = 0;
         }
-        if( m_weights ) {
+        if ( m_weights ) {
             delete [] m_weights;
             m_weights = 0;
         }
@@ -98,11 +98,11 @@ void CPUTSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t vol
 
         // Create the volume storage
         m_voxels  = new float[volume_x * volume_y * volume_z];
-        if( !m_voxels) {
+        if ( !m_voxels) {
             throw std::bad_alloc( );
         }
         m_weights = new float[volume_x * volume_y * volume_z];
-        if( !m_weights ) {
+        if ( !m_weights ) {
             delete [] m_voxels;
             throw std::bad_alloc( );
         }
@@ -129,7 +129,7 @@ void CPUTSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t vol
  * @throw std::invalid_argument if voxel coords are out of range
  */
 void CPUTSDFVolume::voxel_bounds( const Eigen::Vector3i & voxel, Eigen::Vector3f & lower_bounds, Eigen::Vector3f & upper_bounds ) const {
-    if( contains_voxel( voxel ) ) {
+    if ( contains_voxel( voxel ) ) {
         lower_bounds.x() = voxel.x() * m_voxel_size.x();
         upper_bounds.x() = lower_bounds.x() + m_voxel_size.x();
 
@@ -191,15 +191,15 @@ Eigen::Vector3i CPUTSDFVolume::point_to_voxel( const Eigen::Vector3f & point) co
     voxel.z() = std::floor( fractional_voxel.z() );
 
     bool bad_point = false;
-    for( int i=0; i<3; i++ ) {
-        if( ( grid_point[i] < -0.01) || ( grid_point[i] > m_physical_size[i] + 0.01 ) ) {
+    for ( int i = 0; i < 3; i++ ) {
+        if ( ( grid_point[i] < -0.01) || ( grid_point[i] > m_physical_size[i] + 0.01 ) ) {
             bad_point = true;
             break;
         }
     }
 
-    if( ! bad_point ) {
-        for( int i=0; i<3; i++ ) {
+    if ( ! bad_point ) {
+        for ( int i = 0; i < 3; i++ ) {
             voxel [i] = std::min( std::max( 0, voxel[i]), m_size[i] - 1);
         }
     } else {
@@ -281,7 +281,7 @@ bool CPUTSDFVolume::point_is_in_tsdf( const Eigen::Vector3f & point ) const {
  */
 bool CPUTSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const Eigen::Vector3f & ray_direction, Eigen::Vector3f & entry_point, float & t ) const {
     // Check for the case where the origin is inside the voxel grid
-    if( point_is_in_tsdf(origin) ) {
+    if ( point_is_in_tsdf(origin) ) {
         entry_point = origin;
         t = 0.0f;
         return true;
@@ -294,9 +294,9 @@ bool CPUTSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const
 
     bool intersects = true;
 
-    for ( int dim=0; dim<3; dim++ ) {
-        if(  ray_direction[dim] == 0 ) {
-            if( ( origin[dim] < m_offset[dim] ) || ( origin[dim] > (m_offset[dim] + m_physical_size[dim] ) ) ) {
+    for ( int dim = 0; dim < 3; dim++ ) {
+        if (  ray_direction[dim] == 0 ) {
+            if ( ( origin[dim] < m_offset[dim] ) || ( origin[dim] > (m_offset[dim] + m_physical_size[dim] ) ) ) {
                 intersects = false;
                 break;
             }
@@ -306,31 +306,31 @@ bool CPUTSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const
             float t2 = ( m_offset[dim] + m_physical_size[dim] - origin[dim] ) / ray_direction[dim];
 
             // If t1 > t2 swap (t1, t2) since t1 intersection with near plane
-            if( t1 > t2 ) {
+            if ( t1 > t2 ) {
                 float temp_t = t1;
                 t1 = t2;
                 t2 = temp_t;
             }
 
             // if t1 > t_near set t_near = t1 : We want largest t_near
-            if( t1 > t_near ) {
+            if ( t1 > t_near ) {
                 t_near = t1;
             }
 
             //If t2 < t_far set t_far="t2"  want smallest t_far
-            if( t2 < t_far ) {
+            if ( t2 < t_far ) {
                 t_far = t2;
             }
 
             // If Tnear > Tfar box is missed so return false
-            if( t_near > t_far ) {
+            if ( t_near > t_far ) {
                 intersects = false;
                 break;
             }
 
 
             // If Tfar < 0 box is behind ray return false end
-            if( t_far < 0 ) {
+            if ( t_far < 0 ) {
                 intersects = false;
                 break;
             }
@@ -350,7 +350,7 @@ bool CPUTSDFVolume::is_intersected_by_ray( const Eigen::Vector3f & origin, const
  */
 void CPUTSDFVolume::clear( ) {
     size_t maxIdx = m_size[0] * m_size[1] * m_size[2];
-    for( size_t idx = 0; idx < maxIdx; idx ++ ) {
+    for ( size_t idx = 0; idx < maxIdx; idx ++ ) {
         m_voxels[idx] =  0.0f;
         m_weights[idx] = 0.0f;
     }
@@ -374,7 +374,7 @@ float CPUTSDFVolume::distance( int x, int y, int z ) const {
  * @return The distance to the surface at that voxel
  */
 void CPUTSDFVolume::set_distance( int x, int y, int z, float distance ) {
-    size_t idx =index( x, y, z );
+    size_t idx = index( x, y, z );
     m_voxels[ idx ] = distance;
 }
 
@@ -429,8 +429,8 @@ void CPUTSDFVolume::get_interpolation_bounds( const Eigen::Vector3f & point, Eig
 
     // For each coordinate axis, determine whether point is below or above and
     // select the appropriate bounds
-    for( int i=0; i<3; i++ ) {
-        if( point[i] < voxel_centre[i] ) {
+    for ( int i = 0; i < 3; i++ ) {
+        if ( point[i] < voxel_centre[i] ) {
             // Point is left/below/nearer so UPPER bound in this direction is current_voxel
             upper_bounds[i] = current_voxel[i];
             lower_bounds[i] = std::max( 0, current_voxel[i] - 1 );
@@ -505,20 +505,20 @@ const float * CPUTSDFVolume::data() const {
     return m_voxels;
 }
 
-    /**
-     * Set the data
-     */
-    void CPUTSDFVolume::set_distance_data( const float * distance_data ) {
-        size_t data_size = m_size[0] * m_size[1] * m_size[2];
-        memcpy( m_voxels, distance_data, data_size );
-    }
-    /**
-     * Set the data
-     */
-    void CPUTSDFVolume::set_weight_data( const float * weight_data ) {
-        size_t data_size = m_size[0] * m_size[1] * m_size[2];
-        memcpy( m_weights, weight_data, data_size );
-    }
+/**
+ * Set the data
+ */
+void CPUTSDFVolume::set_distance_data( const float * distance_data ) {
+    size_t data_size = m_size[0] * m_size[1] * m_size[2] * sizeof( float );
+    memcpy( m_voxels, distance_data, data_size );
+}
+/**
+ * Set the data
+ */
+void CPUTSDFVolume::set_weight_data( const float * weight_data ) {
+    size_t data_size = m_size[0] * m_size[1] * m_size[2] * sizeof( float );
+    memcpy( m_weights, weight_data, data_size );
+}
 
 
 #pragma mark - Integrate new depth data
@@ -540,9 +540,9 @@ void CPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
     camera.depth_image_to_vertices_and_normals(depth_map, width, height, vertices, normals);
 
     // For each voxel in the space
-    for( int vy=0; vy<m_size.y(); vy++ ) {
-        for( int vx=0; vx<m_size.x(); vx++ ) {
-            for( int vz=0; vz<m_size.z(); vz++ ) {
+    for ( int vy = 0; vy < m_size.y(); vy++ ) {
+        for ( int vx = 0; vx < m_size.x(); vx++ ) {
+            for ( int vz = 0; vz < m_size.z(); vz++ ) {
 
 
                 // Work out where in the image, the centre of this voxel projects
@@ -553,14 +553,14 @@ void CPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
                 uint16_t voxel_pixel_y = cov_in_pixels.y();
 
                 // if this point is in the camera view frustum...
-                if( ( voxel_pixel_x >= 0 && voxel_pixel_x < width ) && ( voxel_pixel_y >= 0 && voxel_pixel_y < height) ) {
+                if ( ( voxel_pixel_x >= 0 && voxel_pixel_x < width ) && ( voxel_pixel_y >= 0 && voxel_pixel_y < height) ) {
                     uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
 
                     // Extract the depth to the surface at this point
                     uint16_t surface_depth = depth_map[ voxel_image_index ];
 
                     // If the depth is valid
-                    if( surface_depth > 0 ) {
+                    if ( surface_depth > 0 ) {
 
                         // Get the voxel centre in cam coords
                         Vector3f voxel_centre_in_cam = camera.world_to_camera(centre_of_voxel);
@@ -574,7 +574,7 @@ void CPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
 
                         // Truncate
                         float tsdf;
-                        if( sdf > 0 ) {
+                        if ( sdf > 0 ) {
                             tsdf = std::fminf( 1.0, sdf / m_truncation_distance);
                         } else {
                             tsdf = std::fmaxf( -1.0, sdf / m_truncation_distance);
@@ -608,36 +608,45 @@ void CPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
 bool CPUTSDFVolume::save_to_file( const std::string & file_name) const {
     using namespace std;
 
+    bool success = false;
+
     // Open file
-    ofstream ofs { file_name };
-    ofs << fixed << setprecision(3);
+    ofstream ofs;
+    ofs.open( file_name, std::ios::out);
+    if ( ofs.is_open() ) {
+        ofs << fixed << setprecision(3);
 
-    // Write Dimensions
-    ofs << "voxel size = " << m_size.x() << " " << m_size.y() << " " << m_size.z() << std::endl;
-    ofs << "space size = " << m_physical_size.x() << " " << m_physical_size.y() << " " << m_physical_size.z() << std::endl;
+        // Write Dimensions
+        ofs << "voxel size = " << m_size.x() << " " << m_size.y() << " " << m_size.z() << std::endl;
+        ofs << "space size = " << m_physical_size.x() << " " << m_physical_size.y() << " " << m_physical_size.z() << std::endl;
 
-    // Write data
-    for( uint16_t y = 0; y< m_size.y() ; y++ ) {
-        for( uint16_t x = 0; x< m_size.x() ; x++ ) {
-            ofs << std::endl << "# y "<< y << ", x " << x << " tsdf" << std::endl;
+        // Write data
+        for ( uint16_t y = 0; y < m_size.y() ; y++ ) {
+            for ( uint16_t x = 0; x < m_size.x() ; x++ ) {
+                ofs << std::endl << "# y " << y << ", x " << x << " tsdf" << std::endl;
 
-            for( uint16_t z = 0; z< m_size.z() ; z++ ) {
-                size_t idx = index( x, y, z ) ;
+                for ( uint16_t z = 0; z < m_size.z() ; z++ ) {
+                    uint64_t idx = index( x, y, z ) ;
 
-                ofs << m_voxels[ idx ] << " ";
-            }
+                    ofs << m_voxels[idx] << " ";
+                }
 
-            ofs << std::endl << "# y "<< y << ", x " << x << " weights" << std::endl;
-            for( uint16_t z = 0; z< m_size.z() ; z++ ) {
-                size_t idx = index( x, y, z ) ;
-                ofs  << m_weights[ idx ] << " ";
+                ofs << std::endl << "# y " << y << ", x " << x << " weights" << std::endl;
+                for ( uint16_t z = 0; z < m_size.z() ; z++ ) {
+                    uint64_t idx = index( x, y, z ) ;
+                    ofs  << m_weights[ idx ] << " ";
+                }
             }
         }
+
+        // Close file
+        ofs.close();
+        success = true;
+    } else {
+        std::cout << "Couldn't save TSDF, error opening file for write " << file_name << std::endl;
     }
 
-    // Close file
-    ofs.close();
-    return true;
+    return success;
 }
 
 
@@ -668,4 +677,3 @@ void CPUTSDFVolume::raycast( uint16_t width, uint16_t height,
 }
 
 }
-

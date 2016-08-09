@@ -82,6 +82,12 @@ public:
     const Eigen::Matrix4f & pose( ) const;
 
     /**
+    * @return the inverse pose of the camera as a 4x4 matrix
+    */
+    const Eigen::Matrix4f & inverse_pose( ) const;
+
+
+    /**
      * @param The new pose of the camera as a 4x4 matrix
      */
     void set_pose( const Eigen::Matrix4f & pose );

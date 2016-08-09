@@ -18,7 +18,20 @@
 namespace phd {
 
 GPUTSDFVolume::~GPUTSDFVolume() {
-    std::cout << "TSDFVolume::dtor called. On entry m_voxels:= " << m_voxels << std::endl;
+    std::cout << "TSDFVolume::dtor called." << std::endl;
+
+         // Remove existing data
+        if( m_voxels ) {
+            cudaFree( m_voxels ) ;
+            m_voxels = 0;
+        }
+        if( m_weights ) {
+            cudaFree( m_weights );
+            m_weights = 0;
+        }
+        m_size = dim3{0,0,0};
+        m_physical_size = float3{ 0.0f, 0.0f, 0.0f};
+        m_pvoxel_size = float3{ 0.0f, 0.0f, 0.0f};
 }
 
 /**
@@ -198,11 +211,11 @@ void GPUTSDFVolume::set_weight( int x, int y, int z, float weight ) {
 }
 
 void GPUTSDFVolume::set_distance_data( const float * distance_data ) {
-        size_t data_size = m_size.x * m_size.y * m_size.z;
+        size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
         cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
 }
 void GPUTSDFVolume::set_weight_data( const float * weight_data ) {
-        size_t data_size = m_size.x * m_size.y * m_size.z;
+        size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
         cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
 }
 
@@ -231,17 +244,41 @@ void GPUTSDFVolume::clear( ) {
 __host__
 void GPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
     using namespace Eigen;
+
     std::cout << "Integrate" << std::endl;
 
-    // Call the kernel
-    dim3 block( 32, 32 );
-    dim3 grid ( divUp( width, block.x ), divUp( height, block.y ) );
+    // Construct device type parameters for integration
+    Mat44 inv_pose;
+    memcpy( &inv_pose, camera.inverse_pose().data(), 16 * sizeof( float ) );
 
-    Mat44 pose;
-    memcpy( &pose, camera.pose().data(), 16 * sizeof( float ) );
+    Mat33 k;
+    memcpy( &k, camera.k().data(), 9 * sizeof( float ) );
+
+    Mat33 kinv;
+    memcpy( &kinv, camera.kinv().data(), 9 * sizeof( float ) );
+
+    // Copy depth map data to device
+    uint16_t * d_depth_map;
+    size_t data_size = width * height * sizeof( uint16_t);
+    cudaError_t err = cudaMalloc( &d_depth_map, data_size );
+    if( err == cudaSuccess) {
 
 
-    integrate_kernel<<<grid, block>>>( m_voxels, m_size, m_physical_size, m_offset, pose, width, height, depth_map);
+        err = cudaMemcpy( d_depth_map, depth_map, data_size, cudaMemcpyHostToDevice );
+        assert( err == cudaSuccess );
+
+        // Call the kernel
+        dim3 block( 1, 32, 32 );
+        dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
+        integrate_kernel<<<grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
+        // Wait for kernel to finish
+        cudaDeviceSynchronize( );
+
+        // Now delete data
+        cudaFree( d_depth_map );
+    } else {
+        std::cout << "Couldn't allocate storage for depth map" << std::endl;
+    }
 }
 
 #pragma mark - Import/Export
@@ -255,36 +292,68 @@ void GPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
 bool GPUTSDFVolume::save_to_file( const std::string & file_name) const {
     using namespace std;
 
-    // Open file
-    ofstream ofs { file_name };
-    ofs << fixed << setprecision(3);
+    bool success = false;
 
-    // Write Dimensions
-    ofs << "voxel size = " << m_size.x << " " << m_size.y << " " << m_size.z << std::endl;
-    ofs << "space size = " << m_physical_size.x << " " << m_physical_size.y << " " << m_physical_size.z << std::endl;
+    // Copy to local memory
+    float * host_voxels;
+    float * host_weights;
 
-    // Write data
-    for( uint16_t y = 0; y< m_size.y ; y++ ) {
-        for( uint16_t x = 0; x< m_size.x ; x++ ) {
-            ofs << std::endl << "# y "<< y << ", x " << x << " tsdf" << std::endl;
+    size_t num_voxels = m_size.x * m_size.y * m_size.z;
 
-            for( uint16_t z = 0; z< m_size.z ; z++ ) {
-                size_t idx = index( x, y, z ) ;
+    host_voxels = new float[ num_voxels ];
+    if ( host_voxels ) {
+        host_weights = new float[ num_voxels ];
+        if ( host_weights) {
 
-                ofs << m_voxels[ idx ] << " ";
+            // Copy data from card into local memeory
+            cudaMemcpy( host_voxels, m_voxels, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
+            cudaMemcpy( host_weights, m_weights, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
+
+
+
+            // Open file
+            ofstream ofs { file_name };
+            ofs << fixed << setprecision(3);
+
+            // Write Dimensions
+            ofs << "voxel size = " << m_size.x << " " << m_size.y << " " << m_size.z << std::endl;
+            ofs << "space size = " << m_physical_size.x << " " << m_physical_size.y << " " << m_physical_size.z << std::endl;
+
+            // Write data
+            for( uint16_t y = 0; y< m_size.y ; y++ ) {
+                for( uint16_t x = 0; x< m_size.x ; x++ ) {
+                    ofs << std::endl << "# y "<< y << ", x " << x << " tsdf" << std::endl;
+
+                    for( uint16_t z = 0; z< m_size.z ; z++ ) {
+                        size_t idx = index( x, y, z ) ;
+
+                        ofs << host_voxels[ idx ] << " ";
+                    }
+
+                    ofs << std::endl << "# y "<< y << ", x " << x << " weights" << std::endl;
+                    for( uint16_t z = 0; z< m_size.z ; z++ ) {
+                        size_t idx = index( x, y, z ) ;
+                        ofs  << host_weights[ idx ] << " ";
+                    }
+                }
             }
 
-            ofs << std::endl << "# y "<< y << ", x " << x << " weights" << std::endl;
-            for( uint16_t z = 0; z< m_size.z ; z++ ) {
-                size_t idx = index( x, y, z ) ;
-                ofs  << m_weights[ idx ] << " ";
-            }
+            // Close file
+            ofs.close();
+
+            delete [] host_voxels;
+            delete [] host_weights;
+            success = true;
+        } else {
+            delete [] host_voxels;
+            std::cout << "Couldn't allocate host_weights memory to save TSDF" << std::endl;
         }
+    } else {
+        std::cout << "Couldn't allocate host_voxels memory to save TSDF" << std::endl;
     }
 
-    // Close file
-    ofs.close();
-    return true;
+
+    return success;
 }
 
 
@@ -294,9 +363,8 @@ bool GPUTSDFVolume::save_to_file( const std::string & file_name) const {
  * @return true if the file saved OK otherwise false.
  */
 bool GPUTSDFVolume::load_from_file( const std::string & file_name) {
-
-    TSDFLoader loader( this );
-    return loader.load_from_file( file_name );
+    std::cout << "INvalid method call: load_from_file" << std::endl;
+    return false;
 }
 
 
