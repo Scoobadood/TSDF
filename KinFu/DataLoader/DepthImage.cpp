@@ -5,6 +5,8 @@
 #include <stdexcept>
 
 DepthImage::DepthImage( std::string file_name ) {
+	m_data = NULL;
+
 	// Check file exists
 	bool is_directory;
 	if ( file_exists( file_name, is_directory ) && !is_directory ) {
@@ -30,6 +32,18 @@ DepthImage::DepthImage( std::string file_name ) {
 		throw std::invalid_argument( "File not found or is directory " + file_name);
 	}
 }
+
+DepthImage::~DepthImage( ) {
+	std::cout<< "Destroyed depth image" << std::endl;
+	if( m_data ) {
+		delete [] m_data;
+		m_data = 0;
+	} else {
+		std::cout << "m_data is null" << std::endl;
+	}
+}
+
+
 
 /**
  * @return the width of the depth image

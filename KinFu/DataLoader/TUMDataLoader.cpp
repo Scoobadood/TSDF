@@ -28,6 +28,12 @@ TUMDataLoader::TUMDataLoader( const std::string& directory ) {
 	}
 }
 
+	/**
+	 */
+	TUMDataLoader::~TUMDataLoader( ) {
+		std::cout << "TUMDataLoader::destructor" << std::endl;
+	}
+
 
 /**
  * Create a pose matrix based on

@@ -181,7 +181,8 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
 
                     float prior_distance = m_voxels[voxel_index];
 
-                    float new_weight = min( prior_weight + current_weight, m_max_weight );
+                    float new_weight = prior_weight + current_weight;
+//                    float new_weight = min( prior_weight + current_weight, m_max_weight );
                     float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
 
                     m_weights[voxel_index] = new_weight;

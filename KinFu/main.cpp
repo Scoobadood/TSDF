@@ -5,8 +5,11 @@
 #include "Utilities/PngWrapper.hpp"
 #include "Utilities/DepthMapUtilities.hpp"
 #include "Utilities/RenderUtilities.hpp"
+#include "Utilities/ply.hpp"
 #include "GPU/BlockTSDFLoader.hpp"
 #include "DataLoader/TUMDataLoader.hpp"
+#include "GPU/MarchingCubes.hpp"
+
 
 
 Eigen::Matrix4f g_campose;
@@ -19,14 +22,14 @@ phd::TSDFVolume * make_tsdf(phd::TSDFVolume::volume_type type, int num_images ) 
     using namespace Eigen;
 
     // Make volume
-    TSDFVolume * volume = TSDFVolume::make_volume(type, Vector3i{ 512, 512, 512}, Vector3f{ 5000, 5000, 5000});
-    volume->offset( -2500, -2500, -2500);
+    TSDFVolume * volume = TSDFVolume::make_volume(type, Vector3i{ 512, 512, 512}, Vector3f{ 3000, 3000, 3000});
+    volume->offset( -1500, -1500, -1500);
 
     // And camera (from FREI 1 IR calibration data at TUM)
     Camera camera{ 591.1f, 590.1f, 331.0f, 234.6f };
 
     // Create TUMDataLoader
-    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg2_xyz" };
+    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
 
     // Load depth image
     uint32_t width{0};
@@ -37,7 +40,7 @@ phd::TSDFVolume * make_tsdf(phd::TSDFVolume::volume_type type, int num_images ) 
 
     // Construct TSDF Volume
     for ( int i = 0; i < num_images; i++ ) {
-        std::cout << "Integrating " << i << std::endl;
+        std::cout << "Integrating frame " << i << std::endl;
 
         // Read it
         Matrix4f pose;
@@ -48,12 +51,10 @@ phd::TSDFVolume * make_tsdf(phd::TSDFVolume::volume_type type, int num_images ) 
         }
 
         if ( depthmap ) {
-
-            //std::cout << pose << std::endl;
             // Set location
             camera.set_pose( pose );
-
             volume->integrate(depthmap->data() , depthmap->width(), depthmap->height(), camera);
+
             delete depthmap;
         }
     }
@@ -131,6 +132,8 @@ int main( int argc, const char * argv[] ) {
         std::cout << "Usage : " << argv[0] << " -m=<nn> | file" << std::endl;
     }
 
+
+    // Save norm and verts
     if ( volume ) {
         phd::Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
 
@@ -146,10 +149,6 @@ int main( int argc, const char * argv[] ) {
         std::cout << "Rendering to image " << std::endl;
         Eigen::Vector3f light_source { g_campose(0,3), g_campose(1,3), g_campose(2,3) };
 
-        std::cout << "Cam   at : " << g_campose.block<3,1>(0,3) << std::endl;
-        std::cout << "Light at : " << light_source << std::endl;
-
-
         PngWrapper *p = scene_as_png( 640, 480, vertices, normals, camera, light_source );
 
         std::cout << "Saving PNG" << std::endl;
@@ -160,9 +159,22 @@ int main( int argc, const char * argv[] ) {
         p->save_to("/home/dave/Desktop/normals.png");
         delete p;
 
-        delete volume;
     } else {
         std::cout << "Couldn't make or load volume" << std::endl;
+    }
+
+
+    // Extract Mesh
+    if( volume ) {
+        std::vector<int3> triangles;
+        std::vector<float3> verts;
+        extract_surface( volume, verts, triangles);
+
+        // Save to PLY file
+        write_to_ply( "/home/dave/Desktop/mesh.ply", verts, triangles);
+        delete volume;
+    } else {
+        std::cout << "Couldn't extract mesh because couldn't make or load volume" << std::endl;
     }
 
 

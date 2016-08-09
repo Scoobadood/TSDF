@@ -3,7 +3,6 @@
 
 #include "DepthImage.hpp"
 
-
 #include <string>
 #include <vector>
 #include <Eigen/Dense>
@@ -15,6 +14,10 @@ public:
 	 * @param directory The dircetory from which to load data
 	 */
 	TUMDataLoader( const std::string& directory );
+
+	/**
+	 */
+	~TUMDataLoader( );
 
 	/**
 	 * @param pose The camera pose, populated by the next method

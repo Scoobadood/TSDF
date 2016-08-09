@@ -432,7 +432,7 @@ void extract_surface( const phd::TSDFVolume * volume, std::vector<float3>& verti
 
 
 		// invoke the kernel
-		dim3 block( 32, 32, 1 );
+		dim3 block( 16, 16, 1 );
 		dim3 grid ( divUp( voxel_grid_size.x, block.x ), divUp( voxel_grid_size.y, block.y ), 1 );
 		mc_kernel <<< grid, block >>>( layer1_data, layer2_data,
 		                               voxel_grid_size, voxel_space_size,

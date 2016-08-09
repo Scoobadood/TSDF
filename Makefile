@@ -16,10 +16,10 @@ SOURCES = main.cpp BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
           Definitions.cpp DepthMapUtilities.cpp FileUtilities.cpp PgmUtilities.cpp \
           PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp TSDFLoader.cpp \
           CPURaycaster.cpp CPUTSDFVolume.cpp \
-          DepthImage.cpp TUMDataLoader.cpp
+          DepthImage.cpp TUMDataLoader.cpp ply.cpp 
 
 
-CUDA_SOURCES = Raycaster_kernel.cu TSDF_kernel.cu GPUTSDFVolume.cu MarchingCubes.cu TSDF_utilities.cu
+CUDA_SOURCES = Raycaster_kernel.cu TSDF_kernel.cu GPUTSDFVolume.cu MarchingCubes.cu TSDF_utilities.cu cu_common.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)

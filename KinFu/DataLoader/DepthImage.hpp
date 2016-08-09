@@ -12,6 +12,11 @@ public:
 	DepthImage( std::string file_name );
 
 	/**
+	 * Clean up depth image memory
+	 */
+	~DepthImage( );
+
+	/**
 	 * @return the width of the depth image
 	 */
 	uint16_t width( ) const;
