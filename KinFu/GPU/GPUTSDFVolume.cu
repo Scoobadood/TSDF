@@ -18,7 +18,25 @@
 namespace phd {
 
 GPUTSDFVolume::~GPUTSDFVolume() {
-    std::cout << "TSDFVolume::dtor called. On entry m_voxels:= " << m_voxels << std::endl;
+            // Remove existing data
+        if( m_voxels ) {
+            cudaFree( m_voxels ) ;
+            m_voxels = 0;
+        }
+        if( m_weights ) {
+            cudaFree( m_weights );
+            m_weights = 0;
+        }
+        if( m_voxel_rotations ) {
+            cudaFree( m_voxel_rotations );
+            m_voxel_rotations = 0;
+        }
+        if( m_voxel_translations ) {
+            cudaFree( m_voxel_translations );
+            m_voxel_translations = 0;
+        }
+
+
 }
 
 /**
@@ -84,9 +102,26 @@ void GPUTSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t vol
         if( err != cudaSuccess ) {
             throw std::bad_alloc( );
         }
+
+
         err = cudaMalloc( &m_weights, volume_x * volume_y * volume_z * sizeof( float ) );
         if( err != cudaSuccess ) {
             cudaFree( m_voxels );
+            throw std::bad_alloc( );
+        }
+
+        err = cudaMalloc( &m_voxel_translations, volume_x * volume_y * volume_z * sizeof( float3 ) );
+        if( err != cudaSuccess ) {
+            cudaFree( m_voxels );
+            cudaFree( m_weights );
+            throw std::bad_alloc( );
+        }
+
+        err = cudaMalloc( &m_voxel_rotations, volume_x * volume_y * volume_z * sizeof( float3 ) );
+        if( err != cudaSuccess ) {
+            cudaFree( m_voxels );
+            cudaFree( m_weights );
+            cudaFree( m_voxel_translations );
             throw std::bad_alloc( );
         }
 
@@ -206,6 +241,42 @@ void GPUTSDFVolume::set_weight_data( const float * weight_data ) {
         cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
 }
 
+
+/**
+ * Reset the 
+ * @param translations X x Y x Z array of float3s
+ * @param grid_size The size of the voxel grid
+ * @param voxel_size The size of an individual voxel
+ * @param grid_offset The offset of the grid
+ */
+__global__
+void initialise_translations( float3 * translations, dim3 grid_size, float3 voxel_size, float3 grid_offset ) {
+
+    // Extract the voxel Y and Z coordinates we then iterate over X
+    int vy = threadIdx.y + blockIdx.y * blockDim.y;
+    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+
+    // If this thread is in range
+    if( vy < grid_size.y && vz < grid_size.z ) {
+
+
+        // The next (x_size) elements from here are the x coords
+        size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
+
+        // We want to iterate over the entire voxel space
+        // Each thread should be a Y,Z coordinate with the thread iterating over x
+        size_t voxel_index = base_voxel_index;
+        for( int vx=0; vx<grid_size.x; vx++ ) {
+            translations[voxel_index].x = (( vx + 0.5f ) * voxel_size.x) + grid_offset.x;
+            translations[voxel_index].y = (( vy + 0.5f ) * voxel_size.y) + grid_offset.y;
+            translations[voxel_index].z = (( vz + 0.5f ) * voxel_size.z) + grid_offset.z;
+
+            voxel_index++;
+        }
+    }
+}
+
+
 /**
  * Clear the TSDF memory on the device
  */
@@ -215,6 +286,12 @@ void GPUTSDFVolume::clear( ) {
 
     cudaMemset( m_weights, 0, data_size );
     cudaMemset( m_voxels, 0, data_size );
+    cudaMemset( m_voxel_rotations, 0, m_size.x * m_size.y * m_size.z * sizeof( float3) );
+
+    // Now initialise the translations
+    dim3 block( 1, 32, 32 );
+    dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
+    initialise_translations<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
 }
 
 

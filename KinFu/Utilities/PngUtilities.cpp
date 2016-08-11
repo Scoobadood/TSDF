@@ -189,7 +189,7 @@ bool save_png_to_file( const std::string file_name, uint32_t width, uint32_t hei
                     png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
 
                     delete[] row_pointers;
-                    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+                    png_destroy_write_struct(&png_ptr, &info_ptr);
 
                     saved_ok = true;
                 } else {
@@ -243,7 +243,7 @@ bool save_colour_png_to_file( const std::string file_name, uint32_t width, uint3
                     png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
 
                     delete[] row_pointers;
-                    png_destroy_write_struct(&png_ptr, (png_infopp)NULL);
+                    png_destroy_write_struct(&png_ptr, &info_ptr);
 
                     saved_ok = true;
                 } else {
