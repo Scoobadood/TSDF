@@ -299,7 +299,6 @@ bool GPUTSDFVolume::save_to_file( const std::string & file_name) const {
     float * host_weights;
 
     size_t num_voxels = m_size.x * m_size.y * m_size.z;
-
     host_voxels = new float[ num_voxels ];
     if ( host_voxels ) {
         host_weights = new float[ num_voxels ];
