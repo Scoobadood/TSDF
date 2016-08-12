@@ -154,6 +154,13 @@ public:
     }
 
     /**
+     * @return pointer to translation data
+     */
+    inline const Float3 *  translation_data() const {
+        return static_cast<Float3 *> (m_voxel_translations);
+    }
+
+    /**
      * Return pointer to weight data
      * @return Pointer to weight data
      */

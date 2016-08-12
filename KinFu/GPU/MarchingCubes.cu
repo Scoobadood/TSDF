@@ -14,81 +14,31 @@
 
 /**
  * Compute the intersection of an edge
+ * @param edge_index The edge to be checked for an intersection
+ * @param voxel_values The weights of each vertex
+ * @param cube_vertices The coordinates in real space of the vertices of the cube
  */
 __device__
 float3 compute_intersection_for_edge( int edge_index,
                                       const float voxel_values[8],
-                                      const float3& voxel_centre,
-                                      const float3& voxel_size) {
-
-	// Get indices of vertices bounding this edge
+                                      const float3 cube_vertices[8] ) {
+		// Get indices of vertices bounding this edge
 	int v1_index = EDGE_VERTICES[edge_index][0];
 	int v2_index = EDGE_VERTICES[edge_index][1];
 
+	float3 start_vertex = cube_vertices[v1_index];
+	float3 end_vertex   = cube_vertices[v2_index];
+
+	// Compute proprtion of edge to include in intersection
 	float numerator = 0 - voxel_values[v1_index];
 	float denom = voxel_values[v2_index] - voxel_values[v1_index];
 	float ratio = numerator / denom;
 
-	float3 intersection = voxel_centre;
-	// This code critically dependent on the edge ordering in MC_edge_table
-	switch ( edge_index ) {
-	// Parallel to X axis
-	case 4:
-		intersection.x += voxel_size.x * ratio;
-		break;
 
-	case 5:
-		intersection.x += voxel_size.x * ratio;
-		intersection.z += voxel_size.z;
-		break;
-
-	case 6:
-		intersection.x += voxel_size.x * ratio;
-		intersection.y += voxel_size.y;
-		intersection.z += voxel_size.z;
-		break;
-
-	case 7:
-		intersection.x += voxel_size.x * ratio;
-		intersection.y += voxel_size.y;
-		break;
-
-	// Parallel to Y axis
-	case 1:
-		intersection.y += voxel_size.y * ratio;
-		intersection.z += voxel_size.z;
-		break;
-	case 3:
-		intersection.y += voxel_size.y * ratio;
-		break;
-	case 9:
-		intersection.x += voxel_size.x;
-		intersection.y += voxel_size.y * ratio;
-		intersection.z += voxel_size.z;
-		break;
-	case 11:
-		intersection.x += voxel_size.x;
-		intersection.y += voxel_size.y * ratio;
-		break;
-
-	// Parallel to Z axis
-	case 0:
-		intersection.z += voxel_size.z * ratio;
-		break;
-	case 2:
-		intersection.y += voxel_size.y;
-		intersection.z += voxel_size.z * ratio;
-		break;
-	case 8:
-		intersection.x += voxel_size.x;
-		intersection.z += voxel_size.z * ratio;
-		break;
-	case 10:
-		intersection.x += voxel_size.x;
-		intersection.y += voxel_size.y;
-		intersection.z += voxel_size.z * ratio;
-		break;
-	}
+	// Work out where this lies
+	float3 edge = f3_sub( end_vertex, start_vertex);
+	float3 delta = f3_mul_scalar( ratio, edge );
+	float3 intersection = f3_add( start_vertex, delta ); 
 
 	return intersection;
 }
@@ -97,9 +47,8 @@ float3 compute_intersection_for_edge( int edge_index,
 /**
  * @param cube_index the value descrbining which cube this is
  * @param voxel_values The distance values from the TSDF corresponding to the 8 voxels forming this cube
- * @param voxel_centre The coordinates of the centre of this voxel
- * @param voxel_size The physical size of a voxel
- * @param intersects Populated by this function, the point on wach of the 12 edges where an intersection occurs
+ * @param cube_vertices The vertex coordinates in real space of the cube being considered
+ * @param intersects Populated by this function, the point on each of the 12 edges where an intersection occurs
  * There are a maximum of 12. Non-intersected edges are skipped that is, if only edge 12 is intersected then intersects[11]
  * will have a value the other values will be NaN
  * @return The number of intersects found
@@ -107,8 +56,7 @@ float3 compute_intersection_for_edge( int edge_index,
 __device__
 int compute_edge_intersects( uint8_t cube_index,
                              const float voxel_values[8],
-                             const float3& voxel_centre,
-                             const float3& voxel_size,
+                             const float3 cube_vertices[8],
                              float3 intersects[12]) {
 	// Get the edges impacted
 	int num_edges_impacted = 0;
@@ -118,7 +66,7 @@ int compute_edge_intersects( uint8_t cube_index,
 		for ( int i = 0; i < 12; i++ ) {
 			if ( ( intersected_edge_flags & mask ) > 0 ) {
 
-				intersects[i] = compute_intersection_for_edge( i, voxel_values, voxel_centre, voxel_size);
+				intersects[i] = compute_intersection_for_edge( i, voxel_values, cube_vertices);
 
 				num_edges_impacted++;
 			} else {
@@ -132,6 +80,28 @@ int compute_edge_intersects( uint8_t cube_index,
 	return num_edges_impacted;
 }
 
+
+/**
+ * Extract the vertices of the cube from the two layers of voxel centre data
+ * @param vx The X coordinate in the slab of voxels
+ * @param vy The Y coordinate in the slab of voxels
+ * @param grid_width The x dimension of the voxel grid
+ * @param tsdf_layer1_centres Centres of voxels in the first slab
+ * @param tsdf_layer2_centres Centres of voxels in the second slab
+ * @param cube_vertices Written to by this function
+ */
+__device__
+void compute_cube_vertices( int vx, int vy, int grid_width, const float3 * tsdf_layer1_centres, const float3 * tsdf_layer2_centres, float3 cube_vertices[8]) {
+	int base_index = vy * grid_width + vx;
+	cube_vertices[0] = tsdf_layer1_centres[ base_index ];
+	cube_vertices[1] = tsdf_layer2_centres[ base_index ];
+	cube_vertices[2] = tsdf_layer2_centres[ base_index + grid_width ];
+	cube_vertices[3] = tsdf_layer1_centres[ base_index + grid_width ];
+	cube_vertices[4] = tsdf_layer1_centres[ base_index              + 1];
+	cube_vertices[5] = tsdf_layer2_centres[ base_index              + 1];
+	cube_vertices[6] = tsdf_layer2_centres[ base_index + grid_width + 1];
+	cube_vertices[7] = tsdf_layer1_centres[ base_index + grid_width + 1];
+}
 
 
 /**
@@ -156,6 +126,8 @@ uint8_t cube_type_for_values( const float values[8] ) {
  * Compute the triangles for two planes of data
  * @param tsdf_values_layer_1 The first layer of values
  * @param tsdf_values_layer_2 The second layer of values
+ * @param tsdf_layer1_centres The coordinates of the voxel centres in layer 1
+ * @param tsdf_layer2_centres The coordinates of the voxel centres in layer 2
  * @param voxel_grid_size Dimensions of the grid
  * @param voxel_space_size How big the grid is physically
  * @param voxel_size THe size of an individual voxel
@@ -167,6 +139,8 @@ uint8_t cube_type_for_values( const float values[8] ) {
 __global__
 void mc_kernel( const float * tsdf_values_layer_1,
                 const float * tsdf_values_layer_2,
+                const float3 * tsdf_layer1_centres, 
+                const float3 * tsdf_layer2_centres,
                 const dim3    voxel_grid_size,
                 const float3  voxel_space_size,
                 const float3  voxel_size,
@@ -194,13 +168,6 @@ void mc_kernel( const float * tsdf_values_layer_1,
 		int vertex_index   =  cube_index * 12;
 		int triangle_index =  cube_index *  5;
 
-
-		// Compute the centre of the voxel at (0,0,0)
-		float3 centre_of_voxel{
-			((vx + 0.5f) * voxel_size.x ) + offset.x,
-			((vy + 0.5f) * voxel_size.y ) + offset.y,
-			((vz + 0.5f) * voxel_size.z ) + offset.z };
-
 		// Load voxel values for the cube
 		float voxel_values[8] = {
 			tsdf_values_layer_1[voxel_index],							//	vx,   vy,   vz
@@ -219,9 +186,13 @@ void mc_kernel( const float * tsdf_values_layer_1,
 		// If it's a non-trivial cube_type, process it
 		if ( ( cube_type != 0 ) && ( cube_type != 0xFF ) ) {
 
+			// Compuyte the coordinates of the vertices of the cube
+			float3 cube_vertices[8];
+			compute_cube_vertices( vx, vy, voxel_grid_size.x, tsdf_layer1_centres, tsdf_layer2_centres, cube_vertices);
+
 			// Compute intersects (up to 12 per cube)
 			float3 	intersects[12];
-			compute_edge_intersects( cube_type, voxel_values, centre_of_voxel, voxel_size, intersects );
+			compute_edge_intersects( cube_type, voxel_values, cube_vertices, intersects );
 
 			// Copy these back into the return vaue array at the appropriate point for this thread
 			for ( int i = 0; i < 12; i++ ) {
@@ -423,18 +394,22 @@ void extract_surface( const phd::TSDFVolume * volume, std::vector<float3>& verti
 
 	// Now iterate over each slice
 	const float * volume_distance_data = volume->distance_data( );
+	const float3 * volume_translation_data = volume->translation_data( );
 	size_t layer_size = voxel_grid_size.x * voxel_grid_size.y;
 	for ( int vz = 0; vz < voxel_grid_size.z-1; vz++ ) {
 
 		// Set up for layer
 		const float * layer1_data = &(volume_distance_data[vz * layer_size] );
 		const float * layer2_data = &(volume_distance_data[(vz + 1) * layer_size] );
+		const float3 * layer1_vertices = &(volume_translation_data[vz * layer_size] );
+		const float3 * layer2_vertices = &(volume_translation_data[(vz +1) * layer_size] );
 
 
 		// invoke the kernel
 		dim3 block( 16, 16, 1 );
 		dim3 grid ( divUp( voxel_grid_size.x, block.x ), divUp( voxel_grid_size.y, block.y ), 1 );
 		mc_kernel <<< grid, block >>>( layer1_data, layer2_data,
+									   layer1_vertices, layer2_vertices,
 		                               voxel_grid_size, voxel_space_size,
 		                               voxel_size, offset,
 		                               vz, d_vertices, d_triangles );

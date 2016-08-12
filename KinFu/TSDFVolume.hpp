@@ -19,6 +19,14 @@
 #include "Camera.hpp"
 
 namespace phd {
+    typedef struct {
+        float x;
+        float y;
+        float z;
+    } Float3;
+
+
+
 class TSDFVolume {
 protected:
     /**
@@ -155,6 +163,11 @@ public:
      * @return Pointer to distance data
      */
     virtual const float *  distance_data() const = 0;
+
+    /**
+     * @return pointer to translation data
+     */
+    virtual const Float3 *  translation_data() const = 0;
 
     /**
      * Return pointer to weight data
