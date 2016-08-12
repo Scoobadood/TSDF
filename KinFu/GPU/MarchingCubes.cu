@@ -394,7 +394,7 @@ void extract_surface( const phd::TSDFVolume * volume, std::vector<float3>& verti
 
 	// Now iterate over each slice
 	const float * volume_distance_data = volume->distance_data( );
-	const float3 * volume_translation_data = reinterpret_cast<float3 *> (volume->translation_data( ) );
+	const float3 * volume_translation_data = reinterpret_cast<const float3 *> (volume->translation_data( ) );
 	size_t layer_size = voxel_grid_size.x * voxel_grid_size.y;
 	for ( int vz = 0; vz < voxel_grid_size.z-1; vz++ ) {
 
