@@ -50,7 +50,7 @@ float3 compute_intersection_for_edge( int edge_index,
 		end_weight = temp;
 	} else if ( ( start_weight * end_weight ) > 0 ) {
 		printf( "Intersected edge expected to have differenlty signed weights at each end\n");
-		exit( -1 );
+		asm("trap;");
 	}
 
 	float ratio = ( 0 - start_weight ) / ( end_weight - start_weight);
