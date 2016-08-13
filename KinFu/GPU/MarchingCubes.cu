@@ -49,8 +49,8 @@ float3 compute_intersection_for_edge( int edge_index,
 		start_weight = end_weight;
 		end_weight = temp;
 	} else if ( ( start_weight * end_weight ) > 0 ) {
-		std::cerr << "Intersected edge expected to have differenlty signed weights at each end" << std::endl;
-		exit( );
+		printf( "Intersected edge expected to have differenlty signed weights at each end\n");
+		exit( -1 );
 	}
 
 	float ratio = ( 0 - start_weight ) / ( end_weight - start_weight);
