@@ -22,17 +22,38 @@ __device__
 float3 compute_intersection_for_edge( int edge_index,
                                       const float voxel_values[8],
                                       const float3 cube_vertices[8] ) {
-		// Get indices of vertices bounding this edge
+	// The expectation here is that 
+	// : Cube vertices is populated with real world coordinates of the cube being marched
+	// : voxel values are the corresponding weights of the vertices
+	// : edge index is an edge to be intersected
+	// : The vertex at one end of that edge has a negative weigt and at the otehr, a positive weight
+	// : The intersection should be at the zero crossing
+
+	// Check assumptions
 	int v1_index = EDGE_VERTICES[edge_index][0];
 	int v2_index = EDGE_VERTICES[edge_index][1];
 
 	float3 start_vertex = cube_vertices[v1_index];
-	float3 end_vertex   = cube_vertices[v2_index];
+	float3 start_weight = voxel_values[v1_index];
 
-	// Compute proprtion of edge to include in intersection
-	float numerator = 0 - voxel_values[v1_index];
-	float denom = voxel_values[v2_index] - voxel_values[v1_index];
-	float ratio = numerator / denom;
+	float3 end_vertex   = cube_vertices[v2_index];
+	float3 end_weight = voxel_values[v2_index];
+
+	if (  (start_weight > 0 ) &&  (end_weight <  0 ) ) {
+		// Swap start and end
+		float3 temp3 = start_vertex;
+		start_vertex = end_vertex;
+		end_vertex = temp;
+
+		float temp = start_weight;
+		start_weight = end_weight;
+		end_weight = temp;
+	} else if ( ( start_weight * end_weight ) > 0 ) {
+		std::cerr << "Intersected edge expected to have differenlty signed weights at each end" << std::endl;
+		exit( );
+	}
+
+	float ratio = ( 0 - start_weight ) / ( end_weight - start_weight);
 
 
 	// Work out where this lies
