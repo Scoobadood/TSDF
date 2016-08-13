@@ -34,10 +34,10 @@ float3 compute_intersection_for_edge( int edge_index,
 	int v2_index = EDGE_VERTICES[edge_index][1];
 
 	float3 start_vertex = cube_vertices[v1_index];
-	float3 start_weight = voxel_values[v1_index];
+	float start_weight = voxel_values[v1_index];
 
 	float3 end_vertex   = cube_vertices[v2_index];
-	float3 end_weight = voxel_values[v2_index];
+	float end_weight = voxel_values[v2_index];
 
 	if (  (start_weight > 0 ) &&  (end_weight <  0 ) ) {
 		// Swap start and end
