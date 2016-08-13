@@ -43,7 +43,7 @@ float3 compute_intersection_for_edge( int edge_index,
 		// Swap start and end
 		float3 temp3 = start_vertex;
 		start_vertex = end_vertex;
-		end_vertex = temp;
+		end_vertex = temp3;
 
 		float temp = start_weight;
 		start_weight = end_weight;
