@@ -327,7 +327,7 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
 
             // Compute distance in plane to central axis to determine size of rotation
             float delta = tran.y - centre_of_space.y;
-            float theta = (( delta * 2.0f ) / max_height);
+            float theta = ( delta *  3.14159265 ) / (max_height * 2 );
             float sin_theta = sin( theta );
             float cos_theta = cos( theta );
 
