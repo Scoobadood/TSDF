@@ -305,12 +305,12 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
 
         // Compute the centre of rotation
         float3 centre_of_rotation {
-            grid_offset.x + ( grid_size.x * voxel_size.x),
+            grid_offset.x + ( 1.5f * grid_size.x * voxel_size.x),
             grid_offset.y + ( 0.5f * grid_size.y * voxel_size.y),
             grid_offset.z + ( 0.5f * grid_size.z * voxel_size.z),
         };
 
-        float max_height = grid_size.y * voxel_size.y;
+        float half_height = (grid_size.y * voxel_size.y) / 2.0f;
 
 
         // We want to iterate over the entire voxel space
@@ -326,13 +326,17 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
             };
 
             // Compute distance in plane to central axis to determine size of rotation
-            float delta = tran.y - centre_of_space.y;
-            float theta = ( delta *  3.14159265 ) / (max_height * 2 );
+            float ratio = (tran.y - centre_of_space.y) / half_height;
+            float theta = ratio * ( 3.14159 / 4 ) ; // %age of 45 degrees
             float sin_theta = sin( theta );
             float cos_theta = cos( theta );
 
-            translations[voxel_index].x = ( ( ( tran.x - centre_of_rotation.x ) * cos_theta ) + ( ( tran.y - centre_of_rotation.y ) * -sin_theta) ) + centre_of_rotation.x;
-            translations[voxel_index].y = ( ( ( tran.x - centre_of_rotation.x ) * sin_theta ) + ( ( tran.y - centre_of_rotation.y ) * cos_theta) ) + centre_of_rotation.y;
+            // Compute relative X and Y
+            float rel_x = ( tran.x - centre_of_rotation.x );
+            float rel_y = ( tran.y - centre_of_rotation.y );
+
+            translations[voxel_index].x = ( ( cos_theta * rel_x ) - ( sin_theta * rel_y ) ) + centre_of_rotation.x;
+            translations[voxel_index].y = ( ( sin_theta * rel_x ) + ( cos_theta * rel_y ) ) + centre_of_rotation.y;
             translations[voxel_index].z = tran.z;
 
             voxel_index++;
