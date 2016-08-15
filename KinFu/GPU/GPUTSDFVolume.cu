@@ -324,9 +324,10 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
             };
 
             // Compute current angle with cor and hor axis
-            float dx = fabs(tran.x - centre_of_rotation.x);
-            float dy = fabs(tran.y - centre_of_space.y);
-            float theta = atan2( dy, dx );
+            float dx = tran.x - centre_of_rotation.x;
+            float dy = tran.y - centre_of_rotation.y;
+
+            float theta = atan2( dy, dx ) * 2;
 
             float sin_theta = sin( theta );
             float cos_theta = cos( theta );
