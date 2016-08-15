@@ -360,6 +360,7 @@ void GPUTSDFVolume::clear( ) {
 }
 
 
+
 #pragma mark - Integrate new depth data
 /**
  * Integrate a range map into the TSDF
