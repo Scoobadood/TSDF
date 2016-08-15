@@ -298,9 +298,9 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
 
         // Compute centre of space
         float3 centre_of_space {
-            grid_offset.x + (0.5f * voxel_size.x, grid_size.x),
-            grid_offset.y + (0.5f * voxel_size.y, grid_size.y),
-            grid_offset.z + (0.5f * voxel_size.z, grid_size.z)
+            grid_offset.x + (0.5f * voxel_size.x * grid_size.x),
+            grid_offset.y + (0.5f * voxel_size.y * grid_size.y),
+            grid_offset.z + (0.5f * voxel_size.z * grid_size.z)
         };
 
         // Compute the centre of rotation
