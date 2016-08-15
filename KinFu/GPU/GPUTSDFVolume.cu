@@ -276,6 +276,70 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
     }
 }
 
+/**
+ * Initialise the deformation field with a twist
+ * @param translations X x Y x Z array of float3s
+ * @param grid_size The size of the voxel grid
+ * @param voxel_size The size of an individual voxel
+ * @param grid_offset The offset of the grid
+ */
+__global__
+void initialise_translations_with_twist( float3 * translations, dim3 grid_size, float3 voxel_size, float3 grid_offset  ) {
+
+    // Extract the voxel Y and Z coordinates we then iterate over X
+    int vy = threadIdx.y + blockIdx.y * blockDim.y;
+    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+
+    // If this thread is in range
+    if( vy < grid_size.y && vz < grid_size.z ) {
+
+        // The next (x_size) elements from here are the x coords
+        size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
+
+        // Compute centre of space
+        float3 centre_of_space {
+            grid_offset.x + (0.5f * voxel_size.x, grid_size.x),
+            grid_offset.y + (0.5f * voxel_size.y, grid_size.y),
+            grid_offset.z + (0.5f * voxel_size.z, grid_size.z)
+        };
+
+        // Compute the centre of rotation
+        float3 centre_of_rotation {
+            grid_offset.x + ( grid_size.x * voxel_size.x),
+            grid_offset.y + ( 0.5f * grid_size.y * voxel_size.y),
+            grid_offset.z + ( 0.5f * grid_size.z * voxel_size.z),
+        };
+
+        float max_height = grid_size.y * voxel_size.y;
+
+
+        // We want to iterate over the entire voxel space
+        // Each thread should be a Y,Z coordinate with the thread iterating over x
+        size_t voxel_index = base_voxel_index;
+        for( int vx=0; vx<grid_size.x; vx++ ) {
+
+            // Starting point
+            float3 tran{
+                (( vx + 0.5f ) * voxel_size.x) + grid_offset.x,
+                (( vy + 0.5f ) * voxel_size.y) + grid_offset.y,
+                (( vz + 0.5f ) * voxel_size.z) + grid_offset.z
+            };
+
+            // Compute distance in plane to central axis to determine size of rotation
+            float delta = tran.y - centre_of_space.y;
+            float theta = (( delta * 2.0f ) / max_height);
+            float sin_theta = sin( theta );
+            float cos_theta = cos( theta );
+
+            translations[voxel_index].x = ( ( ( tran.x - centre_of_rotation.x ) * cos_theta ) + ( ( tran.y - centre_of_rotation.y ) * -sin_theta) ) + centre_of_rotation.x;
+            translations[voxel_index].y = ( ( ( tran.x - centre_of_rotation.x ) * sin_theta ) + ( ( tran.y - centre_of_rotation.y ) * cos_theta) ) + centre_of_rotation.y;
+            translations[voxel_index].z = tran.z;
+
+            voxel_index++;
+        }
+    }
+}
+
 
 /**
  * Clear the TSDF memory on the device
@@ -291,7 +355,8 @@ void GPUTSDFVolume::clear( ) {
     // Now initialise the translations
     dim3 block( 1, 32, 32 );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
-    initialise_translations<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
+//    initialise_translations<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
+    initialise_translations_with_twist<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset);
 }
 
 

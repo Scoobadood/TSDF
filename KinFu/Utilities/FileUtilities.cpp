@@ -52,4 +52,6 @@ bool file_exists( const std::string& file_name, bool & is_directory ) {
             is_directory = true;
         }
     }
+
+    return exists;
 }
