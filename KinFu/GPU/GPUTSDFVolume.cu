@@ -310,8 +310,6 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
             grid_offset.z + ( 0.5f * grid_size.z * voxel_size.z),
         };
 
-        float half_height = (grid_size.y * voxel_size.y) / 2.0f;
-
 
         // We want to iterate over the entire voxel space
         // Each thread should be a Y,Z coordinate with the thread iterating over x
@@ -325,9 +323,11 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
                 (( vz + 0.5f ) * voxel_size.z) + grid_offset.z
             };
 
-            // Compute distance in plane to central axis to determine size of rotation
-            float ratio = (tran.y - centre_of_space.y) / half_height;
-            float theta = ratio * ( 3.14159 / 4 ) ; // %age of 45 degrees
+            // Compute current angle with cor and hor axis
+            float dx = fabs(tran.x - centre_of_rotation.x);
+            float dy = fabs(tran.y - centre_of_space.y);
+            float theta = atan2( dy, dx );
+
             float sin_theta = sin( theta );
             float cos_theta = cos( theta );
 
