@@ -115,9 +115,6 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                         Mat44 inv_pose, Mat33 k, Mat33 kinv,
                         uint32_t width, uint32_t height, const uint16_t * depth_map) {
 
-    // TODO: Move this into parameter bock and pass in from Volume
-    const float m_max_weight = 100;
-
     // Extract the voxel Y and Z coordinates we then iterate over X
     int vy = threadIdx.y + blockIdx.y * blockDim.y;
     int vz = threadIdx.z + blockIdx.z * blockDim.z;
@@ -491,13 +488,6 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
 
         // The next (x_size) elements from here are the x coords
         size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
-
-        // Compute centre of space
-        float3 centre_of_space {
-            grid_offset.x + (0.5f * voxel_size.x * grid_size.x),
-            grid_offset.y + (0.5f * voxel_size.y * grid_size.y),
-            grid_offset.z + (0.5f * voxel_size.z * grid_size.z)
-        };
 
         // Compute the centre of rotation
         float3 centre_of_rotation {
