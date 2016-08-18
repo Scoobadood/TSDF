@@ -8,7 +8,7 @@
 #include "Utilities/ply.hpp"
 #include "GPU/BlockTSDFLoader.hpp"
 #include "DataLoader/TUMDataLoader.hpp"
-#include "GPU/MarchingCubes.hpp"
+#include "GPU/GPUMarchingCubes.hpp"
 
 
 

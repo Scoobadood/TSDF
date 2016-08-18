@@ -1,5 +1,5 @@
 #include "../TSDFVolume.hpp"
-#include "../GPU/MarchingCubes.hpp"
+#include "../GPU/GPUMarchingCubes.hpp"
 
 #include "vector_types.h"
 
