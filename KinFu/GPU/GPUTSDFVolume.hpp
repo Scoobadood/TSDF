@@ -33,11 +33,16 @@ protected:
     // Size of a voxel
     float3 m_voxel_size;
 
-    //  Truncaion distance
+    //  Truncation distance
     float m_truncation_distance;
 
     // Max weight for a voxel
     float m_max_weight;
+
+    // Storage for per voxel transform on device
+    float3 * m_voxel_translations;
+    float3 * m_voxel_rotations;
+    
 public:
     GPUTSDFVolume( const Eigen::Vector3i & size = Eigen::Vector3i {64, 64, 64}, const Eigen::Vector3f & physical_size = Eigen::Vector3f {3000.0f, 3000.0f, 3000.0f} );
     /**
@@ -146,6 +151,13 @@ public:
      */
     inline const float * distance_data() const {
         return m_voxels;
+    }
+
+    /**
+     * @return pointer to translation data
+     */
+    inline const Float3 *  translation_data() const {
+        return reinterpret_cast<Float3 *> (m_voxel_translations);
     }
 
     /**

@@ -68,6 +68,8 @@ PngWrapper * scene_as_png(uint16_t width, uint16_t height,
         }
 
         pw = new PngWrapper( width, height, image, PngWrapper::PNG_TYPE::GREYSCALE_8 );
+
+        delete [] image;
     } else {
         std::cout << "couldn't allocate storage for image" << std::endl;
     }
@@ -101,6 +103,8 @@ PngWrapper * normals_as_png(uint16_t width, uint16_t height, const Eigen::Matrix
             image[write_idx++] = floor( n[2] );
         }
         pw = new PngWrapper( width, height, image, PngWrapper::PNG_TYPE::COLOUR );
+
+        delete [] image;
     } else {
         std::cout << "couldn't allocate storage for image" << std::endl;
     }

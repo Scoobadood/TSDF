@@ -200,6 +200,15 @@ public:
         return m_voxels;
     }
 
+        /**
+     * @return pointer to translation data
+     */
+    inline const Float3 *  translation_data() const {
+        // TODO: Implement this for deformation grid at some point
+        return static_cast<Float3 *> (NULL);
+    }
+
+
     /**
      * Return pointer to weight data
      * @return Pointer to weight data

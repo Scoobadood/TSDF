@@ -1,0 +1,33 @@
+##----------------------------------------------------------------------##
+# CUDA Suppresions
+
+{
+ <alloc_libcuda>
+ Memcheck:Leak
+ match-leak-kinds: reachable,possible
+ fun:*alloc
+ ...
+ obj:*libcuda.so*
+ ...
+}
+
+{
+ <alloc_libcuda>
+ Memcheck:Leak
+ match-leak-kinds: reachable,possible
+ fun:*alloc
+ ...
+ obj:*libcufft.so*
+ ...
+}
+
+{
+ <alloc_libcudart>
+ Memcheck:Leak
+ match-leak-kinds: reachable,possible
+ fun:*alloc
+ ...
+ obj:*libcudart.so*
+ ...
+}
+

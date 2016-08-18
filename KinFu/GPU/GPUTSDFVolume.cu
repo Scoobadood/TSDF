@@ -9,18 +9,209 @@
 
 #include "GPUTSDFVolume.hpp"
 #include "GPURaycaster.hpp"
-#include "TSDF_kernel.hpp"
+#include "TSDF_utilities.hpp"
 #include "../Utilities/TSDFLoader.hpp"
 
 #include <fstream>
 #include <iomanip>
+#include <cfloat>
+#include <cstdint>
+
+#include "math_constants.h"
+
+
+
+
+/**
+ * Convert a depth to a 3D vertex in camera space
+ */
+__device__
+float3 depth_to_vertex( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv ) {
+    float3 vertex{ CUDART_NAN_F , CUDART_NAN_F, CUDART_NAN_F };
+    if( depth != 0 ) {
+        // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
+        float3 cam_point{
+            kinv.m11 * x + kinv.m12 * y + kinv.m13,
+            kinv.m21 * x + kinv.m22 * y + kinv.m23,
+            kinv.m31 * x + kinv.m32 * y + kinv.m33
+        };
+
+        vertex.x = cam_point.x * -depth;
+        vertex.y = cam_point.y * -depth;
+        vertex.z = cam_point.z * -depth;
+    }
+
+    return vertex;
+
+}
+/**
+ * Convert a world coordinate into camera space in the camera image
+ * by multiplying by pose matrix inverse, then by K then dividing through by
+ * z coordinate to project down.
+ * @param world_coordinate The world coordinate to convert
+ * @param inv_pose The 4x4 inverse pose matrix
+ * @param K The camera intrinsic matrix
+ * @return a 2D integral pixel value (u,v)
+ */
+__device__
+int3 camera_to_pixel( const float3& camera_coordinate, const Mat33& k ) {
+    // Project
+    float3 image_coordinate {
+        camera_coordinate.x / camera_coordinate.z,
+        camera_coordinate.y / camera_coordinate.z,
+        1.0f
+    };
+
+    // Adjust by cam intrinsics
+    int3 pixel_coordinate {
+        static_cast<int>(floor( ( k.m11 * image_coordinate.x) + (k.m12 * image_coordinate.y) + k.m13 )),
+        static_cast<int>(floor( ( k.m21 * image_coordinate.x) + (k.m22 * image_coordinate.y) + k.m23 )),
+        1
+    };
+
+    return pixel_coordinate;
+}
+
+/**
+ * Convert a world coordinate into camera space by
+ * by multiplying by pose matrix inverse
+ * @param world_coordinate The world coordinate to convert
+ * @param inv_pose The 4x4 inverse pose matrix
+ * @return a 3D coordinate in camera space
+ */
+__device__
+float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) {
+    float3 cam_coordinate {
+        (inv_pose.m11 * world_coordinate.x ) + (inv_pose.m12 * world_coordinate.y) + (inv_pose.m13 * world_coordinate.z) + inv_pose.m14,
+        (inv_pose.m21 * world_coordinate.x ) + (inv_pose.m22 * world_coordinate.y) + (inv_pose.m23 * world_coordinate.z) + inv_pose.m24,
+        (inv_pose.m31 * world_coordinate.x ) + (inv_pose.m32 * world_coordinate.y) + (inv_pose.m33 * world_coordinate.z) + inv_pose.m34
+    };
+    float w = (inv_pose.m41 * world_coordinate.x ) + (inv_pose.m42 * world_coordinate.y) + (inv_pose.m43 * world_coordinate.z) + inv_pose.m44;
+
+    cam_coordinate.x /= w;
+    cam_coordinate.y /= w;
+    cam_coordinate.z /= w;
+
+    return cam_coordinate;
+}
+
+/**
+ * @param m_voxels The voxel values (in devcie memory) 
+ * @param m_weights The weight values (in device memory) 
+ * @param m_size The voxel size of the space
+ * @param m_physical_size The physical size of the space
+ * @param m_offset The offset of the front, bottom, left corner
+ * @param m_truncation_distance A distance, greater than the voxel diagonal, at which we truncate distance measures in the TSDF
+ * @param inv_pose Inverse of the camera pose matrix (maps world to camera coords) (4x4)
+ * @param k The caera's intrinsic parameters (3x3)
+ * @param kinv Invers eof k (3x3)
+ * @param width Width of the depth image
+ * @param height Height of the depth image
+ * @param d_depth_map Pointer to array of width*height uint16 types in devcie memory
+ */
+__global__
+void integrate_kernel(  float * m_voxels, float * m_weights,
+                        dim3 voxel_grid_size, float3 voxel_space_size, float3 offset, const float trunc_distance,
+                        Mat44 inv_pose, Mat33 k, Mat33 kinv,
+                        uint32_t width, uint32_t height, const uint16_t * depth_map) {
+
+    // Extract the voxel Y and Z coordinates we then iterate over X
+    int vy = threadIdx.y + blockIdx.y * blockDim.y;
+    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+
+    // If this thread is in range
+    if( vy < voxel_grid_size.y && vz < voxel_grid_size.z ) {
+
+
+        // The next (x_size) elements from here are the x coords
+        size_t base_voxel_index =  ((voxel_grid_size.x*voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
+
+        // Compute the voxel size
+        float3 voxel_size { voxel_space_size.x / voxel_grid_size.x, 
+                            voxel_space_size.y / voxel_grid_size.y, 
+                            voxel_space_size.z / voxel_grid_size.z  };
+
+        // We want to iterate over the entire voxel space
+        // Each thread should be a Y,Z coordinate with the thread iterating over x
+        size_t voxel_index = base_voxel_index;
+        for( int vx=0; vx<voxel_grid_size.x; vx++ ) {
+
+            // Work out where in the image, the centre of this voxel projects
+            // This gives us a pixel in the depth map
+
+            // Convert voxel to world coords of centre
+            float3 centre_of_voxel        = centre_of_voxel_at( vx, vy, vz, voxel_size, offset );
+
+            // Convert world to camera coords
+            float3 centre_of_voxel_in_cam = world_to_camera( centre_of_voxel, inv_pose );
+
+            // Project into image plane
+            int3   centre_of_voxel_in_pix = camera_to_pixel( centre_of_voxel_in_cam, k );
+
+            // if this point is in the camera view frustum...
+            if( ( centre_of_voxel_in_pix.x >=0 && centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height) ) {
+
+                uint16_t voxel_pixel_x = static_cast<uint16_t>( centre_of_voxel_in_pix.x);
+                uint16_t voxel_pixel_y = static_cast<uint16_t>( centre_of_voxel_in_pix.y);
+
+                // Extract the depth to the surface at this point
+                uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
+                uint16_t surface_depth = depth_map[ voxel_image_index ];
+
+                // If the depth is valid
+                if( surface_depth > 0 ) {
+
+                    // Project depth entry to a vertex
+                    float3 surface_vertex = depth_to_vertex( surface_depth, voxel_pixel_x, voxel_pixel_y, kinv);
+
+
+                    // First approach ot getting SDF is based on absolute difference in distance
+                    // float voxel_distance = sqrt( (centre_of_voxel_in_cam.x * centre_of_voxel_in_cam.x ) + (centre_of_voxel_in_cam.y * centre_of_voxel_in_cam.y ) + (centre_of_voxel_in_cam.z * centre_of_voxel_in_cam.z )  );
+                    //float surface_distance = sqrt( surface_vertex.x*surface_vertex.x + surface_vertex.y*surface_vertex.y + surface_vertex.z*surface_vertex.z);
+                    // float sdf = surface_distance - voxel_distance;
+
+
+                    // Alternatve approach is based on difference in Z coords only
+                    // Note that for RHS camera, we expect Z coords here to be -ve
+                    // So SDF is (-surface.z) - (-voxel.z)
+                    // which is voxel.z - surface.z hence inversion
+                    // We'd also expect that surface_vertex.z is the same as -ve depth
+                    float sdf = centre_of_voxel_in_cam.z - surface_vertex.z;
+
+                    // Truncate
+                    float tsdf;
+                    if( sdf > 0 ) {
+                        tsdf = min( 1.0, sdf / trunc_distance);
+                    } else {
+                        tsdf = max( -1.0, sdf / trunc_distance);
+                    }
+
+                    // Extract prior weight
+                    float prior_weight = m_weights[voxel_index];
+                    float current_weight = 1.0f;
+
+                    float prior_distance = m_voxels[voxel_index];
+
+                    float new_weight = prior_weight + current_weight;
+//                    float new_weight = min( prior_weight + current_weight, m_max_weight );
+                    float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
+
+                    m_weights[voxel_index] = new_weight;
+                    m_voxels[voxel_index] = new_distance; 
+                } // End of point in frustrum
+            } // Voxel depth <= 0
+
+            voxel_index++;
+        } // For all Xss
+    }
+}
+
+
 
 namespace phd {
 
 GPUTSDFVolume::~GPUTSDFVolume() {
-    std::cout << "TSDFVolume::dtor called." << std::endl;
-
-         // Remove existing data
+        // Remove existing data
         if( m_voxels ) {
             cudaFree( m_voxels ) ;
             m_voxels = 0;
@@ -29,9 +220,14 @@ GPUTSDFVolume::~GPUTSDFVolume() {
             cudaFree( m_weights );
             m_weights = 0;
         }
-        m_size = dim3{0,0,0};
-        m_physical_size = float3{ 0.0f, 0.0f, 0.0f};
-        m_pvoxel_size = float3{ 0.0f, 0.0f, 0.0f};
+        if( m_voxel_rotations ) {
+            cudaFree( m_voxel_rotations );
+            m_voxel_rotations = 0;
+        }
+        if( m_voxel_translations ) {
+            cudaFree( m_voxel_translations );
+            m_voxel_translations = 0;
+        }
 }
 
 /**
@@ -97,9 +293,26 @@ void GPUTSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t vol
         if( err != cudaSuccess ) {
             throw std::bad_alloc( );
         }
+
+
         err = cudaMalloc( &m_weights, volume_x * volume_y * volume_z * sizeof( float ) );
         if( err != cudaSuccess ) {
             cudaFree( m_voxels );
+            throw std::bad_alloc( );
+        }
+
+        err = cudaMalloc( &m_voxel_translations, volume_x * volume_y * volume_z * sizeof( float3 ) );
+        if( err != cudaSuccess ) {
+            cudaFree( m_voxels );
+            cudaFree( m_weights );
+            throw std::bad_alloc( );
+        }
+
+        err = cudaMalloc( &m_voxel_rotations, volume_x * volume_y * volume_z * sizeof( float3 ) );
+        if( err != cudaSuccess ) {
+            cudaFree( m_voxels );
+            cudaFree( m_weights );
+            cudaFree( m_voxel_translations );
             throw std::bad_alloc( );
         }
 
@@ -219,6 +432,104 @@ void GPUTSDFVolume::set_weight_data( const float * weight_data ) {
         cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
 }
 
+
+/**
+ * Reset the 
+ * @param translations X x Y x Z array of float3s
+ * @param grid_size The size of the voxel grid
+ * @param voxel_size The size of an individual voxel
+ * @param grid_offset The offset of the grid
+ */
+__global__
+void initialise_translations( float3 * translations, dim3 grid_size, float3 voxel_size, float3 grid_offset ) {
+
+    // Extract the voxel Y and Z coordinates we then iterate over X
+    int vy = threadIdx.y + blockIdx.y * blockDim.y;
+    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+
+    // If this thread is in range
+    if( vy < grid_size.y && vz < grid_size.z ) {
+
+
+        // The next (x_size) elements from here are the x coords
+        size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
+
+        // We want to iterate over the entire voxel space
+        // Each thread should be a Y,Z coordinate with the thread iterating over x
+        size_t voxel_index = base_voxel_index;
+        for( int vx=0; vx<grid_size.x; vx++ ) {
+            translations[voxel_index].x = (( vx + 0.5f ) * voxel_size.x) + grid_offset.x;
+            translations[voxel_index].y = (( vy + 0.5f ) * voxel_size.y) + grid_offset.y;
+            translations[voxel_index].z = (( vz + 0.5f ) * voxel_size.z) + grid_offset.z;
+
+            voxel_index++;
+        }
+    }
+}
+
+/**
+ * Initialise the deformation field with a twist
+ * @param translations X x Y x Z array of float3s
+ * @param grid_size The size of the voxel grid
+ * @param voxel_size The size of an individual voxel
+ * @param grid_offset The offset of the grid
+ */
+__global__
+void initialise_translations_with_twist( float3 * translations, dim3 grid_size, float3 voxel_size, float3 grid_offset  ) {
+
+    // Extract the voxel Y and Z coordinates we then iterate over X
+    int vy = threadIdx.y + blockIdx.y * blockDim.y;
+    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+
+    // If this thread is in range
+    if( vy < grid_size.y && vz < grid_size.z ) {
+
+        // The next (x_size) elements from here are the x coords
+        size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
+
+        // Compute the centre of rotation
+        float3 centre_of_rotation {
+            grid_offset.x + ( 1.5f * grid_size.x * voxel_size.x),
+            grid_offset.y + ( 0.5f * grid_size.y * voxel_size.y),
+            grid_offset.z + ( 0.5f * grid_size.z * voxel_size.z),
+        };
+
+
+        // We want to iterate over the entire voxel space
+        // Each thread should be a Y,Z coordinate with the thread iterating over x
+        size_t voxel_index = base_voxel_index;
+        for( int vx=0; vx<grid_size.x; vx++ ) {
+
+            // Starting point
+            float3 tran{
+                (( vx + 0.5f ) * voxel_size.x) + grid_offset.x,
+                (( vy + 0.5f ) * voxel_size.y) + grid_offset.y,
+                (( vz + 0.5f ) * voxel_size.z) + grid_offset.z
+            };
+
+            // Compute current angle with cor and hor axis
+            float dx = tran.x - centre_of_rotation.x;
+            float dy = tran.y - centre_of_rotation.y;
+
+            float theta = atan2( dy, dx ) * 2;
+
+            float sin_theta = sin( theta );
+            float cos_theta = cos( theta );
+
+            // Compute relative X and Y
+            float rel_x = ( tran.x - centre_of_rotation.x );
+            float rel_y = ( tran.y - centre_of_rotation.y );
+
+            translations[voxel_index].x = ( ( cos_theta * rel_x ) - ( sin_theta * rel_y ) ) + centre_of_rotation.x;
+            translations[voxel_index].y = ( ( sin_theta * rel_x ) + ( cos_theta * rel_y ) ) + centre_of_rotation.y;
+            translations[voxel_index].z = tran.z;
+
+            voxel_index++;
+        }
+    }
+}
+
+
 /**
  * Clear the TSDF memory on the device
  */
@@ -228,7 +539,15 @@ void GPUTSDFVolume::clear( ) {
 
     cudaMemset( m_weights, 0, data_size );
     cudaMemset( m_voxels, 0, data_size );
+    cudaMemset( m_voxel_rotations, 0, m_size.x * m_size.y * m_size.z * sizeof( float3) );
+
+    // Now initialise the translations
+    dim3 block( 1, 32, 32 );
+    dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
+//    initialise_translations<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
+    initialise_translations_with_twist<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset);
 }
+
 
 
 #pragma mark - Integrate new depth data

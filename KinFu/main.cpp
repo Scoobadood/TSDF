@@ -22,7 +22,7 @@ phd::TSDFVolume * make_tsdf(phd::TSDFVolume::volume_type type, int num_images ) 
     using namespace Eigen;
 
     // Make volume
-    TSDFVolume * volume = TSDFVolume::make_volume(type, Vector3i{ 512, 512, 512}, Vector3f{ 3000, 3000, 3000});
+    TSDFVolume * volume = TSDFVolume::make_volume(type, Vector3i{ 256, 256, 256}, Vector3f{ 3000, 3000, 3000});
     volume->offset( -1500, -1500, -1500);
 
     // And camera (from FREI 1 IR calibration data at TUM)
@@ -155,7 +155,9 @@ int main( int argc, const char * argv[] ) {
         p->save_to("/home/dave/Desktop/scene.png");
         delete p;
 
+        std::cout << "Rendering normals to image " << std::endl;
         p = normals_as_png( 640, 480, normals );
+        std::cout << "Saving PNG" << std::endl;
         p->save_to("/home/dave/Desktop/normals.png");
         delete p;
 
@@ -166,11 +168,13 @@ int main( int argc, const char * argv[] ) {
 
     // Extract Mesh
     if( volume ) {
+        std::cout << "Extracting ISO surface" << std::endl;
         std::vector<int3> triangles;
         std::vector<float3> verts;
         extract_surface( volume, verts, triangles);
 
         // Save to PLY file
+        std::cout << "Writing to PLY" << std::endl;
         write_to_ply( "/home/dave/Desktop/mesh.ply", verts, triangles);
         delete volume;
     } else {
