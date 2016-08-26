@@ -1,17 +1,18 @@
-vpath %.cpp KinFu:KinFu/GPU:KinFu/CPU:KinFu/Utilities:KinFu/DataLoader
-vpath %.cu KinFu/GPU
+vpath %.cpp src:src/GPU:src/CPU:src/Utilities:src/DataLoader:src/Tools
+vpath %.cu src/GPU
 
-SRC_DIR = KinFu
+SRC_DIR = src
 OBJ_DIR = obj
+BIN_DIR = bin
 NVCC=/usr/local/cuda/bin/nvcc
 
 
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
-CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -c  -ccbin=/usr/bin/gcc -std=c++11 -g
+CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src  -c  -ccbin=/usr/bin/gcc -std=c++11 -g
 LDFLAGS=-lpng
 
-SOURCES = main.cpp BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
+SOURCES = kinfu.cpp BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
           BlockTSDFLoader.cpp GPURaycaster.cpp \
           Definitions.cpp DepthMapUtilities.cpp FileUtilities.cpp PgmUtilities.cpp \
           PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp TSDFLoader.cpp \
@@ -27,7 +28,7 @@ _CUDA_OBJECTS=$(CUDA_SOURCES:.cu=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(_OBJECTS)) $(patsubst %,$(OBJ_DIR)/%,$(_CUDA_OBJECTS))
 
 
-EXECUTABLE=go
+EXECUTABLE=$(BIN_DIR)/kinfu
 Debug: all
 
 all: $(SOURCES) $(EXECUTABLE)
