@@ -1,6 +1,6 @@
 #include "TSDFVolume.hpp"
-#include "DepthImage.hpp"
-#include "PngWrapper.hpp"
+#include "DataLoader/DepthImage.hpp"
+#include "Utilities/PngWrapper.hpp"
 
 
 // Image names. Change to read from args later
