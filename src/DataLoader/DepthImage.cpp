@@ -21,9 +21,6 @@ DepthImage::DepthImage( std::string file_name ) {
 			size_t map_size = m_width * m_height;
 			for ( size_t i = 0; i < map_size; i++ ) {
 				uint16_t v = m_data[i];
-
-				// Convert to metres by dividing by 5000, then to millimetres by multiplying by 1000
-				m_data[i] = v / 5;
 			}
 		} else {
 			throw std::invalid_argument( "Problem reading depth image " + file_name);
