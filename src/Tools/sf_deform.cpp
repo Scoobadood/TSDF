@@ -2,6 +2,9 @@
 #include "DataLoader/DepthImage.hpp"
 #include "Utilities/PngWrapper.hpp"
 
+#include <sstream>
+#include <string>
+#include <iomanip>
 
 // Image names. Change to read from args later
 const std::string BASE_COLOR_FILE_NAME = "/home/dave/Projects/Code/Datasets/BerkeleyMHAD/Kinect/Kin01/S01/A05/R03/kin_k01_s01_a05_r03_color_";
