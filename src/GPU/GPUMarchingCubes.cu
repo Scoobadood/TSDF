@@ -1,3 +1,4 @@
+#include "TSDFVolume.hpp"
 #include "cu_common.hpp"
 #include "TSDF_utilities.hpp"
 
