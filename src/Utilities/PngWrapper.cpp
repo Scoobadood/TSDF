@@ -1,9 +1,24 @@
 #include "PngWrapper.hpp"
 #include "PngUtilities.hpp"
 
-PngWrapper::PngWrapper(const std::string& file_name ) {
-    m_data = reinterpret_cast<uint8_t *> (load_png_from_file(file_name, m_width, m_height));
-    m_type = GREYSCALE_16;
+PngWrapper::PngWrapper(const std::string& file_name, PNG_TYPE type ) {
+    m_type = type;
+    switch(type ) {
+        case COLOUR:
+            m_data = reinterpret_cast<uint8_t *> (load_colour_png_from_file(file_name, m_width, m_height));
+            break;
+
+        case GREYSCALE_16:
+            m_data = reinterpret_cast<uint8_t *> (load_png_from_file(file_name, m_width, m_height));
+            break;
+            
+        case GREYSCALE_8:
+            break;
+    }
+
+    if( !m_data) {
+         throw std::invalid_argument( "Failed to create PNGWrapper" );
+    }
 }
 
 PngWrapper::PngWrapper( const uint16_t width, const uint16_t height, const uint8_t * data, PNG_TYPE type ) {

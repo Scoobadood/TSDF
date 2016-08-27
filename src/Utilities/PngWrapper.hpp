@@ -12,7 +12,7 @@ public:
     };
 
 
-    PngWrapper( const std::string& file_name );
+    PngWrapper( const std::string& file_name, PNG_TYPE type = GREYSCALE_16 );
     PngWrapper( const uint16_t width, const uint16_t height, const uint8_t * data, PNG_TYPE );
     virtual ~PngWrapper();
 

@@ -101,7 +101,95 @@ uint16_t * load_png_from_file( const std::string file_name, uint32_t & width, ui
     return pixel_data;
 }
 
+uint8_t * load_colour_png_from_file( const std::string file_name, uint32_t & width, uint32_t & height ) {
+    uint8_t * pixel_data = NULL;
+    width = 0;
+    height = 0;
 
+    png_structp png_ptr = NULL;
+    png_infop info_ptr = NULL;
+    FILE *fp = std::fopen( file_name.c_str(), "rb");
+    if (fp) {
+
+        unsigned char     header[8];
+        if ( fread( header, 1, 8, fp) == 8) {
+
+            bool is_png = !png_sig_cmp(header, 0, 8);
+            if ( is_png ) {
+                // Setup structs for reading data
+
+                png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+
+                if (png_ptr) {
+
+                    info_ptr = png_create_info_struct(png_ptr);
+                    if (info_ptr) {
+
+                        // png_infop end_info = png_create_info_struct(png_ptr);
+                        // if (end_info) {
+
+                            png_init_io(png_ptr, fp);
+
+                            // Notify png of missing sig bytes
+                            png_set_sig_bytes(png_ptr, 8);
+
+                            // Do the actual read
+                            png_read_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+
+
+                            // Get data
+                            png_bytep *row_pointers = png_get_rows(png_ptr, info_ptr);
+                            // Get width and height
+                            width = png_get_image_width(png_ptr, info_ptr);
+                            height = png_get_image_height(png_ptr, info_ptr);
+
+                            if( png_get_rowbytes(png_ptr, info_ptr) == 3*width ) {
+
+                                pixel_data = new uint8_t [width * height * 3];
+                                size_t dst_idx = 0;
+                                for( uint32_t y=0; y<height; y++ ) {
+                                    size_t src_idx = 0;
+                                    for( uint32_t x=0; x<width ; x++ ) {
+                                        pixel_data[dst_idx++] = row_pointers[y][src_idx++];
+                                        pixel_data[dst_idx++] = row_pointers[y][src_idx++];
+                                        pixel_data[dst_idx++] = row_pointers[y][src_idx++];
+                                    }
+                                }
+                            } else {
+                                std::cerr << "Expected 8bpp color file" << std::endl;
+                            }
+                            png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+
+                        // } else {
+                        //     png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+                        //     std::cerr << "Problem reading file " << file_name << std::endl;
+                        // }
+                    } else {
+                        png_destroy_read_struct(&png_ptr,(png_infopp)NULL, (png_infopp)NULL);
+                        std::cerr << "Problem reading file (out of memory)" << file_name << std::endl;
+                    }
+
+
+                } else {
+                    std::cerr << "Problem reading file (out of memory)" << file_name << std::endl;
+                }
+            } else {
+                std::cerr << "File " << file_name << "is not a PNG" << std::endl;
+            }
+        } else {
+            std::cerr << "File " << file_name << "is too short" << std::endl;
+        }
+    } else {
+        std::cerr << "Couldn't open file " << file_name << std::endl;
+    }
+
+    // Free memory and structures used
+    png_free_data( png_ptr, info_ptr, PNG_FREE_ALL, -1);
+
+
+    if( fp ) fclose(fp);
+    return pixel_data;
+}
 
 
 bool save_png_to_file( const std::string file_name, uint32_t width, uint32_t height, const uint16_t * pixel_data ) {
