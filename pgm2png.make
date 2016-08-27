@@ -9,7 +9,7 @@ CC=/usr/bin/g++
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
 CFLAGS=-I/usr/local/include/eigen3 -I/usr/include/eigen3 -Isrc -Isrc/Utilities -std=c++11 -g -c
-LDFLAGS=-L/usr/lib/x86_64-linux-gnu -lpng
+LDFLAGS=-lpng
 
 SOURCES = PgmUtilities.cpp PngUtilities.cpp DepthMapUtilities.cpp pgm2png.cpp 
 
@@ -25,7 +25,7 @@ Debug: all
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE) : $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $(EXECUTABLE)
+	$(CC) $(OBJECTS) $(LDFLAGS)  -o $(EXECUTABLE)
 
 $(OBJ_DIR)/%.o : %.cpp
 	$(CC) $(CFLAGS) $< -o $(OBJ_DIR)/$(@F)
