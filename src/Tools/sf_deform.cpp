@@ -34,7 +34,7 @@ bool getNextImagePair( DepthImage * p_depth_image, PngWrapper * p_colour_image) 
 
 	bool ok = false;
 	if( p_depth_image) {
-		p_colour_image = new PngWrapper( color_image_file_name,  );
+		p_colour_image = new PngWrapper( color_image_file_name, PngWrapper::COLOUR );
 		if( p_colour_image ) {
 			ok = true;
 
