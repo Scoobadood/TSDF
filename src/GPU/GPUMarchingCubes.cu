@@ -1,4 +1,3 @@
-#include "MarchingCubes.hpp"
 #include "cu_common.hpp"
 #include "TSDF_utilities.hpp"
 
