@@ -11,7 +11,7 @@ NVCC=/usr/local/cuda/bin/nvcc
 
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
-CFLAGS=-i/usr/include/eigen3 -i/usr/local/include/eigen3 -Isrc -c -ccbin=/usr/bin/gcc -std=c++11 -g
+CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src -c -ccbin=/usr/bin/gcc -std=c++11 -g
 LDFLAGS=-lpng
 
 SOURCES = BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
