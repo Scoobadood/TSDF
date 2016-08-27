@@ -2,7 +2,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:$(SRC_DIR)/tools
+vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:$(SRC_DIR)/Tools
 
 CC=/usr/bin/g++
 
