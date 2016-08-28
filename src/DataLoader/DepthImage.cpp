@@ -5,7 +5,7 @@
 #include <stdexcept>
 
 DepthImage::DepthImage( std::string file_name ) {
-	m_data = NULL;
+	m_data = nullptr;
 
 	// Check file exists
 	bool is_directory;
@@ -14,14 +14,14 @@ DepthImage::DepthImage( std::string file_name ) {
 		m_data = load_png_from_file(file_name, w, h);
 
 
-		if ( m_data ) {
-			m_width = w;
-			m_height = h;
+		if ( m_data != nullptr) {
+			// m_width = w;
+			// m_height = h;
 
-			size_t map_size = m_width * m_height;
-			for ( size_t i = 0; i < map_size; i++ ) {
-				uint16_t v = m_data[i];
-			}
+			// size_t map_size = m_width * m_height;
+			// for ( size_t i = 0; i < map_size; i++ ) {
+			// 	uint16_t v = m_data[i];
+			// }
 		} else {
 			throw std::invalid_argument( "Problem reading depth image " + file_name);
 		}
@@ -34,7 +34,7 @@ DepthImage::~DepthImage( ) {
 	std::cout<< "Destroyed depth image" << std::endl;
 	if( m_data ) {
 		delete [] m_data;
-		m_data = 0;
+		m_data = nullptr;
 	} else {
 		std::cout << "m_data is null" << std::endl;
 	}
