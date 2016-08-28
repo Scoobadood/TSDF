@@ -20,7 +20,7 @@ void computeSceneFlow( ) {
 /**
  * Get the next depth and colour images
  */
-bool getNextImagePair( DepthImage * p_depth_image, PngWrapper * p_colour_image) {
+bool getNextImagePair( DepthImage ** pp_depth_image, PngWrapper ** pp_colour_image) {
 	static int frame_counter = 0;
 
  	std::ostringstream oss;
@@ -30,13 +30,16 @@ bool getNextImagePair( DepthImage * p_depth_image, PngWrapper * p_colour_image) 
 	std::string depth_image_file_name = BASE_DEPTH_FILE_NAME + frame_str + ".png";
 	std::string color_image_file_name = BASE_COLOR_FILE_NAME + frame_str + ".png";
 
-	p_depth_image = new DepthImage( depth_image_file_name );
+	DepthImage * p_depth_image = new DepthImage( depth_image_file_name );
 
 	bool ok = false;
 	if( p_depth_image) {
-		p_colour_image = new PngWrapper( color_image_file_name, PngWrapper::COLOUR );
+		PngWrapper * p_colour_image = new PngWrapper( color_image_file_name, PngWrapper::COLOUR );
 		if( p_colour_image ) {
 			ok = true;
+
+			*pp_depth_image = p_depth_image;
+			*pp_colour_image = p_colour_image;
 
 			frame_counter++;
 		} else {
@@ -54,7 +57,7 @@ void processFrame( ) {
 	DepthImage * p_depth_image;
 	PngWrapper * p_colour_image;
 
-	int success = getNextImagePair( p_depth_image, p_colour_image );
+	int success = getNextImagePair( &p_depth_image, &p_colour_image );
 
      	// Compute the Scene Flow image
 	computeSceneFlow( );
