@@ -21,7 +21,7 @@ public:
 	/**
 	 * Run SceneFusion
 	 */
-	void processFrames( const DepthImage * depth_image, const PngWrapper *  colour_image );
+	void process_frames( const DepthImage * depth_image, const PngWrapper *  colour_image );
 
 private:
 	TSDFVolume				* m_volume;

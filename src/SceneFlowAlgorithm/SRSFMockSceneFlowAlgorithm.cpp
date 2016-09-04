@@ -1,7 +1,34 @@
 #include "SRSFMockSceneFlowAlgorithm.hpp"
+#include "Utilities/FileUtilities.hpp"
 
 #include <iostream>
+#include <regex>
 
+SRSFMockSceneFlowAlgorithm::SRSFMockSceneFlowAlgorithm( const std::string & scene_flow_directory_name ) {
+	// Check directory exists
+	bool is_directory;
+	if( file_exists( scene_flow_directory_name, is_directory) && is_directory) {
+		// Stash this
+		m_directory = scene_flow_directory_name;
+
+		// Count the mnumber of scene flow files of the form sflow_nnnn.xml
+		files_in_directory( m_directory, m_scene_flow_file_names, []( std::string name ) {
+			// If name is color_nnnnn.pgm or depth.ppm then we accept it
+			bool is_valid = false;
+			is_valid = std::regex_match( name, std::regex::basic_regex("sflow_\\d{4}.xml") );
+			return is_valid;
+		});
+
+		// Sort them
+		std::sort( m_scene_flow_file_names.begin(), m_scene_flow_file_names.end() );
+
+		// And set index to first entry
+		m_current_file_index = 0;
+
+	} else {
+		std::cerr << "Couldn't find directory " << scene_flow_directory_name << std::endl;
+	}
+}
 /**
  * Given a string, parse it into the specified number of floats
  * @param string The source string
@@ -9,7 +36,7 @@
  * @param readValues A pointer into which to store the values of floats read
  * @return true if the number of floats werer read successfully, otherwise false
  */
-bool SRSFMockSceneFlowAlgorithm::readFloatsFromString( const char * string, uint num_floats, float * read_values) {
+bool SRSFMockSceneFlowAlgorithm::read_floats_from_string( const char * string, uint num_floats, float * read_values) {
 	bool read_ok = true;
 
 	if ( !read_values ) {
@@ -48,7 +75,7 @@ bool SRSFMockSceneFlowAlgorithm::readFloatsFromString( const char * string, uint
  * @param height The number of rows in the data
  * @return true if the number of floats werer read successfully, otherwise false
  */
-float * SRSFMockSceneFlowAlgorithm::readResidualsNode( const TiXmlDocument & doc, const char * node_name, uint32_t & width, uint32_t & height ) {
+float * SRSFMockSceneFlowAlgorithm::read_residuals_node( const TiXmlDocument & doc, const char * node_name, uint32_t & width, uint32_t & height ) {
 	if ( ! node_name ) {
 		std::cerr << "Error: missing node name in read_residuals_node" << std::endl;
 		return nullptr;
@@ -72,7 +99,7 @@ float * SRSFMockSceneFlowAlgorithm::readResidualsNode( const TiXmlDocument & doc
 			const TiXmlElement * data_element = doc.RootElement()->FirstChild( node_name )->FirstChildElement( "data" );
 			if ( data_element) {
 				const char * string = data_element->GetText();
-				if ( ! readFloatsFromString( string, num_entries, values ) ) {
+				if ( ! read_floats_from_string( string, num_entries, values ) ) {
 					std::cerr << "Error: Problem reading values from residuals node " << node_name << std::endl;
 				}
 			} else {
@@ -97,7 +124,7 @@ float * SRSFMockSceneFlowAlgorithm::readResidualsNode( const TiXmlDocument & doc
  * @param residuals The residual translation per pixel
  * @return true if the data were read correctly
  */
-bool SRSFMockSceneFlowAlgorithm::readSceneFlow( const std::string & file_name, Eigen::Vector3f& translation, Eigen::Vector3f& rotation, Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals) {
+bool SRSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name, Eigen::Vector3f& translation, Eigen::Vector3f& rotation, Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals) {
 	bool read_ok = true;
 
 	// Load file using TinyXML
@@ -114,7 +141,7 @@ bool SRSFMockSceneFlowAlgorithm::readSceneFlow( const std::string & file_name, E
 		if ( element ) {
 			const char *trans_vec_string = element->GetText();
 			float t[3];
-			if ( readFloatsFromString( trans_vec_string, 3, t ) ) {
+			if ( read_floats_from_string( trans_vec_string, 3, t ) ) {
 				translation[0] = t[0];
 				translation[1] = t[1];
 				translation[2] = t[2];
@@ -136,7 +163,7 @@ bool SRSFMockSceneFlowAlgorithm::readSceneFlow( const std::string & file_name, E
 		if ( element ) {
 			const char *rot_vec_string = element->GetText();
 			float r[3];
-			if ( readFloatsFromString( rot_vec_string, 3, r ) ) {
+			if ( read_floats_from_string( rot_vec_string, 3, r ) ) {
 				rotation[0] = r[0];
 				rotation[1] = r[1];
 				rotation[2] = r[2];
@@ -154,7 +181,7 @@ bool SRSFMockSceneFlowAlgorithm::readSceneFlow( const std::string & file_name, E
 	float * residual_x = nullptr;
 	if ( read_ok ) {
 		// Get the X residucals nodes
-		residual_x = readResidualsNode( doc, "SFx", width, height );
+		residual_x = read_residuals_node( doc, "SFx", width, height );
 		if ( ! residual_x) {
 			read_ok = false;
 			std::cerr << "Couldn't read X residuals in " << file_name << std::endl;
@@ -165,7 +192,7 @@ bool SRSFMockSceneFlowAlgorithm::readSceneFlow( const std::string & file_name, E
 	if ( read_ok ) {
 		// Get the Y residucals nodes
 		uint32_t y_width = 0, y_height = 0;
-		residual_y = readResidualsNode( doc, "SFy", y_width, y_height );
+		residual_y = read_residuals_node( doc, "SFy", y_width, y_height );
 		if ( ( ! residual_y ) || ( y_width != width) || ( y_height != height) ) {
 			read_ok = false;
 			delete [] residual_x;
@@ -177,7 +204,7 @@ bool SRSFMockSceneFlowAlgorithm::readSceneFlow( const std::string & file_name, E
 	if ( read_ok ) {
 		// Get the Y residucals nodes
 		uint32_t z_width = 0, z_height = 0;
-		residual_z = readResidualsNode( doc, "SFz", z_width, z_height );
+		residual_z = read_residuals_node( doc, "SFz", z_width, z_height );
 		if ( ( ! residual_z ) || ( z_width != width) || ( z_height != height) ) {
 			read_ok = false;
 			delete [] residual_x;
@@ -205,20 +232,25 @@ bool SRSFMockSceneFlowAlgorithm::readSceneFlow( const std::string & file_name, E
 }
 
 
-SRSFMockSceneFlowAlgorithm::SRSFMockSceneFlowAlgorithm( const std::string & sceneFlowDirectoryName ) {
-	// Check directory exists
-	// Check it contains some XML files
-	// Count how many assuming that they are ordered with numerically increasing suffixes
-}
+
 
 /**
  * Compute the scene flow from previous and current colour and depth images
  */
-void SRSFMockSceneFlowAlgorithm::computeSceneFlow(	const DepthImage * pDepthImage,
+void SRSFMockSceneFlowAlgorithm::compute_scene_flow(	const DepthImage * pDepthImage,
         const PngWrapper * pColourImage,
         Eigen::Vector3f&   						translation,
         Eigen::Vector3f&   						rotation,
         Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals ) {
-	// Faked ; we load from an expected directory and file pair
-
+	if( m_current_file_index < m_scene_flow_file_names.size() ) {
+		std::string path_to_file = m_directory + "/" + m_scene_flow_file_names[m_current_file_index];
+		// Read the file
+		if (!read_scene_flow( path_to_file, translation, rotation, residuals ) ) {
+			std::cerr << "Failed to read scene flow from file " << path_to_file << std::endl;
+		} else {
+			m_current_file_index ++;
+		}
+	} else {
+		std::cerr << "Tried to read scene flow file that doesn't exist" << std::endl;
+	}
 }

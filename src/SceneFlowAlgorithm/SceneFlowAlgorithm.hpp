@@ -13,9 +13,10 @@ public:
 	/**
 	 * Compute the scene flow from previous and current colour and depth images
 	 */
-	virtual void computeSceneFlow(	const DepthImage * pDepthImage, const PngWrapper * pColourImage,
-						   			Eigen::Vector3f&   						translation, 
-						   			Eigen::Vector3f&   						rotation,
+	virtual void compute_scene_flow(const DepthImage * 						 p_depth_image, 
+									const PngWrapper * 						 p_colour_image,
+						   			Eigen::Vector3f&   						 translation, 
+						   			Eigen::Vector3f&   						 rotation,
 						   			Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals ) = 0;
 protected:
 	SceneFlowAlgorithm( ){};
