@@ -3,7 +3,6 @@
 
 #include "../TSDFVolume.hpp"
 
-namespace phd {
 class TSDFLoader {
 public:
     TSDFLoader( TSDFVolume * volume );
@@ -32,6 +31,5 @@ private:
         data_ignored
     } m_state;
 };
-}
 
 #endif // TSDFLOADER_H

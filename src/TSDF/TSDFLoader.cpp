@@ -1,7 +1,6 @@
 #include "TSDFLoader.hpp"
 #include "FileUtilities.hpp"
 
-namespace phd {
 TSDFLoader::TSDFLoader(  TSDFVolume * volume ) {
     //ctor
     m_volume = volume;
@@ -120,5 +119,4 @@ void TSDFLoader::process_line( const std::string & line ) {
         // Compiler placating
         break;
     }
-}
 }

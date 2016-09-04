@@ -13,7 +13,6 @@
 #include <deque>
 #include <cstdint>
 
-namespace phd {
 
 class Camera {
 private:
@@ -204,5 +203,5 @@ public:
             Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices,
             Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const;
 };
-}
+
 #endif /* Camera_hpp */

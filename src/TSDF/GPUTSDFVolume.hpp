@@ -12,7 +12,6 @@
 #include "../TSDFVolume.hpp"
 #include "vector_types.h"
 
-namespace phd {
 class GPUTSDFVolume : public TSDFVolume {
 protected:
     // Size of voxel grid
@@ -200,7 +199,5 @@ public:
 #pragma mark - Rendering
         virtual void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const ;
     };
-}
-
 #endif /* GPUTSDFVolume_hpp */
 

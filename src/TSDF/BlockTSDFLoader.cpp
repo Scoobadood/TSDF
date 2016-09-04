@@ -1,6 +1,5 @@
 #include "BlockTSDFLoader.hpp"
 
-namespace phd {
 BlockTSDFLoader::BlockTSDFLoader( ) {
     // Set up state
     m_state = expect_voxel_size;
@@ -149,6 +148,3 @@ TSDFVolume * BlockTSDFLoader::to_tsdf( TSDFVolume::volume_type type ) const {
     volume->set_weight_data( m_weight_data );
     return volume;
 }
-
-}
-

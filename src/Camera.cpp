@@ -12,7 +12,6 @@
 #include "Camera.hpp"
 #include "Utilities/Definitions.hpp"
 
-namespace phd {
 
 /**
  * Common construction code
@@ -394,6 +393,5 @@ void Camera::depth_image_to_vertices_and_normals(const uint16_t * depth_image, c
             src_idx--;
         }
     }
-}
 }
 

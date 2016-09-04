@@ -2,7 +2,6 @@
 #include "CPU/CPUTSDFVolume.hpp"
 #include "GPU/GPUTSDFVolume.hpp"
 
-namespace phd {
 
 /**
  * Factory method to return a CPU or GPU based volume
@@ -46,5 +45,4 @@ TSDFVolume *TSDFVolume::make_volume( TSDFVolume::volume_type type, uint16_t volu
     using namespace Eigen;
 
     return TSDFVolume::make_volume( type, Vector3i{ volume_x, volume_y, volume_z}, Vector3f{ psize_x, psize_y, psize_z});
-}
 }

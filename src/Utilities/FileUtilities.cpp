@@ -1,7 +1,9 @@
 #include "FileUtilities.hpp"
 
 #include <fstream>
+#include <iostream>
 #include <sys/stat.h>
+#include <dirent.h>
 
 /**
  * Process file content line by line.
@@ -54,4 +56,33 @@ bool file_exists( const std::string& file_name, bool & is_directory ) {
     }
 
     return exists;
+}
+
+/**
+ * Return the list of files in a directory which meet a spefici criteria
+ * which is labelled
+ * @param directory The directory to search
+ * @param files A vector to be filled by file names meeting the filter
+ * @param filter The function which filters the files. Should return true if a file name matches the filter.
+ */
+void files_in_directory( const std::string& directory, std::vector<std::string>& files, std::function< bool( const char * ) > filter ) {
+    // Get a directory listing#include <string>
+    DIR *dir =  opendir ( directory.c_str() );
+    if ( dir != NULL ) {
+        struct dirent *ent;
+
+        // Iterate over all the file names
+        while ( ( ent = readdir ( dir ) ) != NULL ) {
+
+            // Call the filter with each
+            if( filter( ent->d_name ) ) {
+                // Add matching file name
+                files.push_back( ent->d_name );
+            }
+        }
+        closedir (dir);
+    } else {
+        // Could not open directory
+        std::cerr << "Problem reading directory " << directory << std::endl;
+    }
 }

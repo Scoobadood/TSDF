@@ -18,7 +18,6 @@
 
 #include "Camera.hpp"
 
-namespace phd {
     typedef struct {
         float x;
         float y;
@@ -222,7 +221,6 @@ public:
      */
     virtual void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const = 0;
 };
-}
 
 #endif /* TSDFVolume_hpp */
 

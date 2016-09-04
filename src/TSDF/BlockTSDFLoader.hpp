@@ -7,7 +7,6 @@
 
 
 
-namespace phd {
 class TSDFVolume;
 
 class BlockTSDFLoader {
@@ -46,6 +45,5 @@ private:
         data_ignored
     } m_state;
 };
-}
 
 #endif
