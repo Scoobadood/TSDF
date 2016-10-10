@@ -73,8 +73,13 @@ void MockKinect::start( ) {
 			PngWrapper * colour_image = new PngWrapper( m_directory + "/" + colour_file_name, PngWrapper::COLOUR );
 			DepthImage * depth_image = new DepthImage( m_directory + "/" + depth_file_name );
 
+			// Call callback
 			std::cerr << "Process pair (" << depth_file_name << ", " << colour_file_name << ")" << std::endl;
 			notify( depth_image, colour_image );
+
+			// delete data
+			delete colour_image;
+			delete depth_image;
 		} else {
 			std::cerr << "Mismatched files: depth " << depth_file_name << ", colour " << colour_file_name << std::endl;
 			break;

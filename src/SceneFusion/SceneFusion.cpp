@@ -28,7 +28,10 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	Eigen::Matrix<float, 3, Eigen::Dynamic> residuals;
 	m_scene_flow_algorithm->compute_scene_flow( depth_image, colour_image, translation, rotation, residuals );
 
-	// Process them into TSDF
 
-	// And dispose of them
+	// Process them into TSDF
+	
+
+
+	
 }

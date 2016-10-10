@@ -3,9 +3,10 @@
 
 
 
-/**
- * Convert vertices to voxel centres.
- */
+/*  **********************************************************************
+ *  **  This is old code and has been superceded by the code in the 
+ *  **  SceneFlowUpdater folder
+ *  **********************************************************************/
 
 
 /**
