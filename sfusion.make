@@ -2,7 +2,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:$(SRC_DIR)/DataLoader:$(SRC_DIR)/SceneFlowAlgorithm:$(SRC_DIR)/SceneFusion:$(SRC_DIR)/RGBDDevice:$(SRC_DIR)/Tools:third_party/TinyXml:$(SRC_DIR)/TSDF:$(SRC_DIR)/MarchingCubes:$(SRC_DIR)/Raycaster
+vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:$(SRC_DIR)/DataLoader:$(SRC_DIR)/SceneFlowAlgorithm:$(SRC_DIR)/SceneFusion:$(SRC_DIR)/RGBDDevice:$(SRC_DIR)/Tools:third_party/TinyXml:$(SRC_DIR)/TSDF:$(SRC_DIR)/MarchingCubes:$(SRC_DIR)/RayCaster
 vpath %.cu $(SRC_DIR)/GPU:$(SRC_DIR)/MarchingCubes:$(SRC_DIR)/RayCaster:$(SRC_DIR)/TSDF:$(SRC_DIR)/SceneFlowUpdater
 
 NVCC=/usr/local/cuda/bin/nvcc
