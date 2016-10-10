@@ -2,7 +2,7 @@
 #define SCENE_FLOW_ALGORITHM_HPP
 
 
-#include "DataLoader/Depthimage.hpp"
+#include "DataLoader/DepthImage.hpp"
 #include "Utilities/PngWrapper.hpp"
 
 #include <Eigen/Core>
