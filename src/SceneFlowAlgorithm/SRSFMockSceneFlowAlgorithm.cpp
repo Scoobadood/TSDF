@@ -15,7 +15,8 @@ SRSFMockSceneFlowAlgorithm::SRSFMockSceneFlowAlgorithm( const std::string & scen
 		files_in_directory( m_directory, m_scene_flow_file_names, []( std::string name ) {
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
 			bool is_valid = false;
-			is_valid = std::regex_match( name, std::regex::basic_regex("sflow_\\d{4}.xml") );
+
+			is_valid = std::regex_match( name, std::regex("sflow_\\d{4}.xml") );
 			return is_valid;
 		});
 
