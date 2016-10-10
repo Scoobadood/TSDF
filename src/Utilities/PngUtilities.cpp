@@ -6,7 +6,7 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 
-#include "PngUtilities.hpp"
+#include "../include/PngUtilities.hpp"
 #include <png.h>
 
 

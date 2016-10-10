@@ -123,7 +123,7 @@ void processFrame( ) {
 
 int main( int argc, char *argv[] ) {
 	// Construct a TSDF
-	phd::TSDFVolume *volume = phd::TSDFVolume::make_volume( phd::TSDFVolume::GPU );
+	TSDFVolume *volume = TSDFVolume::make_volume( TSDFVolume::GPU );
 
 	// Load next depth image and project into TSDF
 

@@ -1,4 +1,4 @@
-#include "BlockTSDFLoader.hpp"
+#include "../include/BlockTSDFLoader.hpp"
 
 BlockTSDFLoader::BlockTSDFLoader( ) {
     // Set up state
@@ -92,7 +92,7 @@ void BlockTSDFLoader::process_weight_line( const std::string & line ) {
 }
 
 bool BlockTSDFLoader::load_from_file( const std::string & file_name ) {
-    std::function<void( const std::string & )> f = std::bind(&phd::BlockTSDFLoader::process_line, this, std::placeholders::_1 );
+    std::function<void( const std::string & )> f = std::bind(&BlockTSDFLoader::process_line, this, std::placeholders::_1 );
     process_file_by_lines( file_name, f);
 
     // Assert that we have the correct state

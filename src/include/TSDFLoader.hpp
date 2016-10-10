@@ -1,7 +1,7 @@
 #ifndef TSDFLOADER_H
 #define TSDFLOADER_H
 
-#include "../TSDFVolume.hpp"
+#include "TSDFVolume.hpp"
 
 class TSDFLoader {
 public:

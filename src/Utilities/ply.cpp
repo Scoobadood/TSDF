@@ -1,4 +1,4 @@
-#include "ply.hpp"
+#include "../include/ply.hpp"
 
 #include <iostream>
 #include <fstream>

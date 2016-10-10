@@ -23,7 +23,7 @@ extern const Eigen::Vector3d X_AXIS;
 extern const Eigen::Vector3d Y_AXIS;
 extern const Eigen::Vector3d Z_AXIS;
 extern const Eigen::Vector3d IDENTITY_TRANSLATION;
-extern const phd::Quaternion IDENTITY_ROTATION;
-extern const phd::Quaternion NULL_QUATERNION;
+extern const Quaternion IDENTITY_ROTATION;
+extern const Quaternion NULL_QUATERNION;
 
 #endif /* Constants_hpp */

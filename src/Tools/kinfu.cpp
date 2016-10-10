@@ -17,7 +17,7 @@ Eigen::Matrix4f g_campose;
 /**
  * Make the TSDF from input files
  */
-phd::TSDFVolume * make_tsdf(phd::TSDFVolume::volume_type type, int num_images ) {
+TSDFVolume * make_tsdf(TSDFVolume::volume_type type, int num_images ) {
     using namespace phd;
     using namespace Eigen;
 
@@ -69,10 +69,10 @@ phd::TSDFVolume * make_tsdf(phd::TSDFVolume::volume_type type, int num_images ) 
 /**
  * Load the TSDF
  */
-phd::TSDFVolume * load_tsdf( phd::TSDFVolume::volume_type type, const std::string& file_name) {
-    phd::TSDFVolume * volume = nullptr;
+TSDFVolume * load_tsdf( TSDFVolume::volume_type type, const std::string& file_name) {
+    TSDFVolume * volume = nullptr;
 
-    phd::BlockTSDFLoader loader;
+    BlockTSDFLoader loader;
     if ( loader.load_from_file( file_name ) ) {
         volume = loader.to_tsdf(type);
         if ( volume ) {
@@ -93,8 +93,8 @@ phd::TSDFVolume * load_tsdf( phd::TSDFVolume::volume_type type, const std::strin
 
 int main( int argc, const char * argv[] ) {
     int retval = 0;
-    phd::TSDFVolume::volume_type type = phd::TSDFVolume::GPU;
-    phd::TSDFVolume *volume = nullptr;
+    TSDFVolume::volume_type type = TSDFVolume::GPU;
+    TSDFVolume *volume = nullptr;
 
     // Format is 
     // go -m=nn : make with nn frames or
@@ -135,7 +135,7 @@ int main( int argc, const char * argv[] ) {
 
     // Save norm and verts
     if ( volume ) {
-        phd::Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
+        Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
 
         Eigen::Matrix< float, 3, Eigen::Dynamic> vertices;
         Eigen::Matrix< float, 3, Eigen::Dynamic> normals;

@@ -14,7 +14,6 @@
 #include "TSDFVolume.hpp"
 #include "Camera.hpp"
 
-namespace phd {
     class Raycaster {
     public:
         Raycaster( int width=640, int height=480) {
@@ -38,5 +37,4 @@ namespace phd {
         uint16_t    m_height;
 
     };
-}
 #endif /* Raycaster_hpp */

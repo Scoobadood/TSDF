@@ -9,7 +9,7 @@
 #ifndef GPUTSDFVolume_hpp
 #define GPUTSDFVolume_hpp
 
-#include "../TSDFVolume.hpp"
+#include "TSDFVolume.hpp"
 #include "vector_types.h"
 
 class GPUTSDFVolume : public TSDFVolume {

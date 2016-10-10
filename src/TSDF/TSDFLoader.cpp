@@ -1,5 +1,5 @@
-#include "TSDFLoader.hpp"
-#include "FileUtilities.hpp"
+#include "../include/TSDFLoader.hpp"
+#include "../include/FileUtilities.hpp"
 
 TSDFLoader::TSDFLoader(  TSDFVolume * volume ) {
     //ctor
@@ -72,7 +72,7 @@ void TSDFLoader::process_weight_line( const std::string & line ) {
 }
 
 bool TSDFLoader::load_from_file( const std::string & file_name ) {
-    std::function<void( const std::string & )> f = std::bind(&phd::TSDFLoader::process_line, this, std::placeholders::_1 );
+    std::function<void( const std::string & )> f = std::bind(&TSDFLoader::process_line, this, std::placeholders::_1 );
     process_file_by_lines( file_name, f);
 
     // Assert that we have the correct state

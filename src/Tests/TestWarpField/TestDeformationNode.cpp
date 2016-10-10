@@ -17,7 +17,7 @@ TEST( TestDeformationNode, testThatDefaultCtorProducesIdentity ) {
 
     EXPECT_EQ( dn.getRadiusParameter(), 1.0);
     EXPECT_EQ( dn.getPosition(), Eigen::Vector3d(0.0,0.0,0.0) );
-    EXPECT_EQ( dn.getTransformation(), phd::DualQuaternion( IDENTITY_ROTATION, NULL_QUATERNION ) );
+    EXPECT_EQ( dn.getTransformation(), DualQuaternion( IDENTITY_ROTATION, NULL_QUATERNION ) );
 }
 
 

@@ -1,4 +1,4 @@
-#include "RenderUtilities.hpp"
+#include "../include/RenderUtilities.hpp"
 
 #include <iostream>
 
@@ -20,7 +20,7 @@ void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t 
  * @param light_source THe global position of the light source
  */
 void save_rendered_scene_as_png(std::string filename, uint16_t width, uint16_t height,
-const Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, const Eigen::Matrix<float, 3, Eigen::Dynamic>& normals, const phd::Camera & camera, const Eigen::Vector3f & light_source) {
+const Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, const Eigen::Matrix<float, 3, Eigen::Dynamic>& normals, const Camera & camera, const Eigen::Vector3f & light_source) {
 
     PngWrapper * p = scene_as_png(width, height, vertices, normals, camera, light_source);
     p->save_to( filename );
@@ -39,7 +39,7 @@ const Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, const Eigen::Matrix<flo
 PngWrapper * scene_as_png(uint16_t width, uint16_t height,
                           const Eigen::Matrix<float,3,Eigen::Dynamic>& vertices,
                           const Eigen::Matrix<float,3,Eigen::Dynamic>& normals,
-                          const phd::Camera & camera,
+                          const Camera & camera,
                           const Eigen::Vector3f & light_source) {
     PngWrapper * pw = NULL;
     // allocate image data

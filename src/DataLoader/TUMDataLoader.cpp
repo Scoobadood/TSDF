@@ -1,5 +1,5 @@
-#include "TUMDataLoader.hpp"
-#include "../Utilities/FileUtilities.hpp"
+#include "../include/TUMDataLoader.hpp"
+#include "../include/FileUtilities.hpp"
 
 #include <sys/stat.h>
 #include <stdexcept>

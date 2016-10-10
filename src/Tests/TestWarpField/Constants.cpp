@@ -15,7 +15,7 @@ const Eigen::Vector3d X_AXIS{ 1.0, 0.0, 0.0};
 const Eigen::Vector3d Y_AXIS{ 0.0, 1.0, 0.0};
 const Eigen::Vector3d Z_AXIS{ 0.0, 0.0, 1.0};
 const Eigen::Vector3d IDENTITY_TRANSLATION{0.0, 0.0, 0.0};
-const phd::Quaternion IDENTITY_ROTATION{1.0, 0.0, 0.0, 0.0};
-const phd::Quaternion NULL_QUATERNION{0.0, 0.0, 0.0, 0.0};
+const Quaternion IDENTITY_ROTATION{1.0, 0.0, 0.0, 0.0};
+const Quaternion NULL_QUATERNION{0.0, 0.0, 0.0, 0.0};
 
 

@@ -1,5 +1,5 @@
-#include "MockKinect.hpp"
-#include "Utilities/FileUtilities.hpp"
+#include "../include/MockKinect.hpp"
+#include "../include/FileUtilities.hpp"
 
 #include <iostream>
 #include <algorithm>

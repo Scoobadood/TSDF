@@ -3,8 +3,6 @@
 
 #include <string>
 #include <vector>
-#include "DataLoader/DepthImage.hpp"
-#include "Utilities/PngWrapper.hpp"
 
 #include "RGBDDevice.hpp"
 

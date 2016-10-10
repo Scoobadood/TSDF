@@ -1,5 +1,5 @@
 #include "SRSFMockSceneFlowAlgorithm.hpp"
-#include "Utilities/FileUtilities.hpp"
+#include "FileUtilities.hpp"
 
 #include <iostream>
 #include <regex>

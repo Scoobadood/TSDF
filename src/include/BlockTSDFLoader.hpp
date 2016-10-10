@@ -1,8 +1,8 @@
 #ifndef TSDF_BLOCK_LOADER_H
 #define TSDF_BLOCK_LOADER_H
 
-#include "../TSDFVolume.hpp"
-#include "../Utilities/FileUtilities.hpp"
+#include "TSDFVolume.hpp"
+#include "FileUtilities.hpp"
 
 
 

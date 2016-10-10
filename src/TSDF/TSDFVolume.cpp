@@ -1,6 +1,5 @@
-#include "TSDFVolume.hpp"
-#include "CPU/CPUTSDFVolume.hpp"
-#include "GPU/GPUTSDFVolume.hpp"
+#include "../include/TSDFVolume.hpp"
+#include "../include/GPUTSDFVolume.hpp"
 
 
 /**
@@ -19,10 +18,6 @@ TSDFVolume * TSDFVolume::make_volume( TSDFVolume::volume_type type,
     TSDFVolume *volume = NULL;
 
     switch (type) {
-    case TSDFVolume::CPU:
-        volume = new CPUTSDFVolume { voxel_size, physical_size};
-        break;
-
     case TSDFVolume::GPU:
         volume = new GPUTSDFVolume { voxel_size, physical_size};
         break;

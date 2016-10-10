@@ -1,4 +1,4 @@
-#include "cu_common.hpp"
+#include "../include/cu_common.hpp"
 #include <iostream>
 
 __host__

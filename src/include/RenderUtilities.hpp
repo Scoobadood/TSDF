@@ -5,9 +5,7 @@
 
 #include <Eigen/Dense>
 
-namespace phd{
-    class Camera;
-};
+class Camera;
 
 PngWrapper * normals_as_png(uint16_t width, uint16_t height, const Eigen::Matrix<float,3,Eigen::Dynamic>& normals);
 /*
@@ -22,10 +20,10 @@ PngWrapper * normals_as_png(uint16_t width, uint16_t height, const Eigen::Matrix
 PngWrapper * scene_as_png(uint16_t width, uint16_t height,
                           const Eigen::Matrix<float,3,Eigen::Dynamic>& vertices,
                           const Eigen::Matrix<float,3,Eigen::Dynamic>& normals,
-                          const phd::Camera & camera,
+                          const Camera & camera,
                           const Eigen::Vector3f & light_source);
 
 void save_normals_as_colour_png( std::string filename, uint16_t width, uint16_t height, const Eigen::Matrix<float,3,Eigen::Dynamic>& normals );
-void save_rendered_scene_as_png( std::string filename, uint16_t width, uint16_t height, const Eigen::Matrix<float,3,Eigen::Dynamic>& vertices, const Eigen::Matrix<float,3,Eigen::Dynamic>& normals, const phd::Camera & camera, const Eigen::Vector3f & light_source);
+void save_rendered_scene_as_png( std::string filename, uint16_t width, uint16_t height, const Eigen::Matrix<float,3,Eigen::Dynamic>& vertices, const Eigen::Matrix<float,3,Eigen::Dynamic>& normals, const Camera & camera, const Eigen::Vector3f & light_source);
 
 #endif // RenderUtilities_h

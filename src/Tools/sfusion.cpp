@@ -1,6 +1,6 @@
-#include "SceneFusion/SceneFusion.hpp"
-#include "RGBDDevice/MockKinect.hpp"
-#include "SceneFlowAlgorithm/SRSFMockSceneFlowAlgorithm.hpp"
+#include "../include/SceneFusion.hpp"
+#include "../include/MockKinect.hpp"
+#include "../include/SRSFMockSceneFlowAlgorithm.hpp"
 
 int main( int argc, const char * argv[] ) {
 	if ( argc == 3 ) {

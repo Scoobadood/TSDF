@@ -16,8 +16,8 @@ public:
     PngWrapper( const uint16_t width, const uint16_t height, const uint8_t * data, PNG_TYPE );
     virtual ~PngWrapper();
 
-    uint32_t width();
-    uint32_t height();
+    inline uint32_t width() const {return m_width; };
+    inline uint32_t height() const  {return m_height; };
     bool save_to( const std::string& file_name ) const;
 
 protected:

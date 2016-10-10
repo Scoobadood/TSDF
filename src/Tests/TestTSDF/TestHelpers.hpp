@@ -19,8 +19,8 @@
 #pragma mark - helpers
 
 
-void create_sphere_in_TSDF( phd::TSDFVolume & volume, float radius );
-void create_wall_in_TSDF( phd::TSDFVolume & volume, float depth );
+void create_sphere_in_TSDF( TSDFVolume & volume, float radius );
+void create_wall_in_TSDF( TSDFVolume & volume, float depth );
 
 uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radius, uint16_t min_depth, uint16_t max_depth ) ;
 uint16_t * make_wall_depth_map( uint16_t width, uint16_t height, uint16_t max_depth, uint16_t min_depth, uint16_t wall_depth );
@@ -32,7 +32,7 @@ Eigen::Matrix4f make_y_axis_rotation( float theta, Eigen::Vector3f pos );
 Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos );
 Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos );
 
-phd::Camera make_kinect( );
+Camera make_kinect( );
 
 
 

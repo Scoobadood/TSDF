@@ -10,7 +10,7 @@
 #include <iostream>
 
 #include "Camera.hpp"
-#include "Utilities/Definitions.hpp"
+#include "include/Definitions.hpp"
 
 
 /**

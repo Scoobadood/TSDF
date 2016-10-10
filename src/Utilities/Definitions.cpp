@@ -6,7 +6,7 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 
-#include "Definitions.hpp"
+#include "../include/Definitions.hpp"
 
 /**
  * Predefined bad vertex

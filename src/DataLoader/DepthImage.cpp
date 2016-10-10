@@ -1,6 +1,6 @@
-#include "DepthImage.hpp"
-#include "../Utilities/PngUtilities.hpp"
-#include "../Utilities/FileUtilities.hpp"
+#include "../include/DepthImage.hpp"
+#include "../include/PngUtilities.hpp"
+#include "../include/FileUtilities.hpp"
 
 #include <stdexcept>
 

@@ -5,12 +5,12 @@
 //  Created by Dave on 11/03/2016.
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
-#include "cu_common.hpp"
+#include "../include/cu_common.hpp"
 
-#include "GPUTSDFVolume.hpp"
-#include "GPURaycaster.hpp"
-#include "TSDF_utilities.hpp"
-#include "../Utilities/TSDFLoader.hpp"
+#include "../include/GPUTSDFVolume.hpp"
+#include "../include/GPURaycaster.hpp"
+#include "../include/TSDF_utilities.hpp"
+#include "../include/TSDFLoader.hpp"
 
 #include <fstream>
 #include <iomanip>
@@ -207,8 +207,6 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
 }
 
 
-
-namespace phd {
 
 GPUTSDFVolume::~GPUTSDFVolume() {
         // Remove existing data
@@ -692,5 +690,3 @@ void GPUTSDFVolume::raycast( uint16_t width, uint16_t height, const Camera& came
 
     raycaster.raycast( *this, camera, vertices, normals );
 }
-}
-

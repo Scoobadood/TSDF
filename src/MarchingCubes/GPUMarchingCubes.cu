@@ -245,7 +245,7 @@ void mc_kernel( const float * tsdf_values_layer_1,
  * Transfer variables into a device usable form prior to invoking the kernel
  */
 __host__
-void prep_for_kernel( const phd::TSDFVolume 	*volume,
+void prep_for_kernel( const TSDFVolume		 	*volume,
                       dim3& 					voxel_grid_size,
                       float3& 					voxel_space_size,
                       float3& 					voxel_size,
@@ -291,7 +291,7 @@ void prep_for_kernel( const phd::TSDFVolume 	*volume,
  * @param triangles a vector of triangles to be populated by this function
  */
 __host__
-void process_kernel_output( const phd::TSDFVolume * volume,
+void process_kernel_output( const TSDFVolume	 * volume,
                             const float3          * h_vertices,
                             const int3            * h_triangles,
                             std::vector<float3>&    vertices,
@@ -360,7 +360,7 @@ void process_kernel_output( const phd::TSDFVolume * volume,
  * @param triangles A vector of Triangles
  */
 __host__
-void extract_surface( const phd::TSDFVolume * volume, std::vector<float3>& vertices, std::vector<int3>& triangles) {
+void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, std::vector<int3>& triangles) {
 	using namespace Eigen;
 
 	// Convert input parms into kernel parameters

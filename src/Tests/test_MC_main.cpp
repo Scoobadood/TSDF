@@ -8,11 +8,11 @@
 
 #include <Eigen/Dense>
 
-phd::TSDFVolume * make_sphere_tsdf( const  int vx, const  int vy, const  int vz, const float px, const float py, const float pz ) {
+TSDFVolume * make_sphere_tsdf( const  int vx, const  int vy, const  int vz, const float px, const float py, const float pz ) {
 	using namespace Eigen;
 
 
-	phd::TSDFVolume *volume = phd::TSDFVolume::make_volume( phd::TSDFVolume::GPU, Vector3i{ vx, vy, vz }, Vector3f{px, py, pz} );
+	TSDFVolume *volume = TSDFVolume::make_volume( TSDFVolume::GPU, Vector3i{ vx, vy, vz }, Vector3f{px, py, pz} );
 
 	// Now make some data
 	float * data = new float[ vx * vy * vz];
@@ -78,12 +78,12 @@ void write_to_ply( const std::string& file_name, const std::vector<float3>& vert
 int main( int argc, const char * argv[] ) {
 	int retval = 0;
 
-	phd::TSDFVolume::volume_type type = phd::TSDFVolume::GPU;
-	phd::TSDFVolume *volume = make_sphere_tsdf( 256, 256, 256, 1024.0f, 1024.0f, 1024.0f );
+	TSDFVolume::volume_type type = TSDFVolume::GPU;
+	TSDFVolume *volume = make_sphere_tsdf( 256, 256, 256, 1024.0f, 1024.0f, 1024.0f );
 
 
 	if ( volume ) {
-		phd::Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
+		Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
 
 		std::vector<int3> triangles;
 		std::vector<float3> vertices;

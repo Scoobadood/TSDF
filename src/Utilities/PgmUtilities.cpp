@@ -6,7 +6,7 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 
-#include "PgmUtilities.hpp"
+#include "../include/PgmUtilities.hpp"
 #include <fstream>
 #include <assert.h>
 

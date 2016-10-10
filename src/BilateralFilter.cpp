@@ -9,7 +9,7 @@
 #include <iostream>
 #include <cmath>
 #include <cstring>
-#include "BilateralFilter.hpp"
+#include "include/BilateralFilter.hpp"
 
 
 BilateralFilter::BilateralFilter( float sigma_colour, float sigma_space ) : m_sigma_colour{ sigma_colour }, m_sigma_space{ sigma_space } {

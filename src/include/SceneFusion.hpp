@@ -1,10 +1,11 @@
 #ifndef SCENE_FUSION_HPP
 #define SCENE_FUSION_HPP
 
-#include "TSDF/TSDFVolume.hpp"
-#include "SceneFlowAlgorithm/SceneFlowAlgorithm.hpp"
-#include "RGBDDevice/RGBDDevice.hpp"
-
+#include "TSDFVolume.hpp"
+#include "SceneFlowAlgorithm.hpp"
+#include "RGBDDevice.hpp"
+#include "PngWrapper.hpp"
+#include "DepthImage.hpp"
 /**
  * The main class for SceneFusion
  * Responsible for pulling frames from the Device class and merging them into the TSDFVolume
@@ -29,6 +30,8 @@ private:
 	SceneFlowAlgorithm		* m_scene_flow_algorithm;
 
 	RGBDDevice				* m_rgbd_device;
+
+	Camera					* m_camera;
 };
 
 #endif

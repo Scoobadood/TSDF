@@ -1,6 +1,6 @@
-#include "DepthMapUtilities.hpp"
-#include "PngUtilities.hpp"
-#include "PgmUtilities.hpp"
+#include "../include/DepthMapUtilities.hpp"
+#include "../include/PngUtilities.hpp"
+#include "../include/PgmUtilities.hpp"
 
 uint16_t * read_tum_depth_map( const std::string & file_name, uint32_t & width, uint32_t & height ) {
 

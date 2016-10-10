@@ -1,8 +1,8 @@
 #ifndef RGBD_DEVICE_HPP
 #define RGBD_DEVICE_HPP
 
-#include "DataLoader/DepthImage.hpp"
-#include "Utilities/PngWrapper.hpp"
+#include "DepthImage.hpp"
+#include "PngWrapper.hpp"
 
 #include <functional>
 

@@ -452,8 +452,8 @@ void dump_matrix( const std::string& title, const Mat33& mat ) {
  * Compute the vertex map
  */
 __host__
-float3 * get_vertices(  const phd::TSDFVolume&  volume,
-                        const phd::Camera&      camera,
+float3 * get_vertices(  const TSDFVolume&  volume,
+                        const Camera&      camera,
                         uint16_t                width,
                         uint16_t                height ) {
 
@@ -556,7 +556,7 @@ float3 * compute_normals( uint16_t width, uint16_t height, float3 * d_vertices )
  *
  */
 __host__
-void cast(const phd::TSDFVolume & volume, const phd::Camera & camera,
+void cast(const TSDFVolume & volume, const Camera & camera,
           uint16_t width, uint16_t height,
           Eigen::Matrix<float, 3, Eigen::Dynamic> & vertices,
           Eigen::Matrix<float, 3, Eigen::Dynamic> & normals ) {
@@ -589,8 +589,8 @@ void cast(const phd::TSDFVolume & volume, const phd::Camera & camera,
 
 
 __host__
-void sphere_cast(const phd::TSDFVolume & volume,
-                 const phd::Camera & camera,
+void sphere_cast(const TSDFVolume & volume,
+                 const Camera & camera,
                  uint16_t width, uint16_t height,
                  Eigen::Matrix<float, 3, Eigen::Dynamic> & vertices,
                  Eigen::Matrix<float, 3, Eigen::Dynamic> & normals ) {

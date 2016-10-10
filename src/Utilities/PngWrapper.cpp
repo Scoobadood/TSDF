@@ -1,5 +1,5 @@
-#include "PngWrapper.hpp"
-#include "PngUtilities.hpp"
+#include "../include/PngWrapper.hpp"
+#include "../include/PngUtilities.hpp"
 
 PngWrapper::PngWrapper(const std::string& file_name, PNG_TYPE type ) {
     m_type = type;
