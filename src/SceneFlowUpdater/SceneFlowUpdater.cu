@@ -1,7 +1,8 @@
+#include "../include/GPUMarchingCubes.hpp"
 #include "../include/SceneFlowUpdater.hpp"
 #include "../include/cu_common.hpp"
 
-
+const float THRESHOLD = 2.0f;
 
 __device__
 /**
@@ -17,39 +18,87 @@ int3 world_to_pixel( const float3 & world_coordinate, const Mat44 & inv_pose, co
 	cam_coordinate.z = inv_pose.m31 * world_coordinate.x + inv_pose.m32 * world_coordinate.y + inv_pose.m33 * world_coordinate.z + inv_pose.m34;
 
 
-    // Push into camera image
-    float3 image_coordinate;
-    image_coordinate.x = k.m11 * cam_coordinate.x + k.m12 * cam_coordinate.y + k.m13 * cam_coordinate.z;
-    image_coordinate.y = k.m21 * cam_coordinate.x + k.m22 * cam_coordinate.y + k.m23 * cam_coordinate.z;
-    image_coordinate.z = k.m31 * cam_coordinate.x + k.m32 * cam_coordinate.y + k.m33 * cam_coordinate.z;
+	// Push into camera image
+	float3 image_coordinate;
+	image_coordinate.x = k.m11 * cam_coordinate.x + k.m12 * cam_coordinate.y + k.m13 * cam_coordinate.z;
+	image_coordinate.y = k.m21 * cam_coordinate.x + k.m22 * cam_coordinate.y + k.m23 * cam_coordinate.z;
+	image_coordinate.z = k.m31 * cam_coordinate.x + k.m32 * cam_coordinate.y + k.m33 * cam_coordinate.z;
 
-    // Round and store
-    int3 pixel_coordinate;
-    pixel_coordinate.x = round( image_coordinate.x / image_coordinate.z);
-    pixel_coordinate.y = round( image_coordinate.x / image_coordinate.z);
+	// Round and store
+	int3 pixel_coordinate;
+	pixel_coordinate.x = round( image_coordinate.x / image_coordinate.z);
+	pixel_coordinate.y = round( image_coordinate.x / image_coordinate.z);
 
-    return pixel_coordinate;
+	return pixel_coordinate;
 }
-/**
- * THe mesh scene flow kernel currently does nothing
- */
+
+
+
 __global__
-void mesh_scene_flow_kernel(  
-	float3 * d_mesh_vertices, 		// Input mesh
-	uint32_t num_vertices,			
-	float3 * d_scene_flow, 			//	Input raw scene flow for whole image
-	uint32_t sf_width, 				// 	Dimesnions of scene flow
-	uint32_t sf_height, 
-	Mat44 	 inv_pose,				// Camera data
-	Mat33	 k, 
-	float3 * d_mesh_scene_flow	 	// Output of scene flow for each point in the input mesh
+void apply_scene_flow_to_tsdf_kernel( 
+	const float3		*mesh_scene_flow,			//	The scene flow per mesh vertex
+	const float3	  	*mesh_vertices,				//	The coordinates of the mesh vertex
+	int 				num_mesh_vertices,			//	Number of vertices in the mesh
+	float3				*voxel_translations,			//	Defromation data for the TSDF
+	int3				size						//	Deimsnions of the TSDF in voxels
 	) {
 
-	// Vertex index - 
+	// Construct the base pointer in TSDF space from y and z
+    int vy = threadIdx.y + blockIdx.y * blockDim.y;
+    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+
+    // If this thread is in range
+    if( vy < size.y && vz < size.z ) {
+
+
+        // The next (x_size) elements from here are the x coords
+        size_t base_voxel_index =  ((size.x * size.y) * vz ) + (size.x * vy);
+
+        // Iterate across X coordinate
+        size_t voxel_index = base_voxel_index;
+        for( int vx=0; vx<size.x; vx++ ) {
+
+
+        	// For any vertex in the mesh which is within a given neighbour hood of this voxel centre
+        	// Update the voxel centre coordinates with the scene flow of that vertex
+        	for( int i=0; i<num_mesh_vertices; i++ ) {
+        		// TODO: Replace this with a radial basis function for weighted deformation
+        		float3 vector_to_vertex = f3_sub( voxel_translations[voxel_index], mesh_vertices[i]);
+        		float dist_to_vertex = f3_norm( vector_to_vertex);
+
+        		if( dist_to_vertex < THRESHOLD ) {
+        			voxel_translations[voxel_index]  = f3_add( voxel_translations[voxel_index], mesh_scene_flow[i] );
+        		}
+        	}
+
+
+        	voxel_index++;
+        }
+    }
+}
+
+
+/**
+ * The mesh scene flow kernel extracts the scene flow value for each vertex in the input mesh and stores
+ * it in d_meshscene_flow
+ */
+__global__
+void mesh_scene_flow_kernel(
+    float3 * mesh_vertices, 		// Input mesh
+    uint32_t num_vertices,
+    float3 * scene_flow, 			//	Input raw scene flow for whole image
+    uint32_t sf_width, 				// 	Dimesnions of scene flow
+    uint32_t sf_height,
+    Mat44 	 inv_pose,				// Camera data
+    Mat33	 k,
+    float3 * mesh_scene_flow	 	// Output of scene flow for each point in the input mesh
+) {
+
+	// Vertex index -
 	int vertex_index = 	threadIdx.x + (blockIdx.x * blockDim.x);
 
 	// Grab the vertex
-	float3 vertex = d_mesh_vertices[vertex_index];
+	float3 vertex = mesh_vertices[vertex_index];
 
 	// Transform to camera space
 	int3 camera_coord = world_to_pixel( vertex, inv_pose, k );
@@ -58,10 +107,10 @@ void mesh_scene_flow_kernel(
 	int scene_flw_index = camera_coord.y * sf_width + camera_coord.x;
 
 	// Dereference scene flow
-	float3 sf_at_vertex = d_scene_flow[scene_flw_index];
+	float3 sf_at_vertex = scene_flow[scene_flw_index];
 
 	// Stick it into the out mesh
-	d_mesh_scene_flow[vertex_index] = sf_at_vertex;
+	mesh_scene_flow[vertex_index] = sf_at_vertex;
 }
 
 
@@ -99,7 +148,7 @@ void get_scene_flow_for_mesh( const std::vector<float3> vertices, const Camera *
 
 	// Allocate host memory for output scene flow values
 	float3 * h_mesh_scene_flow = new float3[vertices.size()];
-	if( !h_mesh_scene_flow ) {
+	if ( !h_mesh_scene_flow ) {
 		cudaFree( d_mesh_scene_flow );
 		cudaFree( d_mesh_vertices );
 		cudaFree( d_scene_flow );
@@ -112,52 +161,97 @@ void get_scene_flow_for_mesh( const std::vector<float3> vertices, const Camera *
 	err = cudaMemcpy( d_scene_flow, scene_flow, sf_width * sf_height * sizeof( float3 ), cudaMemcpyHostToDevice);
 	check_cuda_error( "Copy of input scene flow data to device failed " , err);
 
-	// Vertex data 
+	// Vertex data
 	std::vector<double> v;
 	const float3 *vertices_as_array = &vertices[0];
 	err = cudaMemcpy( d_mesh_vertices, vertices_as_array, vertices.size() * sizeof( float3 ), cudaMemcpyHostToDevice);
 	check_cuda_error( "Copy of input mesh vertices to device failed " , err);
 
 	// Invoke kernel
-	Mat44 inv_pose;	
-    memcpy( &inv_pose, (void *)(camera->inverse_pose().data()) , 16 * sizeof( float ) );
+	Mat44 inv_pose;
+	memcpy( &inv_pose, (void *)(camera->inverse_pose().data()) , 16 * sizeof( float ) );
 
-    Mat33 k;
-    memcpy( &k, (void *) (camera->k().data()), 9 * sizeof( float ) );
+	Mat33 k;
+	memcpy( &k, (void *) (camera->k().data()), 9 * sizeof( float ) );
 
 	dim3 block( 128, 1, 1 );
 	dim3 grid ( divUp( vertices.size(), block.x ), 1, 1 );
-	mesh_scene_flow_kernel <<< grid, block >>>( 
-		d_mesh_vertices, 		// Input mesh
-		vertices.size(),			
-		d_scene_flow, 			//	Input raw scene flow for whole image
-		sf_width, 				// 	Dimesnions of scene flow
-		sf_height, 
-		inv_pose,				// Camera data
-		k, 
-		d_mesh_scene_flow );
+	mesh_scene_flow_kernel <<< grid, block >>>(
+	    d_mesh_vertices, 		// Input mesh
+	    vertices.size(),
+	    d_scene_flow, 			//	Input raw scene flow for whole image
+	    sf_width, 				// 	Dimesnions of scene flow
+	    sf_height,
+	    inv_pose,				// Camera data
+	    k,
+	    d_mesh_scene_flow );
 
 	// Copy mesh scene flow back from device
 	err = cudaMemcpy( h_mesh_scene_flow, d_mesh_scene_flow, vertices.size() * sizeof( float3 ), cudaMemcpyDeviceToHost);
 	check_cuda_error( "Copy of output mesh scene flow to host failed " , err);
 
 	// Now unpack from memory to vector
-	mesh_scene_flow.assign( h_mesh_scene_flow, h_mesh_scene_flow+vertices.size());
+	mesh_scene_flow.assign( h_mesh_scene_flow, h_mesh_scene_flow + vertices.size());
 
 	// Now tidy up memory
-		cudaFree( d_mesh_scene_flow );
-		cudaFree( d_mesh_vertices );
-		cudaFree( d_scene_flow );
-		delete [] h_mesh_scene_flow;
+	cudaFree( d_mesh_scene_flow );
+	cudaFree( d_mesh_vertices );
+	cudaFree( d_scene_flow );
+	delete [] h_mesh_scene_flow;
 }
 
+__host__ 
+void update_voxel_grid_from_mesh_scene_flow( 
+	const TSDFVolume *volume,  
+	const float3 * mesh_scene_flow, 
+	const float3 * mesh_vertices,
+	int num_vertices) {
+
+
+	dim3 block( 1, 32, 32 );
+	dim3 grid ( 1, divUp( volume->size().y(), block.y ), divUp( volume->size().z(), block.z ));
+
+	Eigen::Vector3i eigen_volume_size = volume->size();
+	int3 volume_size{  eigen_volume_size[0], eigen_volume_size[1], eigen_volume_size[2] };
+	float3 *translation_data = (float3 *) volume->translation_data();
+
+	apply_scene_flow_to_tsdf_kernel<<< grid, block >>> ( 
+		mesh_scene_flow,			//	The scene flow per mesh vertex
+		mesh_vertices,				//	The coordinates of the mesh vertex
+		num_vertices,				//	Number of vertices in the mesh
+		translation_data,		//	Defromation data for the TSDF
+		volume_size				//	Deimsnions of the TSDF in voxels
+		);
+}
+
+
+
 /**
- * Update the Given TSDF volume's per voxel translation using the input Scene Flow 
+ * Update the Given TSDF volume's per voxel translation using the input Scene Flow
  * @param volume The TSDF Volume to update
  * @param translation The global translation
  * @param rotation The Global rotation
  * @param residuals Per voxel ransation after globals are appliedd
  */
-void update_tsdf( const TSDFVolume * volume, const Eigen::Vector3f translation, const Eigen::Vector3f rotation, const Eigen::Matrix<float, 3, Eigen::Dynamic> residuals ) {
+void update_tsdf( const TSDFVolume * volume, const Camera * camera, uint32_t width, uint32_t height, const Eigen::Vector3f translation, const Eigen::Vector3f rotation, const Eigen::Matrix<float, 3, Eigen::Dynamic> residuals ) {
+
+	std::vector<float3> vertices;
+	std::vector<int3> triangles;
+	extract_surface( volume, vertices, triangles);
+
+	float3 * scene_flow = new float3[ width * height];
+	for( int i=0; i<width*height; i++ ) {
+		scene_flow[i].x = residuals( 0, i );
+		scene_flow[i].y = residuals( 1, i );
+		scene_flow[i].z = residuals( 2, i );
+	}
+
+
+	std::vector<float3> mesh_scene_flow;
+	get_scene_flow_for_mesh( vertices, camera, width, height, scene_flow, mesh_scene_flow );
+
+	const float3 * vertex_data = (const float3 *) &(vertices[0]);
+	const float3 * mesh_scene_flow_data = (const float3 *) &(mesh_scene_flow[0]);
+	update_voxel_grid_from_mesh_scene_flow( volume, mesh_scene_flow_data, vertex_data, vertices.size());
 }
 
