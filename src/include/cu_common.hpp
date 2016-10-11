@@ -80,6 +80,15 @@ void f3_normalise( float3 vec ) {
 }
 
 /**
+ * Normalise a float3
+ * @param vec The float3 vector
+ */
+__device__ __forceinline__
+float f3_norm( float3 vec ) {
+    return sqrt( vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
+}
+
+/**
  * Perform a matrix multiplication
  * @param mat33 The matrix
  * @param vec3 The vector
