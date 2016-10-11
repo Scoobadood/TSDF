@@ -155,7 +155,7 @@ public:
     /**
      * @return pointer to translation data
      */
-    inline const Float3 *  translation_data() const {
+    inline Float3 *  translation_data() const {
         return reinterpret_cast<Float3 *> (m_voxel_translations);
     }
 
