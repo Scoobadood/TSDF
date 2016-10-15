@@ -16,7 +16,12 @@ SRSFMockSceneFlowAlgorithm::SRSFMockSceneFlowAlgorithm( const std::string & scen
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
 			bool is_valid = false;
 
-			is_valid = std::regex_match( name, std::regex("sflow_\\d{4}.xml") );
+			try {
+				is_valid = std::regex_match( name, std::regex("sflow_\\d{4}.xml") );
+    		} catch (const std::regex_error& e) {
+        		std::cerr << "regex_error caught: " << e.what() << '\n';
+		    }
+
 			return is_valid;
 		});
 
