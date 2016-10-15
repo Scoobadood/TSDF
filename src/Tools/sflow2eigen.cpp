@@ -1,7 +1,7 @@
 /**
  */
 
-#include "../DataLoader/srsf_sceneflow_loader.hpp"
+#include "../include/srsf_sceneflow_loader.hpp"
 
 #include <Eigen/Core>
 #include <iostream>
