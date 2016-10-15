@@ -33,7 +33,7 @@ void MockKinect::initialise( ) {
 		files_in_directory( m_directory, m_colour_file_names, []( std::string name ) {
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
 			bool is_valid = false;
-			is_valid = std::regex_match( name, std::regex("color_\\d{4}.png") );
+			is_valid = std::regex_match( name, std::regex("color_[0-9]{4}.png") );
 			return is_valid;
 		});
 
@@ -41,7 +41,7 @@ void MockKinect::initialise( ) {
 		files_in_directory( m_directory, m_depth_file_names, []( std::string name ) {
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
 			bool is_valid = false;
-			is_valid = std::regex_match( name, std::regex("depth_\\d{4}.png")  );
+			is_valid = std::regex_match( name, std::regex("depth_[0-9]d{4}.png")  );
 			return is_valid;
 		});
 
