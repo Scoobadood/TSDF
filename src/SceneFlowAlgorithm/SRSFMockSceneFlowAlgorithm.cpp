@@ -17,7 +17,8 @@ SRSFMockSceneFlowAlgorithm::SRSFMockSceneFlowAlgorithm( const std::string & scen
 			bool is_valid = false;
 
 			try {
-				is_valid = std::regex_match( name, std::regex("sflow_[0-9]d{4}.xml") );
+				
+				is_valid = std::regex_match( name, std::regex("sflow_[0-9]{5}.xml") );
     		} catch (const std::regex_error& e) {
         		std::cerr << "regex_error caught: " << e.what() << '\n';
 		    }
