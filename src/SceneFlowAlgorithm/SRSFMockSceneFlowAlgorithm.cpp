@@ -17,10 +17,11 @@ SRSFMockSceneFlowAlgorithm::SRSFMockSceneFlowAlgorithm( const std::string & scen
 			bool is_valid = false;
 
 			try {
-				
-				is_valid = std::regex_match( name, std::regex("sflow_[0-9]{5}.xml") );
+				std::regex scene_flow_filename_regex( "sflow_[0-9]{5}\\.xml", std::regex_constants::icase );
+
+				is_valid = std::regex_match( name, scene_flow_filename_regex );
     		} catch (const std::regex_error& e) {
-        		std::cerr << "regex_error caught: " << e.what() << '\n';
+        		std::cerr << "Invalid regex in SRSFMockSceneFlowAlgorithm: " << e.what() << '\n';
 		    }
 
 			return is_valid;
