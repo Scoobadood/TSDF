@@ -2,27 +2,18 @@
 #include "FileUtilities.hpp"
 
 #include <iostream>
-#include <regex>
 
 SRSFMockSceneFlowAlgorithm::SRSFMockSceneFlowAlgorithm( const std::string & scene_flow_directory_name ) {
 	// Check directory exists
 	bool is_directory;
-	if( file_exists( scene_flow_directory_name, is_directory) && is_directory) {
+	if ( file_exists( scene_flow_directory_name, is_directory) && is_directory) {
 		// Stash this
 		m_directory = scene_flow_directory_name;
 
 		// Count the mnumber of scene flow files of the form sflow_nnnn.xml
 		files_in_directory( m_directory, m_scene_flow_file_names, []( std::string name ) {
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
-			bool is_valid = false;
-
-			try {
-				std::regex scene_flow_filename_regex( "sflow_[0-9]{5}\\.xml", std::regex_constants::icase );
-
-				is_valid = std::regex_match( name, scene_flow_filename_regex );
-    		} catch (const std::regex_error& e) {
-        		std::cerr << "Invalid regex in SRSFMockSceneFlowAlgorithm: " << e.what() << '\n';
-		    }
+			bool is_valid = match_file_name( "sflow", 5, "xml", name );
 
 			return is_valid;
 		});
@@ -250,7 +241,7 @@ void SRSFMockSceneFlowAlgorithm::compute_scene_flow(	const DepthImage * pDepthIm
         Eigen::Vector3f&   						translation,
         Eigen::Vector3f&   						rotation,
         Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals ) {
-	if( m_current_file_index < m_scene_flow_file_names.size() ) {
+	if ( m_current_file_index < m_scene_flow_file_names.size() ) {
 		std::string path_to_file = m_directory + "/" + m_scene_flow_file_names[m_current_file_index];
 		// Read the file
 		if (!read_scene_flow( path_to_file, translation, rotation, residuals ) ) {

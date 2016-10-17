@@ -18,7 +18,7 @@ MockKinect::MockKinect( const std::string directory ) {
  */
 void MockKinect::initialise( ) {
 
-	std::cout<< "Initialising MockKinect" << std::endl;
+	std::cout << "Initialising MockKinect" << std::endl;
 
 	// Does directory exist
 	bool exists;
@@ -34,17 +34,9 @@ void MockKinect::initialise( ) {
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
 			bool is_valid = false;
 
-			try {
-				std::regex rgb_filename_regex("color_[0-9]{5}\\.png", std::regex_constants::icase );
-
-				is_valid = std::regex_match( name, rgb_filename_regex);
-    		} catch (const std::regex_error& e) {
-        		std::cerr << "Invalid regex in MockKinect: " << e.what() << '\n';
-		    }
-
-
-
-
+			// Can't use regex because gcc 4.8.4 doesn't support it despite having the header and compiling successfully
+			// I need to match files like color_nnnnn.png
+			is_valid = match_file_name( "color", 5, "png", name );
 			return is_valid;
 		});
 
@@ -53,13 +45,7 @@ void MockKinect::initialise( ) {
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
 			bool is_valid = false;
 
-			try {
-				std::regex depth_filename_regex("depth_[0-9]{5}\\.png", std::regex_constants::icase );
-
-				is_valid = std::regex_match( name, depth_filename_regex );
-    		} catch (const std::regex_error& e) {
-        		std::cerr << "Invalid regex in MockKinect: " << e.what() << '\n';
-		    }
+			is_valid = match_file_name( "depth", 5, "png", name );
 			return is_valid;
 		});
 
