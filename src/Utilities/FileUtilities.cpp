@@ -61,11 +61,6 @@ bool match_file_name( const std::string& prefix, int num_digits, const std::stri
         error_message = "An invalid parameter was passed to match_file_name";
     }
 
-    if( ! matches ) {
-        std::cerr << "String " << test_string << " didn't match template. " << error_message << std::endl;
-    } else {
-        std::cerr << "String " << test_string << " matches template." << std::endl;
-    }
     return matches;
 }
 

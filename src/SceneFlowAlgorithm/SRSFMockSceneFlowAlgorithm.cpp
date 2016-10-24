@@ -49,15 +49,31 @@ bool SRSFMockSceneFlowAlgorithm::read_floats_from_string( const char * string, u
 
 
 	if ( string ) {
+		std::cerr << "Reading " << num_floats << " floats from string length  " << strlen(string) << std::endl;
 		std::istringstream iss( string );
+		double d ;
 		for ( size_t i = 0; i < num_floats; i++ ) {
-			if ( iss.good() ) {
-				iss >> read_values[i];
-			} else {
-				std::cerr << "Not enough float entries in string. Expected " << num_floats << ", read " << (i + 1) << std::endl;
-				read_ok = false;
-				break;
+			if ( !(iss >> d) ) {
+				// Clear fail flag
+				iss.clear( std::ios::goodbit) ;
+				std::string possibleNan(3,'_');
+				iss.read( &possibleNan[0], 3);
+				if( possibleNan == "Nan") {
+					d = std::numeric_limits<double>::quiet_NaN();
+				} else {
+
+					std::cerr << "Problem reading floats from string. Expected " << num_floats  << "failed at "<< i << std::endl;
+					std::cerr << "Error: " << strerror(errno) << std::endl;
+					read_ok = false;
+
+					// Backtrack through the array to find last non-zero value read
+					while( read_values[--i] == 0.0f );
+					std::cout << "Last good non-zero value read was at index " << i << "and was " << read_values[i] << std::endl;
+
+					break;
+				}
 			}
+			read_values[i] = d;
 		}
 	} else {
 		std::cerr << "String is null in readFloatsFromString" << std::endl;
@@ -222,9 +238,9 @@ bool SRSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 			residuals(1, i) = residual_y[i];
 			residuals(2, i) = residual_z[i];
 
-			if ( residual_x[i] != 0 || residual_y[i] != 0 || residual_z[i] != 0 ) {
-				std::cout << "(" << residual_x[i] << "," << residual_y[i] << "," << residual_z[i] << ")";
-			}
+			// if ( residual_x[i] != 0 || residual_y[i] != 0 || residual_z[i] != 0 ) {
+			// 	std::cout << "(" << residual_x[i] << "," << residual_y[i] << "," << residual_z[i] << ")";
+			// }
 		}
 	}
 	return read_ok;
