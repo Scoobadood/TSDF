@@ -49,7 +49,6 @@ bool SRSFMockSceneFlowAlgorithm::read_floats_from_string( const char * string, u
 
 
 	if ( string ) {
-		std::cerr << "Reading " << num_floats << " floats from string length  " << strlen(string) << std::endl;
 		std::istringstream iss( string );
 		double d ;
 		for ( size_t i = 0; i < num_floats; i++ ) {
