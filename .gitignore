@@ -42,3 +42,5 @@ obj/
 
 #data
 cpu_tsdf_128.txt
+go
+test_MC

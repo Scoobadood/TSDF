@@ -2,7 +2,7 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Tests:$(SRC_DIR)/GPU:$(SRC_DIR)/CPU:$(SRC_DIR)/Utilities:$(SRC_DIR)/DataLoader
+vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Tests:$(SRC_DIR)/GPU:$(SRC_DIR)/CPU:$(SRC_DIR)/Utilities:$(SRC_DIR)/DataLoader:$(SRC_DIR)/Tools
 vpath %.cu $(SRC_DIR)/GPU
 
 
@@ -20,7 +20,7 @@ SOURCES = BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
           PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp TSDFLoader.cpp \
           CPURaycaster.cpp CPUTSDFVolume.cpp \
           DepthImage.cpp TUMDataLoader.cpp \
-          test_MC_main.cpp
+          sf_deform.cpp
 
 
 CUDA_SOURCES = GPUTSDFVolume.cu GPUMarchingCubes.cu TSDF_utilities.cu Raycaster_kernel.cu cu_common.cu
@@ -31,7 +31,7 @@ _CUDA_OBJECTS=$(CUDA_SOURCES:.cu=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(_OBJECTS)) $(patsubst %,$(OBJ_DIR)/%,$(_CUDA_OBJECTS))
 
 
-EXECUTABLE=bin/test_MC
+EXECUTABLE=bin/sf_deform
 Debug: all
 
 all: $(SOURCES) $(CUDA_SOURCES) $(EXECUTABLE)
