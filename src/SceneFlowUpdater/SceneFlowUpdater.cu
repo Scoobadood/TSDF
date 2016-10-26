@@ -116,6 +116,12 @@ void mesh_scene_flow_kernel(
 
 /**
  * Kernel to obtain scene flow vector for each point in the surface mesh
+ * @param vertices The mesh vertices
+ * @param camera The Camera 
+ * @param sf_width The width of the scene flow image
+ * @param sf_height The height of the scene flow image
+ * @param scene_flow The scene flow image data
+ * @param mesh_scene_flow An output vector fo the scene flow values for each vertex of he mesh
  */
 __host__
 void get_scene_flow_for_mesh( const std::vector<float3> vertices, const Camera * camera, uint32_t sf_width, uint32_t sf_height, const float3 * scene_flow, std::vector<float3> mesh_scene_flow ) {
