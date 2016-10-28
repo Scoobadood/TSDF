@@ -17,14 +17,14 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 		  FileUtilities.cpp Definitions.cpp\
 		  SRSFMockSceneFlowAlgorithm.cpp \
 		  MockKinect.cpp \
-		  TSDFVolume.cpp Camera.cpp \
+		  Camera.cpp \
 		  GPURaycaster.cpp \
 		  DepthImage.cpp SceneFusion.cpp \
           PngUtilities.cpp PngWrapper.cpp \
           sfusion.cpp
 
 
-CUDA_SOURCES = GPUMarchingCubes.cu cu_common.cu GPUTSDFVolume.cu TSDF_utilities.cu Raycaster_kernel.cu SceneFlowUpdater.cu
+CUDA_SOURCES = GPUMarchingCubes.cu cu_common.cu TSDFVolume.cu TSDF_utilities.cu Raycaster_kernel.cu SceneFlowUpdater.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)
