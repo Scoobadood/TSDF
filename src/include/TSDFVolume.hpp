@@ -9,7 +9,14 @@
 #ifndef TSDFVolume_hpp
 #define TSDFVolume_hpp
 
+#include "Camera.hpp"
+
+#include <Eigen/Core>
 #include "vector_types.h"
+
+#include <cstdint>
+#include <iostream>
+#include <string>
 
 class TSDFVolume {
 protected:
@@ -42,17 +49,34 @@ protected:
     float3 * m_voxel_rotations;
     
 public:
-    typedef struct {
-        float x, float y, float z
-    } Float3;
+    struct Float3 {
+        float x;
+        float y; 
+        float z;
+        inline Float3( const float3& rhs ) {
+            x=rhs.x;
+            y=rhs.y;
+            z=rhs.z;
+        }
+    };
 
-    typedef struct {
-        int16_t x, int16_t y, int16_t z
-    } Int3;
+    struct Int3 {
+        int16_t x;
+        int16_t y; 
+        int16_t z;
+    };
 
-    typedef struct {
-        uint16_t x, uint16_t y, uint16_t z
-    } UInt3;
+    struct  UInt3 {
+        unsigned int x; 
+        unsigned int y;
+        unsigned int z;
+
+        inline UInt3( const dim3& rhs ) : x{rhs.x}, y{rhs.y}, z{rhs.z} {};
+        inline UInt3( uint32_t x, uint32_t y, uint32_t z ) : x{x}, y{y}, z{z} {};
+        inline operator dim3() const {return dim3{x,y,z}; }
+    };
+
+    ~TSDFVolume();
 
     /**
     * Make a TSDFVolume with the given dimensions (voxels) and physcial dimensions
@@ -94,7 +118,7 @@ public:
     /**
      * @return the dimensions of each voxel in mm
      */
-    inline Float3 voxel_size( ) const { return (Float3) m_voxel_size };
+    inline Float3 voxel_size( ) const { return (Float3) m_voxel_size; }
 
     /**
      * @return the physical size of the volume in world coords (mm)
@@ -104,7 +128,7 @@ public:
     /**
      * @return the truncation distance (mm)
      */
-    inline float truncation_distance( ) const { return m_truncation_distance} ;
+    inline float truncation_distance( ) const { return m_truncation_distance; } 
 
     /**
      * Offset the TSDF volume in space by the given offset. By default, the bottom, left, front corner of
@@ -114,7 +138,9 @@ public:
      * @param oz Z offset in mm
      */
     inline void offset( float ox, float oy, float oz ) { 
-        m_offset = float3{ ox, oy oz }
+        m_offset.x=ox;
+        m_offset.y=oy;
+        m_offset.z=oz;
     }
 
     /**

@@ -233,11 +233,13 @@ TSDFVolume::~TSDFVolume() {
  * @param size
  * @param physical_size
  */
-TSDFVolume::TSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL} {
+TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL} {
+    
     std::cout << "TSDFVolume::ctor called." << std::endl;
 
-    if( ( size.x() > 0 ) && ( size.y() > 0 ) && ( size.z() > 0 ) && ( physical_size.x() > 0 ) && ( physical_size.y() > 0 ) && ( physical_size.z() > 0 ) ) {
-        set_size( size.x(), size.y(), size.z() , physical_size.x(), physical_size.y(), physical_size.z() );
+    if( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) && 
+        ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
+        set_size( size.x, size.y, size.z , physical_size.x, physical_size.y, physical_size.z );
     } else {
         throw std::invalid_argument( "Attempt to construct CPUTSDFVolume with zero or negative size" );
     }
