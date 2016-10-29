@@ -1,11 +1,13 @@
 #include "SceneFusion.hpp"
 #include "../include/SceneFlowUpdater.hpp"
 #include "../include/GPUMarchingCubes.hpp"
-#include "../include/GPUTSDFVolume.hpp"
+#include "../include/TSDFVolume.hpp"
 #include "../include/Camera.hpp"
 
 #include "vector_types.h"
 
+
+#include <iostream>
 #include <vector>
 
 /**
@@ -16,7 +18,7 @@
 SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
-	m_volume = new GPUTSDFVolume();
+	m_volume = new TSDFVolume();
 	m_volume->offset( -1500, -1500, -1500);
 
     // And camera (from FREI 1 IR calibration data at TUM)
@@ -44,13 +46,6 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	Eigen::Matrix<float, 3, Eigen::Dynamic> residuals;
 	m_scene_flow_algorithm->compute_scene_flow( depth_image, colour_image, translation, rotation, residuals );
 
-
-	// Process them into TSDF
-	std::vector<float3> vertices;
-	std::vector<int3> triangles;
-	extract_surface( m_volume, vertices, triangles);
-
-	std::vector<float3> mesh_scene_flow;
-	const float3* scene_flow = (const float3 *) residuals.data();
-	get_scene_flow_for_mesh( vertices, m_camera, colour_image->width(), colour_image->height(), scene_flow, mesh_scene_flow );
+	// Update the scene flow into TSDF
+	update_tsdf(  m_volume, m_camera, depth_image->width(), depth_image->height(), translation, rotation, residuals );
 }

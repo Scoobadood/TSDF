@@ -2,7 +2,14 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Tests:$(SRC_DIR)/GPU:$(SRC_DIR)/CPU:$(SRC_DIR)/Utilities:$(SRC_DIR)/DataLoader:$(SRC_DIR)/Tools
+vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Tests:\
+	$(SRC_DIR)/GPU:\
+	$(SRC_DIR)/CPU:\
+	$(SRC_DIR)/Utilities:\
+	$(SRC_DIR)/Raycaster:\
+	$(SRC_DIR)/DataLoader:\
+	$(SRC_DIR)/Tools:\
+	$(SRC_DIR)/TSDF
 vpath %.cu $(SRC_DIR)/GPU
 
 NVCC=/usr/local/cuda/bin/nvcc
@@ -13,7 +20,7 @@ NVCC=/usr/local/cuda/bin/nvcc
 CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src  -c  -ccbin=/usr/bin/gcc -std=c++11 -g
 LDFLAGS=-lpng
 
-SOURCES = kinfu.cpp BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
+SOURCES = kinfu.cpp BilateralFilter.cpp Camera.cpp \
           BlockTSDFLoader.cpp GPURaycaster.cpp \
           Definitions.cpp DepthMapUtilities.cpp FileUtilities.cpp PgmUtilities.cpp \
           PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp TSDFLoader.cpp \
@@ -21,7 +28,7 @@ SOURCES = kinfu.cpp BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
           DepthImage.cpp TUMDataLoader.cpp ply.cpp 
 
 
-CUDA_SOURCES = Raycaster_kernel.cu GPUTSDFVolume.cu MarchingCubes.cu TSDF_utilities.cu cu_common.cu
+CUDA_SOURCES = Raycaster_kernel.cu TSDFVolume.cu MarchingCubes.cu TSDF_utilities.cu cu_common.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)

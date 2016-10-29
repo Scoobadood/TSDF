@@ -7,7 +7,7 @@
 //
 #include "../include/cu_common.hpp"
 
-#include "../include/GPUTSDFVolume.hpp"
+#include "../include/TSDFVolume.hpp"
 #include "../include/GPURaycaster.hpp"
 #include "../include/TSDF_utilities.hpp"
 #include "../include/TSDFLoader.hpp"
@@ -208,7 +208,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
 
 
 
-GPUTSDFVolume::~GPUTSDFVolume() {
+TSDFVolume::~TSDFVolume() {
         // Remove existing data
         if( m_voxels ) {
             cudaFree( m_voxels ) ;
@@ -233,11 +233,13 @@ GPUTSDFVolume::~GPUTSDFVolume() {
  * @param size
  * @param physical_size
  */
-GPUTSDFVolume::GPUTSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3f & physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL} {
+TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL} {
+    
     std::cout << "TSDFVolume::ctor called." << std::endl;
 
-    if( ( size.x() > 0 ) && ( size.y() > 0 ) && ( size.z() > 0 ) && ( physical_size.x() > 0 ) && ( physical_size.y() > 0 ) && ( physical_size.z() > 0 ) ) {
-        set_size( size.x(), size.y(), size.z() , physical_size.x(), physical_size.y(), physical_size.z() );
+    if( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) && 
+        ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
+        set_size( size.x, size.y, size.z , physical_size.x, physical_size.y, physical_size.z );
     } else {
         throw std::invalid_argument( "Attempt to construct CPUTSDFVolume with zero or negative size" );
     }
@@ -255,7 +257,7 @@ GPUTSDFVolume::GPUTSDFVolume( const Eigen::Vector3i & size, const Eigen::Vector3
  * @param psize_z Physical size in Z dimension in mm
  */
 __host__
-void GPUTSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z) {
+void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z) {
     using namespace Eigen;
 
     if( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
@@ -326,54 +328,6 @@ void GPUTSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t vol
 
 
 
-/**
- * @return the size of this space.
- */
-Eigen::Vector3i GPUTSDFVolume::size( ) const {
-    return Eigen::Vector3i { static_cast<int>(m_size.x), static_cast<int>(m_size.y), static_cast<int>(m_size.z)};
-}
-
-
-
-/**
- * @return the dimensions of each voxel in mm
- */
-Eigen::Vector3f GPUTSDFVolume::voxel_size( ) const {
-    return Eigen::Vector3f { m_voxel_size.x, m_voxel_size.y, m_voxel_size.z};
-}
-
-/**
- * @return the physical size of the volume in world coords (mm)
- */
-Eigen::Vector3f GPUTSDFVolume::physical_size( ) const {
-    return Eigen::Vector3f {m_physical_size.x, m_physical_size.y, m_physical_size.z};
-}
-
-/**
- * @return the truncation distance (mm)
- */
-float GPUTSDFVolume::truncation_distance( ) const {
-    return m_truncation_distance;
-}
-
-/**
- * Offset the TSDF volume in space by the given offset. By default, the bottom, left, front corner of
- * voxel (0,0,0) is at world coordinate (0,0,0). This moves that point to the new world coordinate by a
- * @param ox X offset in mm
- * @param oy Y offset in mm
- * @param oz Z offset in mm
- */
-void GPUTSDFVolume::offset( float ox, float oy, float oz ) {
-    m_offset = float3 {ox, oy, oz};
-}
-
-/**
- * @return the offset f the TSDF volume in space
- */
-Eigen::Vector3f GPUTSDFVolume::offset( ) const {
-    return Eigen::Vector3f { m_offset.x, m_offset.y, m_offset.z };
-}
-
 
 
 #pragma mark - Data access
@@ -383,7 +337,7 @@ Eigen::Vector3f GPUTSDFVolume::offset( ) const {
  * @param z The depth voxel coord
  * @return The distance to the surface at that voxel
  */
-float GPUTSDFVolume::distance( int x, int y, int z ) const {
+float TSDFVolume::distance( int x, int y, int z ) const {
     return m_voxels[ index(x, y, z) ];
 }
 
@@ -394,7 +348,7 @@ float GPUTSDFVolume::distance( int x, int y, int z ) const {
  * @param distance The distance to set
  * @return The distance to the surface at that voxel
  */
-void GPUTSDFVolume::set_distance( int x, int y, int z, float distance ) {
+void TSDFVolume::set_distance( int x, int y, int z, float distance ) {
     size_t idx =index( x, y, z );
     m_voxels[ idx ] = distance;
 }
@@ -406,7 +360,7 @@ void GPUTSDFVolume::set_distance( int x, int y, int z, float distance ) {
  * @param z The depth voxel coord
  * @return The weight at that voxel
  */
-float GPUTSDFVolume::weight( int x, int y, int z ) const {
+float TSDFVolume::weight( int x, int y, int z ) const {
     return m_weights[ index(x, y, z) ];
 }
 
@@ -417,15 +371,15 @@ float GPUTSDFVolume::weight( int x, int y, int z ) const {
  * @param weight The weight to set
  * @return The weight at that voxel
  */
-void GPUTSDFVolume::set_weight( int x, int y, int z, float weight ) {
+void TSDFVolume::set_weight( int x, int y, int z, float weight ) {
     m_weights[ index(x, y, z) ] = weight;
 }
 
-void GPUTSDFVolume::set_distance_data( const float * distance_data ) {
+void TSDFVolume::set_distance_data( const float * distance_data ) {
         size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
         cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
 }
-void GPUTSDFVolume::set_weight_data( const float * weight_data ) {
+void TSDFVolume::set_weight_data( const float * weight_data ) {
         size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
         cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
 }
@@ -532,7 +486,7 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
  * Clear the TSDF memory on the device
  */
 __host__
-void GPUTSDFVolume::clear( ) {
+void TSDFVolume::clear( ) {
     size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float );
 
     cudaMemset( m_weights, 0, data_size );
@@ -559,7 +513,7 @@ void GPUTSDFVolume::clear( ) {
  * @param camera The camera from which the depth_map was taken
  */
 __host__
-void GPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
+void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
     using namespace Eigen;
 
     std::cout << "Integrate" << std::endl;
@@ -606,7 +560,7 @@ void GPUTSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint3
  * @param The filename
  * @return true if the file saved OK otherwise false.
  */
-bool GPUTSDFVolume::save_to_file( const std::string & file_name) const {
+bool TSDFVolume::save_to_file( const std::string & file_name) const {
     using namespace std;
 
     bool success = false;
@@ -678,14 +632,14 @@ bool GPUTSDFVolume::save_to_file( const std::string & file_name) const {
  * @param The filename
  * @return true if the file saved OK otherwise false.
  */
-bool GPUTSDFVolume::load_from_file( const std::string & file_name) {
-    std::cout << "INvalid method call: load_from_file" << std::endl;
+bool TSDFVolume::load_from_file( const std::string & file_name) {
+    std::cout << "Invalid method call: load_from_file" << std::endl;
     return false;
 }
 
 
 #pragma mark - Rendering
-void GPUTSDFVolume::raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const {
+void TSDFVolume::raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const {
     GPURaycaster raycaster( width, height );
 
     raycaster.raycast( *this, camera, vertices, normals );

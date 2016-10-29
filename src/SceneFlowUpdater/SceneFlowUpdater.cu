@@ -40,7 +40,7 @@ void apply_scene_flow_to_tsdf_kernel(
 	const float3	  	*mesh_vertices,				//	The coordinates of the mesh vertex
 	int 				num_mesh_vertices,			//	Number of vertices in the mesh
 	float3				*voxel_translations,			//	Defromation data for the TSDF
-	int3				size						//	Deimsnions of the TSDF in voxels
+	dim3				size						//	Deimsnions of the TSDF in voxels
 	) {
 
 	// Construct the base pointer in TSDF space from y and z
@@ -116,6 +116,12 @@ void mesh_scene_flow_kernel(
 
 /**
  * Kernel to obtain scene flow vector for each point in the surface mesh
+ * @param vertices The mesh vertices
+ * @param camera The Camera 
+ * @param sf_width The width of the scene flow image
+ * @param sf_height The height of the scene flow image
+ * @param scene_flow The scene flow image data
+ * @param mesh_scene_flow An output vector fo the scene flow values for each vertex of he mesh
  */
 __host__
 void get_scene_flow_for_mesh( const std::vector<float3> vertices, const Camera * camera, uint32_t sf_width, uint32_t sf_height, const float3 * scene_flow, std::vector<float3> mesh_scene_flow ) {
@@ -209,18 +215,16 @@ void update_voxel_grid_from_mesh_scene_flow(
 
 
 	dim3 block( 1, 32, 32 );
-	dim3 grid ( 1, divUp( volume->size().y(), block.y ), divUp( volume->size().z(), block.z ));
+	dim3 grid ( 1, divUp( volume->size().y, block.y ), divUp( volume->size().z, block.z ));
 
-	Eigen::Vector3i eigen_volume_size = volume->size();
-	int3 volume_size{  eigen_volume_size[0], eigen_volume_size[1], eigen_volume_size[2] };
 	float3 *translation_data = (float3 *) volume->translation_data();
 
 	apply_scene_flow_to_tsdf_kernel<<< grid, block >>> ( 
 		mesh_scene_flow,			//	The scene flow per mesh vertex
 		mesh_vertices,				//	The coordinates of the mesh vertex
 		num_vertices,				//	Number of vertices in the mesh
-		translation_data,		//	Defromation data for the TSDF
-		volume_size				//	Deimsnions of the TSDF in voxels
+		translation_data,			//	Defromation data for the TSDF
+		volume->size()				//	Dimensions of the TSDF in voxels
 		);
 }
 
@@ -233,7 +237,7 @@ void update_voxel_grid_from_mesh_scene_flow(
  * @param rotation The Global rotation
  * @param residuals Per voxel ransation after globals are appliedd
  */
-void update_tsdf( const TSDFVolume * volume, const Camera * camera, uint32_t width, uint32_t height, const Eigen::Vector3f translation, const Eigen::Vector3f rotation, const Eigen::Matrix<float, 3, Eigen::Dynamic> residuals ) {
+void update_tsdf( const TSDFVolume * volume, const Camera * camera, uint16_t width, uint16_t height, const Eigen::Vector3f translation, const Eigen::Vector3f rotation, const Eigen::Matrix<float, 3, Eigen::Dynamic> residuals ) {
 
 	std::vector<float3> vertices;
 	std::vector<int3> triangles;

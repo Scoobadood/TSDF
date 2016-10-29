@@ -4,6 +4,7 @@
 #include "TSDFVolume.hpp"
 #include "SceneFlowAlgorithm.hpp"
 #include "RGBDDevice.hpp"
+#include "Camera.hpp"
 #include "PngWrapper.hpp"
 #include "DepthImage.hpp"
 /**
