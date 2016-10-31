@@ -253,31 +253,13 @@ void prep_for_kernel( const TSDFVolume		 	*volume,
 
 	using namespace Eigen;
 
-	Vector3i vsize = volume->size();
-	voxel_grid_size = dim3{
-		static_cast<unsigned int> (vsize[0]),
-		static_cast<unsigned int> (vsize[1]),
-		static_cast<unsigned int> (vsize[2])
-	};
-
-	Vector3f vpsize = volume->physical_size();
-	voxel_space_size = float3{
-		vpsize[0],
-		vpsize[1],
-		vpsize[2]
-	};
-
-	Vector3f voffset = volume->offset();
-	offset = float3 {
-		voffset[0],
-		voffset[1],
-		voffset[2]
-	};
-
+	voxel_grid_size = volume->size();
+	voxel_space_size = volume->physical_size();
+	offset =  volume->offset();
 	voxel_size = float3 {
-		vpsize[0] / vsize[0],
-		vpsize[1] / vsize[1],
-		vpsize[2] / vsize[2],
+		voxel_space_size.x / voxel_grid_size.x,
+		voxel_space_size.y / voxel_grid_size.y,
+		voxel_space_size.z / voxel_grid_size.z,
 	};
 }
 
@@ -299,14 +281,14 @@ void process_kernel_output( const TSDFVolume	 * volume,
 	using namespace Eigen;
 
 	// Assemble triangles into given vectors
-	Vector3i vsize = volume->size();
+	TSDFVolume::UInt3 vsize = volume->size();
 
 	// For all but last row of voxels
 	int cube_index = 0;
-	for ( int y = 0; y < vsize.y() - 1; y++ ) {
+	for ( int y = 0; y < vsize.y - 1; y++ ) {
 
 		// For all but last column of voxels
-		for ( int x = 0; x < vsize.x() - 1; x++ ) {
+		for ( int x = 0; x < vsize.x - 1; x++ ) {
 
 			// get pointers to vertices and triangles for this voxel
 			const float3 * verts = h_vertices  + ( cube_index * 12 );

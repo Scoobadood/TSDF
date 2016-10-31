@@ -463,14 +463,8 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     dump_vector( "Camera at", origin );
 
     // Set up voxel grid size
-    Eigen::Vector3i volume_size = volume.size();
-    dim3 voxel_grid_size {
-        static_cast<uint16_t>( volume_size[0] ),
-        static_cast<uint16_t>( volume_size[1] ),
-        static_cast<uint16_t>( volume_size[2] )
-    };
-
-    float3 voxel_size = float3_from_eigen_vector( volume.voxel_size());
+    dim3 voxel_grid_size = volume.size();
+    float3 voxel_size = volume.voxel_size();
 
     // Set up rotation matrices for pose and Kinv
     const float *pose = camera.pose().data();
@@ -490,13 +484,11 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     dump_matrix( "Kinv", kinv );
 
     // Set up world coords for min and max extremes of the voxel space
-    float3 space_min = float3_from_eigen_vector( volume.offset() );
+    float3 space_min = volume.offset();
     dump_vector( "Space Min", space_min );
 
-    float3 space_max = float3_from_eigen_vector( volume.offset() + volume.physical_size( ) );
+    float3 space_max = volume.offset()+volume.physical_size( );
     dump_vector( "Space Max", space_max );
-
-
 
 
     cudaError_t err;

@@ -19,61 +19,38 @@
 #include <string>
 
 class TSDFVolume {
-protected:
-    // Size of voxel grid
-    dim3 m_size;
-
-    // Physical size of space represented
-    float3 m_physical_size;
-
-    // Offset of physical grid in world coordinates
-    float3 m_offset;
-
-    // Voxel memory on device
-    float * m_voxels;
-
-    //  Voxel weight data on device
-    float * m_weights;
-
-    // Size of a voxel
-    float3 m_voxel_size;
-
-    //  Truncation distance
-    float m_truncation_distance;
-
-    // Max weight for a voxel
-    float m_max_weight;
-
-    // Storage for per voxel transform on device
-    float3 * m_voxel_translations;
-    float3 * m_voxel_rotations;
-    
 public:
     struct Float3 {
         float x;
-        float y; 
+        float y;
         float z;
         inline Float3( const float3& rhs ) {
-            x=rhs.x;
-            y=rhs.y;
-            z=rhs.z;
+            x = rhs.x;
+            y = rhs.y;
+            z = rhs.z;
         }
+        inline operator float3() const {return float3{x, y, z}; }
+        inline float3 operator +( const float3& rhs ) { 
+            x += rhs.x;
+            y += rhs.y;
+            z += rhs.z;
+            return float3{x,y,z}; }
     };
 
     struct Int3 {
         int16_t x;
-        int16_t y; 
+        int16_t y;
         int16_t z;
     };
 
     struct  UInt3 {
-        unsigned int x; 
+        unsigned int x;
         unsigned int y;
         unsigned int z;
 
         inline UInt3( const dim3& rhs ) : x{rhs.x}, y{rhs.y}, z{rhs.z} {};
         inline UInt3( uint32_t x, uint32_t y, uint32_t z ) : x{x}, y{y}, z{z} {};
-        inline operator dim3() const {return dim3{x,y,z}; }
+        inline operator dim3() const {return dim3{x, y, z}; }
     };
 
     ~TSDFVolume();
@@ -123,12 +100,12 @@ public:
     /**
      * @return the physical size of the volume in world coords (mm)
      */
-    inline Float3 physical_size( ) const { return (Float3) m_physical_size; } 
+    inline Float3 physical_size( ) const { return (Float3) m_physical_size; }
 
     /**
      * @return the truncation distance (mm)
      */
-    inline float truncation_distance( ) const { return m_truncation_distance; } 
+    inline float truncation_distance( ) const { return m_truncation_distance; }
 
     /**
      * Offset the TSDF volume in space by the given offset. By default, the bottom, left, front corner of
@@ -137,10 +114,10 @@ public:
      * @param oy Y offset in mm
      * @param oz Z offset in mm
      */
-    inline void offset( float ox, float oy, float oz ) { 
-        m_offset.x=ox;
-        m_offset.y=oy;
-        m_offset.z=oz;
+    inline void offset( float ox, float oy, float oz ) {
+        m_offset.x = ox;
+        m_offset.y = oy;
+        m_offset.z = oz;
     }
 
     /**
@@ -168,7 +145,9 @@ public:
      * @param z The depth voxel coord
      * @return The distance to the surface at that voxel
      */
-    float distance( int x, int y, int z ) const;
+    inline float distance( int x, int y, int z ) const {
+        return m_voxels[ index(x, y, z) ];
+    }
 
     /**
      * @param x The horizontal voxel coord
@@ -177,7 +156,10 @@ public:
      * @param distance The distance to set
      * @return The distance to the surface at that voxel
      */
-    void set_distance( int x, int y, int z, float distance );
+    inline void set_distance( int x, int y, int z, float distance ) {
+        size_t idx = index( x, y, z );
+        m_voxels[ idx ] = distance;
+    }
 
     /**
      * @param x The horizontal voxel coord
@@ -185,7 +167,9 @@ public:
      * @param z The depth voxel coord
      * @return The weight at that voxel
      */
-    float weight( int x, int y, int z ) const;
+    inline float weight( int x, int y, int z ) const {
+        return m_weights[ index(x, y, z) ];
+    }
 
     /**
      * @param x The horizontal voxel coord
@@ -194,7 +178,9 @@ public:
      * @param weight The weight to set
      * @return The weight at that voxel
      */
-    void set_weight( int x, int y, int z, float weight );
+    inline void set_weight( int x, int y, int z, float weight ) {
+        m_weights[ index(x, y, z) ] = weight;
+    }
 
     /**
      * Return pointer to distance data
@@ -219,39 +205,76 @@ public:
         return m_weights;
     }
 
+    /**
+     * Set the distance data for the TSDF in one call
+     * @param distance_data Pointer to enough floats to populate the TSFD
+     */
     void set_distance_data( const float * distance_data );
-    
 
+
+    /**
+     * Set the weight data for the TSDF in one call
+     * @param weight_data Pointer to enough floats to populate the TSFD
+     */
     void set_weight_data( const float * weight_data );
 
 #pragma mark - Integrate new depth data
-        /**
-         * Integrate a range map into the TSDF
-         * @param depth_map Pointer to width*height depth values where 0 is an invalid depth and positive values are expressed in mm
-         * @param width The horiontal dimension of the depth_map
-         * @param height The height of the depth_map
-         * @param camera The camera from which the depth_map was taken
-         */
-        void integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera );
+    /**
+     * Integrate a range map into the TSDF
+     * @param depth_map Pointer to width*height depth values where 0 is an invalid depth and positive values are expressed in mm
+     * @param width The horiontal dimension of the depth_map
+     * @param height The height of the depth_map
+     * @param camera The camera from which the depth_map was taken
+     */
+    void integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera );
 
 #pragma mark - Import/Export
 
-        /**
-         * Save the TSDF to file
-         * @param The filename
-         * @return true if the file saved OK otherwise false.
-         */
-        bool save_to_file( const std::string & file_name) const;
+    /**
+     * Save the TSDF to file
+     * @param The filename
+     * @return true if the file saved OK otherwise false.
+     */
+    bool save_to_file( const std::string & file_name) const;
 
-        /**
-         * Load the given TSDF file
-         * @param The filename
-         * @return true if the file saved OK otherwise false.
-         */
-        bool load_from_file( const std::string & file_name);
+    /**
+     * Load the given TSDF file
+     * @param The filename
+     * @return true if the file saved OK otherwise false.
+     */
+    bool load_from_file( const std::string & file_name);
 
 #pragma mark - Rendering
-        void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const ;
-    };
-#endif /* TSDFVolume_hpp */
+    void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const ;
 
+protected:
+// Size of voxel grid
+    dim3 m_size;
+
+// Physical size of space represented
+    float3 m_physical_size;
+
+// Offset of physical grid in world coordinates
+    float3 m_offset;
+
+// Voxel memory on device
+    float * m_voxels;
+
+//  Voxel weight data on device
+    float * m_weights;
+
+// Size of a voxel
+    float3 m_voxel_size;
+
+//  Truncation distance
+    float m_truncation_distance;
+
+// Max weight for a voxel
+    float m_max_weight;
+
+// Storage for per voxel transform on device
+    float3 * m_voxel_translations;
+    float3 * m_voxel_rotations;
+
+};
+#endif /* TSDFVolume_hpp */

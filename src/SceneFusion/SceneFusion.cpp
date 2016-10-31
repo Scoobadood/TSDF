@@ -47,5 +47,8 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	m_scene_flow_algorithm->compute_scene_flow( depth_image, colour_image, translation, rotation, residuals );
 
 	// Update the scene flow into TSDF
-	update_tsdf(  m_volume, m_camera, depth_image->width(), depth_image->height(), translation, rotation, residuals );
+	uint16_t width = depth_image->width();
+	uint16_t height = depth_image->height();
+
+	update_tsdf(  m_volume, m_camera, width, height, translation, rotation, residuals );
 }

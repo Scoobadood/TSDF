@@ -35,46 +35,46 @@ int3 world_to_pixel( const float3 & world_coordinate, const Mat44 & inv_pose, co
 
 
 __global__
-void apply_scene_flow_to_tsdf_kernel( 
-	const float3		*mesh_scene_flow,			//	The scene flow per mesh vertex
-	const float3	  	*mesh_vertices,				//	The coordinates of the mesh vertex
-	int 				num_mesh_vertices,			//	Number of vertices in the mesh
-	float3				*voxel_translations,			//	Defromation data for the TSDF
-	dim3				size						//	Deimsnions of the TSDF in voxels
-	) {
+void apply_scene_flow_to_tsdf_kernel(
+    const float3		*mesh_scene_flow,			//	The scene flow per mesh vertex
+    const float3	  	*mesh_vertices,				//	The coordinates of the mesh vertex
+    int 				num_mesh_vertices,			//	Number of vertices in the mesh
+    float3				*voxel_translations,			//	Defromation data for the TSDF
+    dim3				size						//	Deimsnions of the TSDF in voxels
+) {
 
 	// Construct the base pointer in TSDF space from y and z
-    int vy = threadIdx.y + blockIdx.y * blockDim.y;
-    int vz = threadIdx.z + blockIdx.z * blockDim.z;
+	int vy = threadIdx.y + blockIdx.y * blockDim.y;
+	int vz = threadIdx.z + blockIdx.z * blockDim.z;
 
-    // If this thread is in range
-    if( vy < size.y && vz < size.z ) {
-
-
-        // The next (x_size) elements from here are the x coords
-        size_t base_voxel_index =  ((size.x * size.y) * vz ) + (size.x * vy);
-
-        // Iterate across X coordinate
-        size_t voxel_index = base_voxel_index;
-        for( int vx=0; vx<size.x; vx++ ) {
+	// If this thread is in range
+	if ( vy < size.y && vz < size.z ) {
 
 
-        	// For any vertex in the mesh which is within a given neighbour hood of this voxel centre
-        	// Update the voxel centre coordinates with the scene flow of that vertex
-        	for( int i=0; i<num_mesh_vertices; i++ ) {
-        		// TODO: Replace this with a radial basis function for weighted deformation
-        		float3 vector_to_vertex = f3_sub( voxel_translations[voxel_index], mesh_vertices[i]);
-        		float dist_to_vertex = f3_norm( vector_to_vertex);
+		// The next (x_size) elements from here are the x coords
+		size_t base_voxel_index =  ((size.x * size.y) * vz ) + (size.x * vy);
 
-        		if( dist_to_vertex < THRESHOLD ) {
-        			voxel_translations[voxel_index]  = f3_add( voxel_translations[voxel_index], mesh_scene_flow[i] );
-        		}
-        	}
+		// Iterate across X coordinate
+		size_t voxel_index = base_voxel_index;
+		for ( int vx = 0; vx < size.x; vx++ ) {
 
 
-        	voxel_index++;
-        }
-    }
+			// For any vertex in the mesh which is within a given neighbour hood of this voxel centre
+			// Update the voxel centre coordinates with the scene flow of that vertex
+			for ( int i = 0; i < num_mesh_vertices; i++ ) {
+				// TODO: Replace this with a radial basis function for weighted deformation
+				float3 vector_to_vertex = f3_sub( voxel_translations[voxel_index], mesh_vertices[i]);
+				float dist_to_vertex = f3_norm( vector_to_vertex);
+
+				if ( dist_to_vertex < THRESHOLD ) {
+					voxel_translations[voxel_index]  = f3_add( voxel_translations[voxel_index], mesh_scene_flow[i] );
+				}
+			}
+
+
+			voxel_index++;
+		}
+	}
 }
 
 
@@ -117,7 +117,7 @@ void mesh_scene_flow_kernel(
 /**
  * Kernel to obtain scene flow vector for each point in the surface mesh
  * @param vertices The mesh vertices
- * @param camera The Camera 
+ * @param camera The Camera
  * @param sf_width The width of the scene flow image
  * @param sf_height The height of the scene flow image
  * @param scene_flow The scene flow image data
@@ -206,26 +206,31 @@ void get_scene_flow_for_mesh( const std::vector<float3> vertices, const Camera *
 	delete [] h_mesh_scene_flow;
 }
 
-__host__ 
-void update_voxel_grid_from_mesh_scene_flow( 
-	const TSDFVolume *volume,  
-	const float3 * mesh_scene_flow, 
-	const float3 * mesh_vertices,
-	int num_vertices) {
-
+__host__
+/**
+ * @param volume The TSDF Volume to update
+ * @param mesh_scene_flow The scene flow per mesh node
+ * @param mesh_vertices The vertices of the mesh
+ * @param num_vertices Number of vertices
+ */
+void update_voxel_grid_from_mesh_scene_flow(
+    const TSDFVolume *volume,
+    const float3 * mesh_scene_flow,
+    const float3 * mesh_vertices,
+    int num_vertices) {
 
 	dim3 block( 1, 32, 32 );
 	dim3 grid ( 1, divUp( volume->size().y, block.y ), divUp( volume->size().z, block.z ));
 
 	float3 *translation_data = (float3 *) volume->translation_data();
 
-	apply_scene_flow_to_tsdf_kernel<<< grid, block >>> ( 
-		mesh_scene_flow,			//	The scene flow per mesh vertex
-		mesh_vertices,				//	The coordinates of the mesh vertex
-		num_vertices,				//	Number of vertices in the mesh
-		translation_data,			//	Defromation data for the TSDF
-		volume->size()				//	Dimensions of the TSDF in voxels
-		);
+	apply_scene_flow_to_tsdf_kernel <<< grid, block >>> (
+	    mesh_scene_flow,			//	The scene flow per mesh vertex
+	    mesh_vertices,				//	The coordinates of the mesh vertex
+	    num_vertices,				//	Number of vertices in the mesh
+	    translation_data,			//	Defromation data for the TSDF
+	    volume->size()				//	Dimensions of the TSDF in voxels
+	);
 }
 
 
@@ -244,18 +249,25 @@ void update_tsdf( const TSDFVolume * volume, const Camera * camera, uint16_t wid
 	extract_surface( volume, vertices, triangles);
 
 	float3 * scene_flow = new float3[ width * height];
-	for( int i=0; i<width*height; i++ ) {
-		scene_flow[i].x = residuals( 0, i );
-		scene_flow[i].y = residuals( 1, i );
-		scene_flow[i].z = residuals( 2, i );
+	if ( scene_flow ) {
+		for ( int i = 0; i < width * height; i++ ) {
+			scene_flow[i].x = residuals( 0, i );
+			scene_flow[i].y = residuals( 1, i );
+			scene_flow[i].z = residuals( 2, i );
+		}
+
+
+		std::vector<float3> mesh_scene_flow;
+		get_scene_flow_for_mesh( vertices, camera, width, height, scene_flow, mesh_scene_flow );
+
+		const float3 * vertex_data = (const float3 *) & (vertices[0]);
+		const float3 * mesh_scene_flow_data = (const float3 *) & (mesh_scene_flow[0]);
+		update_voxel_grid_from_mesh_scene_flow( volume, mesh_scene_flow_data, vertex_data, vertices.size());
+
+		// Delete the scene flow
+		delete[] scene_flow;
+	} else {
+		std::cout << "Couldn't allocate memory for scene flow" << std::endl;
 	}
-
-
-	std::vector<float3> mesh_scene_flow;
-	get_scene_flow_for_mesh( vertices, camera, width, height, scene_flow, mesh_scene_flow );
-
-	const float3 * vertex_data = (const float3 *) &(vertices[0]);
-	const float3 * mesh_scene_flow_data = (const float3 *) &(mesh_scene_flow[0]);
-	update_voxel_grid_from_mesh_scene_flow( volume, mesh_scene_flow_data, vertex_data, vertices.size());
 }
 

@@ -28,7 +28,7 @@
 __device__
 float3 depth_to_vertex( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv ) {
     float3 vertex{ CUDART_NAN_F , CUDART_NAN_F, CUDART_NAN_F };
-    if( depth != 0 ) {
+    if ( depth != 0 ) {
         // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
         float3 cam_point{
             kinv.m11 * x + kinv.m12 * y + kinv.m13,
@@ -96,8 +96,8 @@ float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) 
 }
 
 /**
- * @param m_voxels The voxel values (in devcie memory) 
- * @param m_weights The weight values (in device memory) 
+ * @param m_voxels The voxel values (in devcie memory)
+ * @param m_weights The weight values (in device memory)
  * @param m_size The voxel size of the space
  * @param m_physical_size The physical size of the space
  * @param m_offset The offset of the front, bottom, left corner
@@ -120,21 +120,21 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
     int vz = threadIdx.z + blockIdx.z * blockDim.z;
 
     // If this thread is in range
-    if( vy < voxel_grid_size.y && vz < voxel_grid_size.z ) {
+    if ( vy < voxel_grid_size.y && vz < voxel_grid_size.z ) {
 
 
         // The next (x_size) elements from here are the x coords
-        size_t base_voxel_index =  ((voxel_grid_size.x*voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
+        size_t base_voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
 
         // Compute the voxel size
-        float3 voxel_size { voxel_space_size.x / voxel_grid_size.x, 
-                            voxel_space_size.y / voxel_grid_size.y, 
+        float3 voxel_size { voxel_space_size.x / voxel_grid_size.x,
+                            voxel_space_size.y / voxel_grid_size.y,
                             voxel_space_size.z / voxel_grid_size.z  };
 
         // We want to iterate over the entire voxel space
         // Each thread should be a Y,Z coordinate with the thread iterating over x
         size_t voxel_index = base_voxel_index;
-        for( int vx=0; vx<voxel_grid_size.x; vx++ ) {
+        for ( int vx = 0; vx < voxel_grid_size.x; vx++ ) {
 
             // Work out where in the image, the centre of this voxel projects
             // This gives us a pixel in the depth map
@@ -149,7 +149,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
             int3   centre_of_voxel_in_pix = camera_to_pixel( centre_of_voxel_in_cam, k );
 
             // if this point is in the camera view frustum...
-            if( ( centre_of_voxel_in_pix.x >=0 && centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height) ) {
+            if ( ( centre_of_voxel_in_pix.x >= 0 && centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height) ) {
 
                 uint16_t voxel_pixel_x = static_cast<uint16_t>( centre_of_voxel_in_pix.x);
                 uint16_t voxel_pixel_y = static_cast<uint16_t>( centre_of_voxel_in_pix.y);
@@ -159,7 +159,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                 uint16_t surface_depth = depth_map[ voxel_image_index ];
 
                 // If the depth is valid
-                if( surface_depth > 0 ) {
+                if ( surface_depth > 0 ) {
 
                     // Project depth entry to a vertex
                     float3 surface_vertex = depth_to_vertex( surface_depth, voxel_pixel_x, voxel_pixel_y, kinv);
@@ -180,7 +180,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
 
                     // Truncate
                     float tsdf;
-                    if( sdf > 0 ) {
+                    if ( sdf > 0 ) {
                         tsdf = min( 1.0, sdf / trunc_distance);
                     } else {
                         tsdf = max( -1.0, sdf / trunc_distance);
@@ -197,7 +197,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                     float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
 
                     m_weights[voxel_index] = new_weight;
-                    m_voxels[voxel_index] = new_distance; 
+                    m_voxels[voxel_index] = new_distance;
                 } // End of point in frustrum
             } // Voxel depth <= 0
 
@@ -209,23 +209,23 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
 
 
 TSDFVolume::~TSDFVolume() {
-        // Remove existing data
-        if( m_voxels ) {
-            cudaFree( m_voxels ) ;
-            m_voxels = 0;
-        }
-        if( m_weights ) {
-            cudaFree( m_weights );
-            m_weights = 0;
-        }
-        if( m_voxel_rotations ) {
-            cudaFree( m_voxel_rotations );
-            m_voxel_rotations = 0;
-        }
-        if( m_voxel_translations ) {
-            cudaFree( m_voxel_translations );
-            m_voxel_translations = 0;
-        }
+    // Remove existing data
+    if ( m_voxels ) {
+        cudaFree( m_voxels ) ;
+        m_voxels = 0;
+    }
+    if ( m_weights ) {
+        cudaFree( m_weights );
+        m_weights = 0;
+    }
+    if ( m_voxel_rotations ) {
+        cudaFree( m_voxel_rotations );
+        m_voxel_rotations = 0;
+    }
+    if ( m_voxel_translations ) {
+        cudaFree( m_voxel_translations );
+        m_voxel_translations = 0;
+    }
 }
 
 /**
@@ -234,11 +234,11 @@ TSDFVolume::~TSDFVolume() {
  * @param physical_size
  */
 TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL} {
-    
+
     std::cout << "TSDFVolume::ctor called." << std::endl;
 
-    if( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) && 
-        ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
+    if ( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) &&
+            ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
         set_size( size.x, size.y, size.z , physical_size.x, physical_size.y, physical_size.z );
     } else {
         throw std::invalid_argument( "Attempt to construct CPUTSDFVolume with zero or negative size" );
@@ -260,15 +260,15 @@ __host__
 void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z) {
     using namespace Eigen;
 
-    if( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
+    if ( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
 
 
         // Remove existing data
-        if( m_voxels ) {
+        if ( m_voxels ) {
             cudaFree( m_voxels ) ;
             m_voxels = 0;
         }
-        if( m_weights ) {
+        if ( m_weights ) {
             cudaFree( m_weights );
             m_weights = 0;
         }
@@ -284,32 +284,32 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
         m_voxel_size = float3 { cx, cy, cz };
 
         // Set t > diagonal of voxel
-        float vs_norm = sqrt( cx*cx+cy*cy+cz*cz );
+        float vs_norm = sqrt( cx * cx + cy * cy + cz * cz );
         m_truncation_distance = 1.1f * vs_norm;
 
         // Allocate device storage
         cudaError_t err;
         err = cudaMalloc( &m_voxels, volume_x * volume_y * volume_z * sizeof( float ) );
-        if( err != cudaSuccess ) {
+        if ( err != cudaSuccess ) {
             throw std::bad_alloc( );
         }
 
 
         err = cudaMalloc( &m_weights, volume_x * volume_y * volume_z * sizeof( float ) );
-        if( err != cudaSuccess ) {
+        if ( err != cudaSuccess ) {
             cudaFree( m_voxels );
             throw std::bad_alloc( );
         }
 
         err = cudaMalloc( &m_voxel_translations, volume_x * volume_y * volume_z * sizeof( float3 ) );
-        if( err != cudaSuccess ) {
+        if ( err != cudaSuccess ) {
             cudaFree( m_voxels );
             cudaFree( m_weights );
             throw std::bad_alloc( );
         }
 
         err = cudaMalloc( &m_voxel_rotations, volume_x * volume_y * volume_z * sizeof( float3 ) );
-        if( err != cudaSuccess ) {
+        if ( err != cudaSuccess ) {
             cudaFree( m_voxels );
             cudaFree( m_weights );
             cudaFree( m_voxel_translations );
@@ -327,66 +327,30 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
 }
 
 
-
-
-
 #pragma mark - Data access
-/**
- * @param x The horizontal voxel coord
- * @param y The vertical voxel coord
- * @param z The depth voxel coord
- * @return The distance to the surface at that voxel
- */
-float TSDFVolume::distance( int x, int y, int z ) const {
-    return m_voxels[ index(x, y, z) ];
-}
 
 /**
- * @param x The horizontal voxel coord
- * @param y The vertical voxel coord
- * @param z The depth voxel coord
- * @param distance The distance to set
- * @return The distance to the surface at that voxel
+ * Set the distance data for the TSDF in one call
+ * @param distance_data Pointer to enough floats to populate the TSFD
  */
-void TSDFVolume::set_distance( int x, int y, int z, float distance ) {
-    size_t idx =index( x, y, z );
-    m_voxels[ idx ] = distance;
-}
-
-
-/**
- * @param x The horizontal voxel coord
- * @param y The vertical voxel coord
- * @param z The depth voxel coord
- * @return The weight at that voxel
- */
-float TSDFVolume::weight( int x, int y, int z ) const {
-    return m_weights[ index(x, y, z) ];
-}
-
-/**
- * @param x The horizontal voxel coord
- * @param y The vertical voxel coord
- * @param z The depth voxel coord
- * @param weight The weight to set
- * @return The weight at that voxel
- */
-void TSDFVolume::set_weight( int x, int y, int z, float weight ) {
-    m_weights[ index(x, y, z) ] = weight;
-}
-
 void TSDFVolume::set_distance_data( const float * distance_data ) {
-        size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
-        cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
-}
-void TSDFVolume::set_weight_data( const float * weight_data ) {
-        size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
-        cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
+    size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
+    cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
 }
 
 
 /**
- * Reset the 
+ * Set the weight data for the TSDF in one call
+ * @param weight_data Pointer to enough floats to populate the TSFD
+ */
+void TSDFVolume::set_weight_data( const float * weight_data ) {
+    size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
+    cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
+}
+
+
+/**
+ * Reset the defomation grid.
  * @param translations X x Y x Z array of float3s
  * @param grid_size The size of the voxel grid
  * @param voxel_size The size of an individual voxel
@@ -400,7 +364,7 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
     int vz = threadIdx.z + blockIdx.z * blockDim.z;
 
     // If this thread is in range
-    if( vy < grid_size.y && vz < grid_size.z ) {
+    if ( vy < grid_size.y && vz < grid_size.z ) {
 
 
         // The next (x_size) elements from here are the x coords
@@ -409,7 +373,7 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
         // We want to iterate over the entire voxel space
         // Each thread should be a Y,Z coordinate with the thread iterating over x
         size_t voxel_index = base_voxel_index;
-        for( int vx=0; vx<grid_size.x; vx++ ) {
+        for ( int vx = 0; vx < grid_size.x; vx++ ) {
             translations[voxel_index].x = (( vx + 0.5f ) * voxel_size.x) + grid_offset.x;
             translations[voxel_index].y = (( vy + 0.5f ) * voxel_size.y) + grid_offset.y;
             translations[voxel_index].z = (( vz + 0.5f ) * voxel_size.z) + grid_offset.z;
@@ -420,7 +384,7 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
 }
 
 /**
- * Initialise the deformation field with a twist
+ * Initialise the deformation field with a banana style bend
  * @param translations X x Y x Z array of float3s
  * @param grid_size The size of the voxel grid
  * @param voxel_size The size of an individual voxel
@@ -434,7 +398,7 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
     int vz = threadIdx.z + blockIdx.z * blockDim.z;
 
     // If this thread is in range
-    if( vy < grid_size.y && vz < grid_size.z ) {
+    if ( vy < grid_size.y && vz < grid_size.z ) {
 
         // The next (x_size) elements from here are the x coords
         size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
@@ -450,7 +414,7 @@ void initialise_translations_with_twist( float3 * translations, dim3 grid_size, 
         // We want to iterate over the entire voxel space
         // Each thread should be a Y,Z coordinate with the thread iterating over x
         size_t voxel_index = base_voxel_index;
-        for( int vx=0; vx<grid_size.x; vx++ ) {
+        for ( int vx = 0; vx < grid_size.x; vx++ ) {
 
             // Starting point
             float3 tran{
@@ -497,12 +461,13 @@ void TSDFVolume::clear( ) {
     dim3 block( 1, 32, 32 );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 //    initialise_translations<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
-    initialise_translations_with_twist<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset);
+    initialise_translations_with_twist <<< grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset);
 }
 
 
 
 #pragma mark - Integrate new depth data
+
 /**
  * Integrate a range map into the TSDF
  * This follows the approach in Cohen, N.S.V. 2013, 'Open Fusion', pp. 1–35.
@@ -514,6 +479,8 @@ void TSDFVolume::clear( ) {
  */
 __host__
 void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
+    assert( depth_map );
+
     using namespace Eigen;
 
     std::cout << "Integrate" << std::endl;
@@ -532,24 +499,30 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     uint16_t * d_depth_map;
     size_t data_size = width * height * sizeof( uint16_t);
     cudaError_t err = cudaMalloc( &d_depth_map, data_size );
-    if( err == cudaSuccess) {
-
+    if ( err == cudaSuccess) {
 
         err = cudaMemcpy( d_depth_map, depth_map, data_size, cudaMemcpyHostToDevice );
+        if ( err == cudaSuccess ) {
+
+            // Call the kernel
+            dim3 block( 1, 32, 32 );
+            dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
+            integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
+
+            // Wait for kernel to finish
+            cudaDeviceSynchronize( );
+
+            // Now delete data
+            cudaFree( d_depth_map );
+        } else {
+            std::cerr << "Failed to copy depth map to GPU" << std::endl;
+        }
         assert( err == cudaSuccess );
 
-        // Call the kernel
-        dim3 block( 1, 32, 32 );
-        dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
-        integrate_kernel<<<grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
-        // Wait for kernel to finish
-        cudaDeviceSynchronize( );
-
-        // Now delete data
-        cudaFree( d_depth_map );
     } else {
-        std::cout << "Couldn't allocate storage for depth map" << std::endl;
+        std::cerr << "Couldn't allocate storage for depth map" << std::endl;
     }
+    std::cout << "Integration finished" << std::endl;
 }
 
 #pragma mark - Import/Export
@@ -590,18 +563,18 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
             ofs << "space size = " << m_physical_size.x << " " << m_physical_size.y << " " << m_physical_size.z << std::endl;
 
             // Write data
-            for( uint16_t y = 0; y< m_size.y ; y++ ) {
-                for( uint16_t x = 0; x< m_size.x ; x++ ) {
-                    ofs << std::endl << "# y "<< y << ", x " << x << " tsdf" << std::endl;
+            for ( uint16_t y = 0; y < m_size.y ; y++ ) {
+                for ( uint16_t x = 0; x < m_size.x ; x++ ) {
+                    ofs << std::endl << "# y " << y << ", x " << x << " tsdf" << std::endl;
 
-                    for( uint16_t z = 0; z< m_size.z ; z++ ) {
+                    for ( uint16_t z = 0; z < m_size.z ; z++ ) {
                         size_t idx = index( x, y, z ) ;
 
                         ofs << host_voxels[ idx ] << " ";
                     }
 
-                    ofs << std::endl << "# y "<< y << ", x " << x << " weights" << std::endl;
-                    for( uint16_t z = 0; z< m_size.z ; z++ ) {
+                    ofs << std::endl << "# y " << y << ", x " << x << " weights" << std::endl;
+                    for ( uint16_t z = 0; z < m_size.z ; z++ ) {
                         size_t idx = index( x, y, z ) ;
                         ofs  << host_weights[ idx ] << " ";
                     }
