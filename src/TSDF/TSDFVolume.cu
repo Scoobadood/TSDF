@@ -21,6 +21,72 @@
 
 
 
+    /**
+     *
+     */
+__device__ __forceinline__
+    size_t index( const dim3& m_size, int x, int y, int z ) {
+        return x + (y * m_size.x) + (z * m_size.x * m_size.y);
+    };
+
+    /**
+     * @param x The horizontal voxel coord
+     * @param y The vertical voxel coord
+     * @param z The depth voxel coord
+     * @return The distance to the surface at that voxel
+     */
+    __device__ __forceinline__
+    float distance( const dim3& m_size, float *m_voxels, int x, int y, int z ) {
+        return m_voxels[ index( m_size, x, y, z) ];
+    }
+
+    /**
+     * @param x The horizontal voxel coord
+     * @param y The vertical voxel coord
+     * @param z The depth voxel coord
+     * @param distance The distance to set
+     * @return The distance to the surface at that voxel
+     */
+    __device__ __forceinline__
+    void set_distance(const  dim3& m_size, float * m_voxels, int x, int y, int z, float distance ) {
+        size_t idx = index( m_size, x, y, z );
+        m_voxels[ idx ] = distance;
+    }
+
+    /**
+     * @param x The horizontal voxel coord
+     * @param y The vertical voxel coord
+     * @param z The depth voxel coord
+     * @return The weight at that voxel
+     */
+    __device__ __forceinline__
+    float weight( const dim3& m_size, float * m_weights, int x, int y, int z ) {
+        return m_weights[ index(m_size, x, y, z) ];
+    }
+
+    /**
+     * Return the deformed voxel centre for the given voxel
+     * @param x The horizontal voxel coord
+     * @param y The vertical voxel coord
+     * @param z The depth voxel coord
+     * @return The weight at that voxel
+     */
+    __device__ __forceinline__
+    float3  deformed_voxel_centre( const dim3& m_size, float3 * m_voxel_translations, int x, int y, int z )  {
+        return m_voxel_translations[ index(m_size,x,y,z)];
+    }
+
+    /**
+     * @param x The horizontal voxel coord
+     * @param y The vertical voxel coord
+     * @param z The depth voxel coord
+     * @param weight The weight to set
+     * @return The weight at that voxel
+     */
+    __device__ __forceinline__
+    void set_weight( const dim3& m_size, float * m_weights, int x, int y, int z, float weight ) {
+        m_weights[ index(m_size,x, y, z) ] = weight;
+    }
 
 /**
  * Convert a depth to a 3D vertex in camera space

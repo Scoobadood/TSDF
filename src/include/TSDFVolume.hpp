@@ -125,62 +125,13 @@ public:
      */
     inline Float3 offset( ) const { return (Float3) m_offset; }
 
-#pragma mark - Data access
-
-    /**
-     *
-     */
-    inline size_t index( int x, int y, int z ) const {
-        return x + (y * m_size.x) + (z * m_size.x * m_size.y);
-    };
-
     /**
      * Clear the voxel and weight data
      */
     void clear( );
 
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @return The distance to the surface at that voxel
-     */
-    inline float distance( int x, int y, int z ) const {
-        return m_voxels[ index(x, y, z) ];
-    }
+#pragma mark - Data access
 
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @param distance The distance to set
-     * @return The distance to the surface at that voxel
-     */
-    inline void set_distance( int x, int y, int z, float distance ) {
-        size_t idx = index( x, y, z );
-        m_voxels[ idx ] = distance;
-    }
-
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @return The weight at that voxel
-     */
-    inline float weight( int x, int y, int z ) const {
-        return m_weights[ index(x, y, z) ];
-    }
-
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @param weight The weight to set
-     * @return The weight at that voxel
-     */
-    inline void set_weight( int x, int y, int z, float weight ) {
-        m_weights[ index(x, y, z) ] = weight;
-    }
 
     /**
      * Return pointer to distance data
