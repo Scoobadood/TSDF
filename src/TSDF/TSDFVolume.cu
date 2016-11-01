@@ -177,7 +177,9 @@ float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) 
  */
 __global__
 void integrate_kernel(  float * m_voxels, float * m_weights,
-                        dim3 voxel_grid_size, float3 voxel_space_size, float3 offset, const float trunc_distance,
+                        dim3 voxel_grid_size, float3 voxel_space_size, 
+                        float3 * voxel_centres, 
+                        float3 offset, const float trunc_distance,
                         Mat44 inv_pose, Mat33 k, Mat33 kinv,
                         uint32_t width, uint32_t height, const uint16_t * depth_map) {
 
@@ -192,11 +194,6 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
         // The next (x_size) elements from here are the x coords
         size_t base_voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
 
-        // Compute the voxel size
-        float3 voxel_size { voxel_space_size.x / voxel_grid_size.x,
-                            voxel_space_size.y / voxel_grid_size.y,
-                            voxel_space_size.z / voxel_grid_size.z  };
-
         // We want to iterate over the entire voxel space
         // Each thread should be a Y,Z coordinate with the thread iterating over x
         size_t voxel_index = base_voxel_index;
@@ -206,7 +203,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
             // This gives us a pixel in the depth map
 
             // Convert voxel to world coords of centre
-            float3 centre_of_voxel        = centre_of_voxel_at( vx, vy, vz, voxel_size, offset );
+            float3 centre_of_voxel        = voxel_centres[ index( voxel_grid_size, vx, vy, vz ) ];
 
             // Convert world to camera coords
             float3 centre_of_voxel_in_cam = world_to_camera( centre_of_voxel, inv_pose );
@@ -573,7 +570,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
             // Call the kernel
             dim3 block( 1, 32, 32 );
             dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
-            integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
+            integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
 
             // Wait for kernel to finish
             cudaDeviceSynchronize( );
