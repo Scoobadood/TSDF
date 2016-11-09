@@ -15,13 +15,8 @@ DepthImage::DepthImage( std::string file_name ) {
 
 
 		if ( m_data != nullptr) {
-			// m_width = w;
-			// m_height = h;
-
-			// size_t map_size = m_width * m_height;
-			// for ( size_t i = 0; i < map_size; i++ ) {
-			// 	uint16_t v = m_data[i];
-			// }
+			m_width = w;
+			m_height = h;
 		} else {
 			throw std::invalid_argument( "Problem reading depth image " + file_name);
 		}
