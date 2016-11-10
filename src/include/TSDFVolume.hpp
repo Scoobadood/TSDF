@@ -132,6 +132,13 @@ public:
 
 #pragma mark - Data access
 
+ /**
+     *
+     */
+    inline size_t index( int x, int y, int z ) const {
+        return x + (y * m_size.x) + (z * m_size.x * m_size.y);
+    };
+
     /**
      * Return pointer to distance data
      * @return Pointer to distance data
