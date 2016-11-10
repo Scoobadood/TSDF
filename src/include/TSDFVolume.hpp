@@ -132,7 +132,6 @@ public:
 
 #pragma mark - Data access
 
-
     /**
      * Return pointer to distance data
      * @return Pointer to distance data
