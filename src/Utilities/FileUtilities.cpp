@@ -9,46 +9,59 @@
 
 /**
  * Return true if a string matches the given template
- * The template is of the form <prexifx>_<nnn...>.<suffix>
+ * The template is of the form <prexifx><nnn...><suffix>.<extension>
  * Where prefix is a string, there are a number of digits and a suffix
  * This is a utility function to get around the fact that despite appearances to the contrary, 
  * gcc 4.8.n does NOT support regexes
  * We use this function to match input colour, depth and scene flow file names
  * @param prefix The prefix
  * @param num_digits The number of digits to match
- * @param suffix The file extension
+ * @param suffix Any suffix following the digits
+ * @param extension The file extension
  * @param test_string The candidate string to match
  * @return true if it matches else false
  */
-bool match_file_name( const std::string& prefix, int num_digits, const std::string& suffix, const std::string& test_string ) {
+bool match_file_name( const std::string& prefix, 
+                        int num_digits, 
+                        const std::string& suffix, 
+                        const std::string& extension,
+                        const std::string& test_string ) {
     bool matches = false;
 
     std::string error_message;
 
-    // Must be the right length to start with
-    if( ( test_string.length()  > 0 ) && 
-        ( prefix.length() > 0 ) && 
-        ( suffix.length() > 0 ) &&
+    // Must be the right length to start with. Any can be non-zero but at least one must be
+    if( ( test_string.length()  > 0 ) || 
+        ( prefix.length() > 0 )       || 
+        ( suffix.length() > 0 )       ||
+        ( extension.length() > 0 )    ||
         ( num_digits > 0 ) ) {
 
-        int template_length = prefix.length() + 1 + num_digits + suffix.length() + 1;
+        int template_length = prefix.length() + num_digits + suffix.length() + 1 + extension.length();
         if( test_string.length() == template_length ) {
 
             if( std::equal(prefix.begin(), prefix.end(), test_string.begin() ) ) {
-                if( std::equal(suffix.begin(), suffix.end(), test_string.end() - suffix.length() ) ) {
-                    // Check that all remaining cahracters are digits
-                    std::string digits = test_string.substr(prefix.size() + 1, num_digits );
 
-                    matches = std::all_of( digits.begin(), digits.end(), ::isdigit );
+                // Check for the suffix too
+                if( std::equal( suffix.begin(), suffix.end(), test_string.begin() + prefix.length() + num_digits )) {
 
-                    if( ! matches ) {
-                        error_message = "Digits region contains non-digits";
+                    if( std::equal(extension.begin(), extension.end(), test_string.end() - extension.length() ) ) {
+                        // Check that all remaining cahracters are digits
+                        std::string digits = test_string.substr(prefix.size(), num_digits );
+
+                        matches = std::all_of( digits.begin(), digits.end(), ::isdigit );
+
+                        if( ! matches ) {
+                            error_message = "Digits region contains non-digits";
+                        }
+
+                    } else {
+                        error_message = "Extension doesn't match";
                     }
 
                 } else {
                     error_message = "Suffix doesn't match";
                 }
-
             } else {
                 error_message = "Prefix doesn't match";
             }

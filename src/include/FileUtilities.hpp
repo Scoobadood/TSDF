@@ -1,3 +1,5 @@
+#ifndef FILE_UTLITIES_HPP
+#define  FILE_UTLITIES_HPP
 #include <string>
 #include <functional>
 #include <vector>
@@ -30,15 +32,18 @@ void files_in_directory( const std::string& directory, std::vector<std::string>&
 
 /**
  * Return true if a string matches the given template
- * The template is of the form <prexifx>_<nnn...>.<suffix>
+ * The template is of the form <prexifx><nnn...><suffix>.<extension>
  * Where prefix is a string, there are a number of digits and a suffix
  * This is a utility function to get around the fact that despite appearances to the contrary, 
  * gcc 4.8.n does NOT support regexes
  * We use this function to match input colour, depth and scene flow file names
  * @param prefix The prefix
  * @param num_digits The number of digits to match
- * @param suffix The file extension
+ * @param suffix Any suffix following the digits
+ * @param extension The file extension
  * @param test_string The candidate string to match
  * @return true if it matches else false
  */
-bool match_file_name( const std::string& prefix, int num_digits, const std::string& suffix, const std::string& test_string );
+bool match_file_name( const std::string& prefix, int num_digits, const std::string& suffix, const std::string& extension, const std::string& test_string );
+
+#endif

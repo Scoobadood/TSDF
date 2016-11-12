@@ -15,7 +15,9 @@ LDFLAGS=-lpng
 
 SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 		  FileUtilities.cpp Definitions.cpp\
+		  MockSceneFlowAlgorithm.cpp \
 		  SRSFMockSceneFlowAlgorithm.cpp \
+		  PDSFMockSceneFlowAlgorithm.cpp \
 		  MockKinect.cpp \
 		  Camera.cpp \
 		  GPURaycaster.cpp \

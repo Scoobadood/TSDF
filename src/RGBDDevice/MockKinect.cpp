@@ -36,7 +36,7 @@ void MockKinect::initialise( ) {
 
 			// Can't use regex because gcc 4.8.4 doesn't support it despite having the header and compiling successfully
 			// I need to match files like color_nnnnn.png
-			is_valid = match_file_name( "color", 5, "png", name );
+			is_valid = match_file_name( "color_", 5, "", "png", name );
 			return is_valid;
 		});
 
@@ -45,7 +45,7 @@ void MockKinect::initialise( ) {
 			// If name is color_nnnnn.pgm or depth.ppm then we accept it
 			bool is_valid = false;
 
-			is_valid = match_file_name( "depth", 5, "png", name );
+			is_valid = match_file_name( "depth_", 5, "", "png", name );
 			return is_valid;
 		});
 
