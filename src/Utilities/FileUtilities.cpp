@@ -159,3 +159,50 @@ void files_in_directory( const std::string& directory, std::vector<std::string>&
         std::cerr << "Problem reading directory " << directory << std::endl;
     }
 }
+
+
+
+
+/**
+ * Read and return the last (non-empty) line of a text file
+ * @param file_name The name of the file
+ * @param text the string read
+ * @return true if the read was successful
+ */
+bool read_last_line( std::string file_name, std::string& text ) {
+
+    bool read_ok = false;
+
+    std::ifstream fin;
+    fin.open(file_name);
+    if(fin.is_open()) {
+        fin.seekg(-1,std::ios_base::end);                // go to one spot before the EOF
+
+        bool keepLooping = true;
+        while(keepLooping) {
+            char ch;
+            fin.get(ch);                            // Get current byte's data
+
+            if((int)fin.tellg() <= 1) {             // If the data was at or before the 0th byte
+                fin.seekg(0);                       // The first line is the last line
+                keepLooping = false;                // So stop there
+            }
+            else if(ch == '\n') {                   // If the data was a newline
+                keepLooping = false;                // Stop at the current position.
+            }
+            else {                                  // If the data was neither a newline nor at the 0 byte
+                fin.seekg(-2,std::ios_base::cur);        // Move to the front of that data, then to the front of the data before it
+            }
+        }
+
+        getline(fin,text);                      // Read the current line
+        std::cout << "Result: " << text << std::endl;     // Display it
+
+        fin.close();
+        read_ok = true;
+    } else {
+        std::cerr << "Problem reading file " << file_name << std::endl;
+    }
+
+    return read_ok;
+}

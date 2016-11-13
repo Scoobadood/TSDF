@@ -46,4 +46,12 @@ void files_in_directory( const std::string& directory, std::vector<std::string>&
  */
 bool match_file_name( const std::string& prefix, int num_digits, const std::string& suffix, const std::string& extension, const std::string& test_string );
 
+/**
+ * Read and return the last (non-empty) line of a text file
+ * @param file_name The name of the file
+ * @param text the string read
+ * @return true if the read was successful
+ */
+bool read_last_line( std::string file_name, std::string& text );
+
 #endif
