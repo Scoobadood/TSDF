@@ -48,8 +48,8 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 				if ( ! parent->read_floats_from_string( last_line.c_str(), 2, dims ) ) {
 					std::cerr << "Error: Problem reading dimensions from PD scene flow file " << std::endl;
 				} else {
-					image_width = (int)dims[0];
-					image_height = (int)dims[1];
+					image_width = (int)dims[1] + 1;
+					image_height = (int)dims[0]+ 1;
 				}
 			}
 		}

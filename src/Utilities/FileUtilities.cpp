@@ -172,37 +172,52 @@ void files_in_directory( const std::string& directory, std::vector<std::string>&
 bool read_last_line( std::string file_name, std::string& text ) {
 
     bool read_ok = false;
+    bool at_first_line = false;
 
     std::ifstream fin;
     fin.open(file_name);
     if(fin.is_open()) {
-        fin.seekg(-1,std::ios_base::end);                // go to one spot before the EOF
+        // Zip to the end - 1 char
+        fin.seekg(-1,std::ios_base::end);
 
-        bool keepLooping = true;
-        while(keepLooping) {
-            char ch;
-            fin.get(ch);                            // Get current byte's data
 
-            if((int)fin.tellg() <= 1) {             // If the data was at or before the 0th byte
-                fin.seekg(0);                       // The first line is the last line
-                keepLooping = false;                // So stop there
+        bool done = false;
+
+        //  now loop until done.
+        //  done means we found a non -empty last line OR
+        //  we reached the start of the file without finding one
+        while( !done ) {
+            // Initialise the count of characters
+            int count = 0;
+            char c;
+
+            // Read back until we find a '\n' character
+            while( fin.get( c ) && c != '\n') {
+                count++;
+                fin.seekg( -2, std::ios_base::cur);
             }
-            else if(ch == '\n') {                   // If the data was a newline
-                keepLooping = false;                // Stop at the current position.
+
+            // If we have count > 0, we have a string
+            if( count > 0 ) {
+                getline( fin, text );
+                read_ok = true;
+                done = true;
+            } 
+
+            // Otherwise, if we're at the start of the file
+            else if ( fin.tellg() < 0 ) {
+                read_ok = false;
+                done = true;
             }
-            else {                                  // If the data was neither a newline nor at the 0 byte
-                fin.seekg(-2,std::ios_base::cur);        // Move to the front of that data, then to the front of the data before it
+
+            // Otherwise we found an empty line, go to the next one
+            else {
+                fin.seekg( -2, std::ios_base::cur);
             }
         }
-
-        getline(fin,text);                      // Read the current line
-        std::cout << "Result: " << text << std::endl;     // Display it
-
-        fin.close();
-        read_ok = true;
     } else {
-        std::cerr << "Problem reading file " << file_name << std::endl;
+        std::cerr << "Couldn't read file " << file_name << std::endl;
     }
-
     return read_ok;
 }
+
