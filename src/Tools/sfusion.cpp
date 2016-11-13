@@ -1,11 +1,11 @@
 #include "../include/SceneFusion.hpp"
 #include "../include/MockKinect.hpp"
-#include "../include/SRSFMockSceneFlowAlgorithm.hpp"
+#include "../include/PDSFMockSceneFlowAlgorithm.hpp"
 
 int main( int argc, const char * argv[] ) {
 	if ( argc == 3 ) {
 		RGBDDevice * device     = new MockKinect( argv[1] );
-		SceneFlowAlgorithm *sfa = new SRSFMockSceneFlowAlgorithm( argv[2] );
+		SceneFlowAlgorithm *sfa = new PDSFMockSceneFlowAlgorithm( argv[2] );
 
 		SceneFusion * sf = new SceneFusion( sfa, device );
 		device->initialise( );
