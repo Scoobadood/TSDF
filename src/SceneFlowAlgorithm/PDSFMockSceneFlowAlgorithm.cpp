@@ -72,7 +72,7 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 
 	SceneFlowData sfd{ this, file_name };
 	
-	std::function<void( const std::string & )> f = std::bind(&SceneFlowData::process_line, sfd, std::placeholders::_1 );
+	std::function<void( const std::string & )> f = std::bind(&SceneFlowData::process_line, &sfd, std::placeholders::_1 );
 
 	bool read_ok = process_file_by_lines( file_name, f );
 
