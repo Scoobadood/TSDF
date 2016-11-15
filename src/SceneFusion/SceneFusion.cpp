@@ -54,3 +54,11 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	// Now update the depth map into the TSDF
 	m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 }
+
+/**
+ * Extract the surface
+ */
+void SceneFusion::extract_surface( std::vector<float3>& verts, std::vector<int3>& triangles ) const {
+	std::cout << "Extracting ISO surface" << std::endl;
+	::extract_surface( m_volume, verts, triangles);
+}

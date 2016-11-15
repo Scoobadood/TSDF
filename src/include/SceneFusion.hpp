@@ -19,11 +19,16 @@ public:
 	 */
 	SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device );
 
-
 	/**
 	 * Run SceneFusion
 	 */
 	void process_frames( const DepthImage * depth_image, const PngWrapper *  colour_image );
+
+	/*
+	 * Extract the mesh
+	 */
+	void extract_surface( std::vector<float3>& verts, std::vector<int3>& triangles ) const;
+
 
 private:
 	TSDFVolume				* m_volume;

@@ -23,7 +23,7 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 		  GPURaycaster.cpp \
 		  DepthImage.cpp SceneFusion.cpp \
           PngUtilities.cpp PngWrapper.cpp \
-          sfusion.cpp
+          sfusion.cpp ply.cpp 
 
 
 CUDA_SOURCES = GPUMarchingCubes.cu cu_common.cu TSDFVolume.cu TSDF_utilities.cu Raycaster_kernel.cu SceneFlowUpdater.cu
@@ -46,7 +46,7 @@ $(OBJ_DIR)/%.o : %.cpp
 	$(NVCC) -c $(CFLAGS) $< -o $(OBJ_DIR)/$(@F)
 
 $(OBJ_DIR)/%.o : %.cu
-	$(NVCC) -c $(CFLAGS) -lineinfo -dc $< -o $(OBJ_DIR)/$(@F)
+	$(NVCC) -c -G -g $(CFLAGS) -lineinfo -dc $< -o $(OBJ_DIR)/$(@F)
 
 clean:
 	rm $(OBJ_DIR)/*.o $(EXECUTABLE)
