@@ -1,14 +1,12 @@
-#include "TSDFVolume.hpp"
-#include "cu_common.hpp"
-#include "TSDF_utilities.hpp"
+#include "../include/TSDFVolume.hpp"
+#include "../include/cu_common.hpp"
+#include "../include/TSDF_utilities.hpp"
 
 #include "math_constants.h"
 
 #include <Eigen/Dense>
 
-
 #include "MC_edge_table.cu"
-
 #include "MC_triangle_table.cu"
 
 

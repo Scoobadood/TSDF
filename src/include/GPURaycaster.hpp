@@ -10,7 +10,9 @@
 #define GPURaycaster_hpp
 
 #include <Eigen/Core>
+
 #include "Raycaster.hpp"
+#include "TSDFVolume.hpp"
 
 
 class GPURaycaster : public Raycaster {

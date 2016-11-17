@@ -9,7 +9,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "Camera.hpp"
+#include "include/Camera.hpp"
 #include "include/Definitions.hpp"
 
 

@@ -1,5 +1,6 @@
-#include "../TSDFVolume.hpp"
-#include "../GPU/GPUMarchingCubes.hpp"
+#include "../include/TSDFVolume.hpp"
+#include "../include/GPUMarchingCubes.hpp"
+#include "../include/ply.hpp"
 
 #include "vector_types.h"
 
@@ -8,18 +9,18 @@
 
 #include <Eigen/Dense>
 
-TSDFVolume * make_sphere_tsdf( const  int vx, const  int vy, const  int vz, const float px, const float py, const float pz ) {
+TSDFVolume * make_sphere_tsdf( const  uint32_t vx, const  uint32_t vy, const  uint32_t vz, const uint32_t px, const uint32_t py, const uint32_t pz ) {
 	using namespace Eigen;
 
 
-	TSDFVolume *volume = TSDFVolume::make_volume( TSDFVolume::GPU, Vector3i{ vx, vy, vz }, Vector3f{px, py, pz} );
+	TSDFVolume *volume = new TSDFVolume( TSDFVolume::UInt3{ vx, vy, vz }, TSDFVolume::UInt3{px, py, pz} );
 
 	// Now make some data
 	float * data = new float[ vx * vy * vz];
 
 	float radius = fminf( px, fminf( py, pz ) ) / 2.5f;
 
-	Vector3f vsize{ px / vx, py / vy, pz / vz };
+	Vector3f vsize{ px / (float)vx, py / (float)vy, pz / (float)vz };
 
 	size_t idx = 0;
 	for ( int z = 0; z < vz; z++ ) {
@@ -45,53 +46,97 @@ TSDFVolume * make_sphere_tsdf( const  int vx, const  int vy, const  int vz, cons
 	return volume;
 }
 
-void write_to_ply( const std::string& file_name, const std::vector<float3>& vertices, const std::vector<int3>& triangles ) {
-	std::ofstream f { file_name };
-	if( f.is_open() ) {
-		f << "ply" << std::endl;
-		f << "format ascii 1.0" << std::endl;
 
-		f << "element vertex " << vertices.size() << std::endl;
-		f << "property float x" << std::endl;
-		f << "property float y" << std::endl;
-		f << "property float z" << std::endl;
+/**
+ * Initialise the deformation field with a banana style bend
+ * @param translations X x Y x Z array of float3s
+ * @param grid_size The size of the voxel grid
+ * @param voxel_size The size of an individual voxel
+ * @param grid_offset The offset of the grid
+ */
+TSDFVolume::Float3 * build_twist_translation_data( TSDFVolume * volume ) {
 
-		f << "element face " << triangles.size() << std::endl;
-		f << "property list uchar int vertex_indices" << std::endl;
-		f << "end_header" << std::endl;
+	TSDFVolume::Float3 grid_offset = volume->offset( );
+	TSDFVolume::Float3 voxel_size  = volume->voxel_size();
+	TSDFVolume::UInt3  grid_size   = volume->size();
 
-		for ( int v = 0; v < vertices.size(); v++ ) {
-			f << vertices[v].x << " " << vertices[v].y << " " << vertices[v].z << std::endl;
+
+	// Compute the centre of rotation
+	TSDFVolume::Float3 centre_of_rotation {
+		grid_offset.x + ( 1.5f * grid_size.x * voxel_size.x),
+		grid_offset.y + ( 0.5f * grid_size.y * voxel_size.y),
+		grid_offset.z + ( 0.5f * grid_size.z * voxel_size.z),
+	};
+
+	int data_size =  grid_size.x * grid_size.y * grid_size.z;
+
+	TSDFVolume::Float3 * translations = new TSDFVolume::Float3[ data_size ];
+
+	// We want to iterate over the entire voxel space
+	// Each thre	ad should be a Y,Z coordinate with the thread iterating over x
+	int voxel_index = 0;
+	for ( int vz = 0; vz < grid_size.z; vz++ ) {
+		for ( int vy = 0; vy < grid_size.y; vy++ ) {
+			for ( int vx = 0; vx < grid_size.x; vx++ ) {
+
+				// Starting point
+				float3 tran{
+					(( vx + 0.5f ) * voxel_size.x) + grid_offset.x,
+					(( vy + 0.5f ) * voxel_size.y) + grid_offset.y,
+					(( vz + 0.5f ) * voxel_size.z) + grid_offset.z
+				};
+
+				// Compute current angle with cor and hor axis
+				float dx = tran.x - centre_of_rotation.x;
+				float dy = tran.y - centre_of_rotation.y;
+
+				float theta = atan2( dy, dx ) * 2;
+
+				float sin_theta = sin( theta );
+				float cos_theta = cos( theta );
+
+				// Compute relative X and Y
+				float rel_x = ( tran.x - centre_of_rotation.x );
+				float rel_y = ( tran.y - centre_of_rotation.y );
+
+				translations[voxel_index].x = ( ( cos_theta * rel_x ) - ( sin_theta * rel_y ) ) + centre_of_rotation.x;
+				translations[voxel_index].y = ( ( sin_theta * rel_x ) + ( cos_theta * rel_y ) ) + centre_of_rotation.y;
+				translations[voxel_index].z = tran.z;
+
+				voxel_index++;
+			}
 		}
-		for ( int t = 0; t < triangles.size(); t++ ) {
-			f << "3 " << triangles[t].x << " " << triangles[t].y << " " << triangles[t].z << std::endl;
-		}
-	} else {
-		std::cout << "Problem opening file for write " << file_name << std::endl;
-	}	
+	}
+	return translations;
 }
-
-
 /**
  * Test the Marching Cubes code
  */
 int main( int argc, const char * argv[] ) {
 	int retval = 0;
 
-	TSDFVolume::volume_type type = TSDFVolume::GPU;
-	TSDFVolume *volume = make_sphere_tsdf( 256, 256, 256, 1024.0f, 1024.0f, 1024.0f );
-
+	TSDFVolume *volume = make_sphere_tsdf( 256, 256, 256, 1024, 1024, 1024 );
 
 	if ( volume ) {
-		Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
+		TSDFVolume::Float3 * data = build_twist_translation_data( volume );
 
-		std::vector<int3> triangles;
-		std::vector<float3> vertices;
-		extract_surface( volume, vertices, triangles);
+		if ( data ) {
+			volume->set_translation_data( data);
 
-		// Save to PLY file
-		write_to_ply( "/home/dave/Desktop/sphere.ply", vertices, triangles);
+			delete [] data;
 
+			Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
+
+			std::vector<int3> triangles;
+			std::vector<float3> vertices;
+			extract_surface( volume, vertices, triangles);
+
+			// Save to PLY file
+			write_to_ply( "/home/dave/Desktop/sphere.ply", vertices, triangles);
+		} else {
+			std::cout << "Couldn't build twist data" << std::endl;
+			retval = -1;
+		}
 
 	} else {
 		std::cout << "Couldn't make TSDF volume spehere " << std::endl;

@@ -21,72 +21,72 @@
 
 
 
-    /**
-     *
-     */
+/**
+ *
+ */
 __device__ __forceinline__
-    size_t index( const dim3& m_size, int x, int y, int z ) {
-        return x + (y * m_size.x) + (z * m_size.x * m_size.y);
-    };
+size_t index( const dim3& m_size, int x, int y, int z ) {
+    return x + (y * m_size.x) + (z * m_size.x * m_size.y);
+};
 
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @return The distance to the surface at that voxel
-     */
-    __device__ __forceinline__
-    float distance( const dim3& m_size, float *m_voxels, int x, int y, int z ) {
-        return m_voxels[ index( m_size, x, y, z) ];
-    }
+/**
+ * @param x The horizontal voxel coord
+ * @param y The vertical voxel coord
+ * @param z The depth voxel coord
+ * @return The distance to the surface at that voxel
+ */
+__device__ __forceinline__
+float distance( const dim3& m_size, float *m_voxels, int x, int y, int z ) {
+    return m_voxels[ index( m_size, x, y, z) ];
+}
 
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @param distance The distance to set
-     * @return The distance to the surface at that voxel
-     */
-    __device__ __forceinline__
-    void set_distance(const  dim3& m_size, float * m_voxels, int x, int y, int z, float distance ) {
-        size_t idx = index( m_size, x, y, z );
-        m_voxels[ idx ] = distance;
-    }
+/**
+ * @param x The horizontal voxel coord
+ * @param y The vertical voxel coord
+ * @param z The depth voxel coord
+ * @param distance The distance to set
+ * @return The distance to the surface at that voxel
+ */
+__device__ __forceinline__
+void set_distance(const  dim3& m_size, float * m_voxels, int x, int y, int z, float distance ) {
+    size_t idx = index( m_size, x, y, z );
+    m_voxels[ idx ] = distance;
+}
 
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @return The weight at that voxel
-     */
-    __device__ __forceinline__
-    float weight( const dim3& m_size, float * m_weights, int x, int y, int z ) {
-        return m_weights[ index(m_size, x, y, z) ];
-    }
+/**
+ * @param x The horizontal voxel coord
+ * @param y The vertical voxel coord
+ * @param z The depth voxel coord
+ * @return The weight at that voxel
+ */
+__device__ __forceinline__
+float weight( const dim3& m_size, float * m_weights, int x, int y, int z ) {
+    return m_weights[ index(m_size, x, y, z) ];
+}
 
-    /**
-     * Return the deformed voxel centre for the given voxel
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @return The weight at that voxel
-     */
-    __device__ __forceinline__
-    float3  deformed_voxel_centre( const dim3& m_size, float3 * m_voxel_translations, int x, int y, int z )  {
-        return m_voxel_translations[ index(m_size,x,y,z)];
-    }
+/**
+ * Return the deformed voxel centre for the given voxel
+ * @param x The horizontal voxel coord
+ * @param y The vertical voxel coord
+ * @param z The depth voxel coord
+ * @return The weight at that voxel
+ */
+__device__ __forceinline__
+float3  deformed_voxel_centre( const dim3& m_size, float3 * m_voxel_translations, int x, int y, int z )  {
+    return m_voxel_translations[ index(m_size, x, y, z)];
+}
 
-    /**
-     * @param x The horizontal voxel coord
-     * @param y The vertical voxel coord
-     * @param z The depth voxel coord
-     * @param weight The weight to set
-     * @return The weight at that voxel
-     */
-    __device__ __forceinline__
-    void set_weight( const dim3& m_size, float * m_weights, int x, int y, int z, float weight ) {
-        m_weights[ index(m_size,x, y, z) ] = weight;
-    }
+/**
+ * @param x The horizontal voxel coord
+ * @param y The vertical voxel coord
+ * @param z The depth voxel coord
+ * @param weight The weight to set
+ * @return The weight at that voxel
+ */
+__device__ __forceinline__
+void set_weight( const dim3& m_size, float * m_weights, int x, int y, int z, float weight ) {
+    m_weights[ index(m_size, x, y, z) ] = weight;
+}
 
 /**
  * Convert a depth to a 3D vertex in camera space
@@ -177,8 +177,8 @@ float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) 
  */
 __global__
 void integrate_kernel(  float * m_voxels, float * m_weights,
-                        dim3 voxel_grid_size, float3 voxel_space_size, 
-                        float3 * voxel_centres, 
+                        dim3 voxel_grid_size, float3 voxel_space_size,
+                        float3 * voxel_centres,
                         float3 offset, const float trunc_distance,
                         Mat44 inv_pose, Mat33 k, Mat33 kinv,
                         uint32_t width, uint32_t height, const uint16_t * depth_map) {
@@ -398,7 +398,8 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
  */
 void TSDFVolume::set_distance_data( const float * distance_data ) {
     size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
-    cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
+    cudaError_t err = cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
+    check_cuda_error( "Couldn't set distance data", err );
 }
 
 
@@ -408,7 +409,19 @@ void TSDFVolume::set_distance_data( const float * distance_data ) {
  */
 void TSDFVolume::set_weight_data( const float * weight_data ) {
     size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
-    cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
+    cudaError_t err = cudaMemcpy( m_weights, weight_data, data_size, cudaMemcpyHostToDevice );
+    check_cuda_error( "Couldn't set weight data", err );
+}
+
+
+/**
+ * Set the translation dat for this space
+ * @param data Data on host memory space; Assumed to be vx*vy*vz float3
+ */
+void TSDFVolume::set_translation_data( Float3 *data) {
+    size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( Float3 );
+    cudaError_t err = cudaMemcpy( m_voxel_translations, data, data_size, cudaMemcpyHostToDevice );
+    check_cuda_error( "Couldn't set voxel translations", err );
 }
 
 
@@ -446,67 +459,7 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
     }
 }
 
-/**
- * Initialise the deformation field with a banana style bend
- * @param translations X x Y x Z array of float3s
- * @param grid_size The size of the voxel grid
- * @param voxel_size The size of an individual voxel
- * @param grid_offset The offset of the grid
- */
-__global__
-void initialise_translations_with_twist( float3 * translations, dim3 grid_size, float3 voxel_size, float3 grid_offset  ) {
 
-    // Extract the voxel Y and Z coordinates we then iterate over X
-    int vy = threadIdx.y + blockIdx.y * blockDim.y;
-    int vz = threadIdx.z + blockIdx.z * blockDim.z;
-
-    // If this thread is in range
-    if ( vy < grid_size.y && vz < grid_size.z ) {
-
-        // The next (x_size) elements from here are the x coords
-        size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
-
-        // Compute the centre of rotation
-        float3 centre_of_rotation {
-            grid_offset.x + ( 1.5f * grid_size.x * voxel_size.x),
-            grid_offset.y + ( 0.5f * grid_size.y * voxel_size.y),
-            grid_offset.z + ( 0.5f * grid_size.z * voxel_size.z),
-        };
-
-
-        // We want to iterate over the entire voxel space
-        // Each thread should be a Y,Z coordinate with the thread iterating over x
-        size_t voxel_index = base_voxel_index;
-        for ( int vx = 0; vx < grid_size.x; vx++ ) {
-
-            // Starting point
-            float3 tran{
-                (( vx + 0.5f ) * voxel_size.x) + grid_offset.x,
-                (( vy + 0.5f ) * voxel_size.y) + grid_offset.y,
-                (( vz + 0.5f ) * voxel_size.z) + grid_offset.z
-            };
-
-            // Compute current angle with cor and hor axis
-            float dx = tran.x - centre_of_rotation.x;
-            float dy = tran.y - centre_of_rotation.y;
-
-            float theta = atan2( dy, dx ) * 2;
-
-            float sin_theta = sin( theta );
-            float cos_theta = cos( theta );
-
-            // Compute relative X and Y
-            float rel_x = ( tran.x - centre_of_rotation.x );
-            float rel_y = ( tran.y - centre_of_rotation.y );
-
-            translations[voxel_index].x = ( ( cos_theta * rel_x ) - ( sin_theta * rel_y ) ) + centre_of_rotation.x;
-            translations[voxel_index].y = ( ( sin_theta * rel_x ) + ( cos_theta * rel_y ) ) + centre_of_rotation.y;
-            translations[voxel_index].z = tran.z;
-
-            voxel_index++;
-        }
-    }
-}
 
 
 /**
@@ -523,8 +476,7 @@ void TSDFVolume::clear( ) {
     // Now initialise the translations
     dim3 block( 1, 32, 32 );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
-//    initialise_translations<<<grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
-    initialise_translations_with_twist <<< grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset);
+    initialise_translations <<< grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
 }
 
 

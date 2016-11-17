@@ -29,6 +29,11 @@ public:
             y = rhs.y;
             z = rhs.z;
         }
+        inline Float3( float fx=0.0f, float fy=0.0f, float fz=0.0f ) {
+            x = fx;
+            y = fy;
+            z = fz;
+        }
         inline operator float3() const {return float3{x, y, z}; }
         inline float3 operator +( const float3& rhs ) { 
             x += rhs.x;
@@ -153,6 +158,12 @@ public:
     inline Float3 *  translation_data() const {
         return reinterpret_cast<Float3 *> (m_voxel_translations);
     }
+
+    /**
+     * Set the translation dat for this space
+     * @param data Data on host memory space; Assumed to be vx*vy*vz float3
+     */
+    void set_translation_data( Float3 *data);
 
     /**
      * Return pointer to weight data
