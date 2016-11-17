@@ -10,7 +10,6 @@
 #include "../include/TSDFVolume.hpp"
 #include "../include/GPURaycaster.hpp"
 #include "../include/TSDF_utilities.hpp"
-#include "../include/TSDFLoader.hpp"
 
 #include <fstream>
 #include <iomanip>
@@ -310,6 +309,25 @@ TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offs
 
 
 /**
+ * Make a TSDFVolume with the given dimensins and physical dimensions
+ * @param volume_x X dimension in voxels
+ * @param volume_y Y dimension in voxels
+ * @param volume_z Z dimension in voxels
+ * @param psize_x Physical size in X dimension in mm
+ * @param psize_y Physical size in Y dimension in mm
+ * @param psize_z Physical size in Z dimension in mm
+ */
+TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z ) {
+    if ( ( volume_x > 0 ) && ( volume_y > 0 ) && ( volume_z > 0 ) &&
+            ( psize_x > 0 ) && ( psize_y > 0 ) && ( psize_z > 0 ) ) {
+
+        set_size( volume_x, volume_y, volume_z , psize_x, psize_y, psize_z );
+    } else {
+        throw std::invalid_argument( "Attempt to construct CPUTSDFVolume with zero or negative size" );
+    }
+}
+
+/**
  * Set the size of the volume. This will delete any existing values and resize the volume, clearing it when done.
  * Volume offset is maintained
  * @param volume_x X dimension in voxels
@@ -498,7 +516,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
 
     using namespace Eigen;
 
-    std::cout << "Integrate" << std::endl;
+    std::cout << "Integrating depth map size " << width << "x" << height << std::endl;
 
     // Construct device type parameters for integration
     Mat44 inv_pose;
@@ -514,29 +532,23 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     uint16_t * d_depth_map;
     size_t data_size = width * height * sizeof( uint16_t);
     cudaError_t err = cudaMalloc( &d_depth_map, data_size );
-    if ( err == cudaSuccess) {
+    check_cuda_error( "Couldn't allocate storage for depth map", err);
 
-        err = cudaMemcpy( d_depth_map, depth_map, data_size, cudaMemcpyHostToDevice );
-        if ( err == cudaSuccess ) {
+    err = cudaMemcpy( d_depth_map, depth_map, data_size, cudaMemcpyHostToDevice );
+    check_cuda_error( "Failed to copy depth map to GPU", err);
 
-            // Call the kernel
-            dim3 block( 1, 32, 32 );
-            dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
-            integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
+    // Call the kernel
+    dim3 block( 1, 32, 32 );
+    dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
+    integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
+    err = cudaGetLastError();
+    check_cuda_error( "Integrate kernel failed", err);
 
-            // Wait for kernel to finish
-            cudaDeviceSynchronize( );
 
-            // Now delete data
-            cudaFree( d_depth_map );
-        } else {
-            std::cerr << "Failed to copy depth map to GPU" << std::endl;
-        }
-        assert( err == cudaSuccess );
+    // Now delete data
+    err = cudaFree( d_depth_map );
+    check_cuda_error( "Failed to deallocate cuda depth map", err);
 
-    } else {
-        std::cerr << "Couldn't allocate storage for depth map" << std::endl;
-    }
     std::cout << "Integration finished" << std::endl;
 }
 

@@ -2,8 +2,21 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
-vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:$(SRC_DIR)/DataLoader:$(SRC_DIR)/SceneFlowAlgorithm:$(SRC_DIR)/SceneFusion:$(SRC_DIR)/RGBDDevice:$(SRC_DIR)/Tools:third_party/TinyXml:$(SRC_DIR)/TSDF:$(SRC_DIR)/MarchingCubes:$(SRC_DIR)/RayCaster
-vpath %.cu $(SRC_DIR)/GPU:$(SRC_DIR)/MarchingCubes:$(SRC_DIR)/RayCaster:$(SRC_DIR)/TSDF:$(SRC_DIR)/SceneFlowUpdater
+vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:\
+	$(SRC_DIR)/DataLoader:\
+	$(SRC_DIR)/SceneFlowAlgorithm:\
+	$(SRC_DIR)/SceneFusion:\
+	$(SRC_DIR)/RGBDDevice:\
+	third_party/TinyXml:\
+	$(SRC_DIR)/Tools:\
+	$(SRC_DIR)/TSDF:\
+	$(SRC_DIR)/MarchingCubes:\
+	$(SRC_DIR)/RayCaster
+vpath %.cu  $(SRC_DIR)/GPU:\
+			$(SRC_DIR)/MarchingCubes:\
+			$(SRC_DIR)/RayCaster:\
+			$(SRC_DIR)/TSDF:\
+			$(SRC_DIR)/SceneFlowUpdater
 
 NVCC=/usr/local/cuda/bin/nvcc
 
@@ -20,13 +33,17 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 		  PDSFMockSceneFlowAlgorithm.cpp \
 		  MockKinect.cpp \
 		  Camera.cpp \
-		  GPURaycaster.cpp \
 		  DepthImage.cpp SceneFusion.cpp \
           PngUtilities.cpp PngWrapper.cpp \
           sfusion.cpp ply.cpp 
 
 
-CUDA_SOURCES = GPUMarchingCubes.cu cu_common.cu TSDFVolume.cu TSDF_utilities.cu Raycaster_kernel.cu SceneFlowUpdater.cu
+CUDA_SOURCES = 	GPUMarchingCubes.cu\
+				cu_common.cu\
+				TSDFVolume.cu\
+				TSDF_utilities.cu\
+				GPURaycaster.cu\
+				SceneFlowUpdater.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)

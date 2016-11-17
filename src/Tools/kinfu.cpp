@@ -1,14 +1,14 @@
 #include <iostream>
 #include <cmath>
 
-#include "TSDFVolume.hpp"
-#include "Utilities/PngWrapper.hpp"
-#include "Utilities/DepthMapUtilities.hpp"
-#include "Utilities/RenderUtilities.hpp"
-#include "Utilities/ply.hpp"
-#include "GPU/BlockTSDFLoader.hpp"
-#include "DataLoader/TUMDataLoader.hpp"
-#include "GPU/GPUMarchingCubes.hpp"
+#include "../include/TSDFVolume.hpp"
+#include "../include/PngWrapper.hpp"
+#include "../include/DepthMapUtilities.hpp"
+#include "../include/RenderUtilities.hpp"
+#include "../include/ply.hpp"
+#include "../include/BlockTSDFLoader.hpp"
+#include "../include/TUMDataLoader.hpp"
+#include "../include/GPUMarchingCubes.hpp"
 
 
 
@@ -17,12 +17,11 @@ Eigen::Matrix4f g_campose;
 /**
  * Make the TSDF from input files
  */
-TSDFVolume * make_tsdf(TSDFVolume::volume_type type, int num_images ) {
-    using namespace phd;
+TSDFVolume * make_tsdf(int num_images ) {
     using namespace Eigen;
 
     // Make volume
-    TSDFVolume * volume = TSDFVolume::make_volume(type, Vector3i{ 256, 256, 256}, Vector3f{ 3000, 3000, 3000});
+    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 256, 256, 256}, TSDFVolume::UInt3{ 3000, 3000, 3000});
     volume->offset( -1500, -1500, -1500);
 
     // And camera (from FREI 1 IR calibration data at TUM)
@@ -69,14 +68,14 @@ TSDFVolume * make_tsdf(TSDFVolume::volume_type type, int num_images ) {
 /**
  * Load the TSDF
  */
-TSDFVolume * load_tsdf( TSDFVolume::volume_type type, const std::string& file_name) {
+TSDFVolume * load_tsdf( const std::string& file_name) {
     TSDFVolume * volume = nullptr;
 
     BlockTSDFLoader loader;
     if ( loader.load_from_file( file_name ) ) {
-        volume = loader.to_tsdf(type);
+        volume = loader.to_tsdf();
         if ( volume ) {
-            std::cout << "Loaded volume " << volume->size().x() << "x" << volume->size().y() << "x" << volume->size().z() << "  (" << volume->physical_size().x() << "mm x " << volume->physical_size().y() << "mm x " << volume->physical_size().z() << "mm)"  << std::endl;
+            std::cout << "Loaded volume " << volume->size().x << "x" << volume->size().y << "x" << volume->size().z << "  (" << volume->physical_size().x << "mm x " << volume->physical_size().y << "mm x " << volume->physical_size().z << "mm)"  << std::endl;
         } else {
             std::cout << "Couldn't load volume"  << std::endl;
         }
@@ -93,7 +92,6 @@ TSDFVolume * load_tsdf( TSDFVolume::volume_type type, const std::string& file_na
 
 int main( int argc, const char * argv[] ) {
     int retval = 0;
-    TSDFVolume::volume_type type = TSDFVolume::GPU;
     TSDFVolume *volume = nullptr;
 
     // Format is 
@@ -104,7 +102,7 @@ int main( int argc, const char * argv[] ) {
     if ( argc == 2 ) {
         if( argv[1][0] != '-' ) {
             std::cout << "Loading TSDF" << std::endl;
-            volume = load_tsdf( type, argv[1]);
+            volume = load_tsdf( argv[1]);
         } else {
             int arglen = strlen( argv[1] );
             if( ( arglen >=4 ) && (argv[1][1] == 'm') && (argv[1][2] == '=' ) ) {
@@ -119,7 +117,7 @@ int main( int argc, const char * argv[] ) {
 
                 if( n > 0 ) {
                     std::cout << "Make TSDF" << std::endl;
-                    volume = make_tsdf(type, n);
+                    volume = make_tsdf( n);
                 } else {
                     std::cout << "Invalid frame count " << n << std::endl;
                 }

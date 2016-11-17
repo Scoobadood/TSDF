@@ -141,9 +141,9 @@ void BlockTSDFLoader::process_line( const std::string & line ) {
     }
 }
 
-TSDFVolume * BlockTSDFLoader::to_tsdf( TSDFVolume::volume_type type ) const {
+TSDFVolume * BlockTSDFLoader::to_tsdf( ) const {
 
-    TSDFVolume * volume = TSDFVolume::make_volume( type, m_size_x, m_size_y, m_size_z, m_psize_x, m_psize_y, m_psize_z );
+    TSDFVolume * volume = new TSDFVolume( m_size_x, m_size_y, m_size_z, m_psize_x, m_psize_y, m_psize_z );
     volume->set_distance_data( m_distance_data );
     volume->set_weight_data( m_weight_data );
     return volume;

@@ -4,13 +4,17 @@ BIN_DIR = bin
 
 vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Tests:\
 	$(SRC_DIR)/GPU:\
-	$(SRC_DIR)/CPU:\
 	$(SRC_DIR)/Utilities:\
 	$(SRC_DIR)/Raycaster:\
 	$(SRC_DIR)/DataLoader:\
 	$(SRC_DIR)/Tools:\
 	$(SRC_DIR)/TSDF
-vpath %.cu $(SRC_DIR)/GPU
+
+vpath %.cu  $(SRC_DIR)/GPU:\
+			$(SRC_DIR)/MarchingCubes:\
+			$(SRC_DIR)/RayCaster:\
+			$(SRC_DIR)/TSDF:\
+			$(SRC_DIR)/SceneFlowUpdater
 
 NVCC=/usr/local/cuda/bin/nvcc
 
@@ -21,14 +25,17 @@ CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src  -
 LDFLAGS=-lpng
 
 SOURCES = kinfu.cpp BilateralFilter.cpp Camera.cpp \
-          BlockTSDFLoader.cpp GPURaycaster.cpp \
+          BlockTSDFLoader.cpp \
           Definitions.cpp DepthMapUtilities.cpp FileUtilities.cpp PgmUtilities.cpp \
-          PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp TSDFLoader.cpp \
-          CPURaycaster.cpp CPUTSDFVolume.cpp \
+          PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp \
           DepthImage.cpp TUMDataLoader.cpp ply.cpp 
 
 
-CUDA_SOURCES = TSDFVolume.cu MarchingCubes.cu TSDF_utilities.cu cu_common.cu
+CUDA_SOURCES =	TSDFVolume.cu\
+				GPUMarchingCubes.cu\
+				GPURaycaster.cu\
+				TSDF_utilities.cu\
+				cu_common.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)
@@ -48,7 +55,7 @@ $(OBJ_DIR)/%.o : %.cpp
 	$(NVCC) $(CFLAGS) $< -o $(OBJ_DIR)/$(@F)
 
 $(OBJ_DIR)/%.o : %.cu
-	$(NVCC) $(CFLAGS) -lineinfo -dc $< -o $(OBJ_DIR)/$(@F)
+	$(NVCC) -c -G -g $(CFLAGS) -lineinfo -dc $< -o $(OBJ_DIR)/$(@F)
 
 clean:
 	rm $(OBJ_DIR)/*.o $(EXECUTABLE)

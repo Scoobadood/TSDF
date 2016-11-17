@@ -21,7 +21,7 @@ public:
      */
     void process_line( const std::string & line );
 
-    TSDFVolume * to_tsdf( TSDFVolume::volume_type type ) const;
+    TSDFVolume * to_tsdf( ) const;
 
 protected:
     void process_voxel_size_line( const std::string & line );
