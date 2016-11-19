@@ -35,11 +35,23 @@ public:
             z = fz;
         }
         inline operator float3() const {return float3{x, y, z}; }
-        inline float3 operator +( const float3& rhs ) { 
-            x += rhs.x;
-            y += rhs.y;
-            z += rhs.z;
-            return float3{x,y,z}; }
+
+        inline Float3 operator -( const Float3& rhs ) const { 
+            return float3{x - rhs.x, y - rhs.y, z - rhs.z}; 
+        }
+        inline Float3 operator +( const Float3& rhs ) const { 
+            return float3{x + rhs.x, y + rhs.y, z + rhs.z}; 
+        }
+        inline Float3 operator /( const float scalar ) const {
+            return float3{x / scalar, y / scalar, z / scalar}; 
+        }
+        inline Float3 operator *( const Float3& rhs ) const {
+            return float3{x * rhs.x, y * rhs.y, z * rhs.z}; 
+        }
+        inline float norm( ) const {
+            return std::sqrt( x*x + y*y + z*z );
+        }
+
     };
 
     struct Int3 {

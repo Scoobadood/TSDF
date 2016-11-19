@@ -193,8 +193,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
         // The next (x_size) elements from here are the x coords
         size_t base_voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
 
-        // We want to iterate over the entire voxel space
-        // Each thread should be a Y,Z coordinate with the thread iterating over x
+        // For each voxel in this column
         size_t voxel_index = base_voxel_index;
         for ( int vx = 0; vx < voxel_grid_size.x; vx++ ) {
 
@@ -202,7 +201,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
             // This gives us a pixel in the depth map
 
             // Convert voxel to world coords of centre
-            float3 centre_of_voxel        = voxel_centres[ index( voxel_grid_size, vx, vy, vz ) ];
+            float3 centre_of_voxel        = voxel_centres[ voxel_index ];
 
             // Convert world to camera coords
             float3 centre_of_voxel_in_cam = world_to_camera( centre_of_voxel, inv_pose );
@@ -211,10 +210,14 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
             int3   centre_of_voxel_in_pix = camera_to_pixel( centre_of_voxel_in_cam, k );
 
             // if this point is in the camera view frustum...
-            if ( ( centre_of_voxel_in_pix.x >= 0 && centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height) ) {
+            if ( ( centre_of_voxel_in_pix.x >= 0 ) && 
+                 ( centre_of_voxel_in_pix.x < width ) && 
+                 ( centre_of_voxel_in_pix.y >= 0 ) &&
+                 ( centre_of_voxel_in_pix.y < height) ) {
 
-                uint16_t voxel_pixel_x = static_cast<uint16_t>( centre_of_voxel_in_pix.x);
-                uint16_t voxel_pixel_y = static_cast<uint16_t>( centre_of_voxel_in_pix.y);
+                // Round to nearest pixel
+                uint16_t voxel_pixel_x = static_cast<uint16_t>( round( (float) centre_of_voxel_in_pix.x) );
+                uint16_t voxel_pixel_y = static_cast<uint16_t>( round( (float) centre_of_voxel_in_pix.y) );
 
                 // Extract the depth to the surface at this point
                 uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
@@ -518,7 +521,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
 
     std::cout << "Integrating depth map size " << width << "x" << height << std::endl;
 
-    // Construct device type parameters for integration
+    // Convert the input parameters to device (CUDA) types
     Mat44 inv_pose;
     memcpy( &inv_pose, camera.inverse_pose().data(), 16 * sizeof( float ) );
 
@@ -545,7 +548,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     check_cuda_error( "Integrate kernel failed", err);
 
 
-    // Now delete data
+    // Now delete depth map data from device
     err = cudaFree( d_depth_map );
     check_cuda_error( "Failed to deallocate cuda depth map", err);
 

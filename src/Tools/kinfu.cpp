@@ -28,7 +28,7 @@ TSDFVolume * make_tsdf(int num_images ) {
     Camera camera{ 591.1f, 590.1f, 331.0f, 234.6f };
 
     // Create TUMDataLoader
-    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
+    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
 
     // Load depth image
     uint32_t width{0};

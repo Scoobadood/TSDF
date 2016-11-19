@@ -9,9 +9,9 @@
 #ifndef TestHelpers_h
 #define TestHelpers_h
 
-#include "../KinFu/TSDFVolume.hpp"
-#include "../KinFu/Camera.hpp"
-#include "../KinFu/Utilities/PngWrapper.hpp"
+#include "../../include/TSDFVolume.hpp"
+#include "../../include/Camera.hpp"
+#include "../../include/PngWrapper.hpp"
 
 
 #include <Eigen/Dense>
