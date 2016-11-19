@@ -65,7 +65,7 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 			} else {
 				int px = (int)values[0];
 				int py = (int)values[1];
-				v.push_back( float3{values[2], values[3], values[4]});
+				v.push_back( float3{values[2] * 1000.0f, values[3]*1000.0f, values[4]*1000.0f});
 			}
 		}
 	};
