@@ -59,18 +59,25 @@ void apply_scene_flow_to_tsdf_kernel(
 		for ( int vx = 0; vx < size.x; vx++ ) {
 
 
-			// For any vertex in the mesh which is within a given neighbour hood of this voxel centre
+			// For any vertex in the mesh which is within a given neighbourhood of this voxel centre
 			// Update the voxel centre coordinates with the scene flow of that vertex
+			float3 deformation{ 0.0f, 0.0f, 0.0f};
+			int    num_impacting_mesh_nodes = 0;
+
 			for ( int i = 0; i < num_mesh_vertices; i++ ) {
 				// TODO: Replace this with a radial basis function for weighted deformation
 				float3 vector_to_vertex = f3_sub( voxel_translations[voxel_index], mesh_vertices[i]);
 				float dist_to_vertex = f3_norm( vector_to_vertex);
 
 				if ( dist_to_vertex < THRESHOLD ) {
-					voxel_translations[voxel_index]  = f3_add( voxel_translations[voxel_index], mesh_scene_flow[i] );
+					deformation = f3_add( deformation, mesh_scene_flow[i]);
+					num_impacting_mesh_nodes++;
 				}
 			}
-
+			if( num_impacting_mesh_nodes > 0 ) {
+				deformation = f3_mul_scalar( deformation, 1.0f / num_impacting_mesh_nodes );
+				voxel_translations[voxel_index]  = f3_add( voxel_translations[voxel_index],  deformation );
+			}
 
 			voxel_index++;
 		}
