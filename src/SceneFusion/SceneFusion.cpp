@@ -24,6 +24,11 @@ SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
     // And camera (from FREI 1 IR calibration data at TUM)
     m_camera = new Camera{ 591.1f, 590.1f, 331.0f, 234.6f };
 
+    // Pose the camera
+    m_camera->move_to( 0, 0, 1500 );
+    m_camera->look_at( 0, 0, 0 );
+
+
 
 	// Check parms are valid
 	m_rgbd_device = rgbd_device;
@@ -39,12 +44,16 @@ SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
  * Run SceneFusion
  */
 void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapper * colour_image ) {
+	std::cout << "------------------------------------------------------------" << std::endl;
 	std::cout << "processFrames Called" << std::endl;
+
 	// Compute the scene flow
 	Eigen::Vector3f translation;
 	Eigen::Vector3f rotation;
 	Eigen::Matrix<float, 3, Eigen::Dynamic> residuals;
 	m_scene_flow_algorithm->compute_scene_flow( depth_image, colour_image, translation, rotation, residuals );
+	// translation and rotation are ignored here.
+	// Residuals is in host memory and is the actual scene flow
 
 	// Update the scene flow into TSDF
 	uint16_t width = depth_image->width();
@@ -53,6 +62,7 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 
 	// Now update the depth map into the TSDF
 	m_volume->integrate(  depth_image->data(), width, height, *m_camera );
+	std::cout << "------------------------------------------------------------" << std::endl;
 }
 
 /**
