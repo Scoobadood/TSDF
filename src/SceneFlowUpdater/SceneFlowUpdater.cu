@@ -27,7 +27,7 @@ int3 world_to_pixel( const float3 & world_coordinate, const Mat44 & inv_pose, co
 	// Round and store
 	int3 pixel_coordinate;
 	pixel_coordinate.x = round( image_coordinate.x / image_coordinate.z);
-	pixel_coordinate.y = round( image_coordinate.x / image_coordinate.z);
+	pixel_coordinate.y = round( image_coordinate.y / image_coordinate.z);
 
 	return pixel_coordinate;
 }
@@ -121,6 +121,7 @@ void mesh_scene_flow_kernel(
 
 		// Transform to camera space
 		int3 camera_coord = world_to_pixel( vertex, inv_pose, k );
+printf( "cam coord %d %d %d\n", camera_coord.x, camera_coord.y, camera_coord.z);
 
 		// Scene flow index...
 		int scene_flw_index = camera_coord.y * sf_width + camera_coord.x;
@@ -153,9 +154,11 @@ void get_scene_flow_for_mesh(	const std::vector<float3> vertices,
 
 	std::cout << "-- get_scene_flow_for_mesh" << std::endl;
 
+	size_t alloc_size = vertices.size() * sizeof( float3 );
+
 	// Allocate memory for mesh scene flow values on the device
 	float3 * d_mesh_scene_flow;
-	cudaError_t err = cudaMalloc( &d_mesh_scene_flow, vertices.size() * sizeof( float3 ) );
+	cudaError_t err = cudaMalloc( &d_mesh_scene_flow, alloc_size );
 	if ( err != cudaSuccess ) {
 		std::cout << "Couldn't allocate device memory for scene flow output for mesh" << std::endl;
 		throw std::bad_alloc( );
@@ -163,7 +166,7 @@ void get_scene_flow_for_mesh(	const std::vector<float3> vertices,
 
 	// Allocate memory for mesh vertices on the device
 	float3 * d_mesh_vertices;
-	err = cudaMalloc( &d_mesh_vertices, vertices.size() * sizeof( float3 ) );
+	err = cudaMalloc( &d_mesh_vertices, alloc_size );
 	if ( err != cudaSuccess ) {
 		cudaFree( d_mesh_scene_flow );
 		std::cout << "Couldn't allocate device memory for mesh vertices" << std::endl;
@@ -196,7 +199,7 @@ void get_scene_flow_for_mesh(	const std::vector<float3> vertices,
 	check_cuda_error( "Copy of input scene flow data to device failed " , err);
 
 	// Vertex data
-	err = cudaMemcpy( d_mesh_vertices, &(vertices[0]), vertices.size() * sizeof( float3 ), cudaMemcpyHostToDevice);
+	err = cudaMemcpy( d_mesh_vertices, &(vertices[0]), alloc_size, cudaMemcpyHostToDevice);
 	check_cuda_error( "Copy of input mesh vertices to device failed " , err);
 
 	// Invoke kernel
@@ -208,7 +211,7 @@ void get_scene_flow_for_mesh(	const std::vector<float3> vertices,
 
 	dim3 block( 128, 1, 1 );
 	dim3 grid ( divUp( vertices.size(), block.x ), 1, 1 );
-	std::cout << "Launch mesh_scene_flow_kernel: grid [" << grid.x << ", " << grid.y << ", " <<grid.z << "] " << std::endl;
+	std::cout << "--- Launch mesh_scene_flow_kernel: grid [" << grid.x << ", " << grid.y << ", " <<grid.z << "] " << std::endl;
 	mesh_scene_flow_kernel <<< grid, block >>>(
 	    d_mesh_vertices, 		// Input mesh (device memory)
 	    vertices.size(),
@@ -218,11 +221,12 @@ void get_scene_flow_for_mesh(	const std::vector<float3> vertices,
 	    inv_pose,				// Camera data
 	    k,
 	    d_mesh_scene_flow );
+	cudaDeviceSynchronize();
 	err = cudaGetLastError();
 	check_cuda_error( "mesh_scene_flow kernel failed " , err);
 
 	// Copy mesh scene flow back from device
-	err = cudaMemcpy( h_mesh_scene_flow, d_mesh_scene_flow, vertices.size() * sizeof( float3 ), cudaMemcpyDeviceToHost);
+	err = cudaMemcpy( h_mesh_scene_flow, d_mesh_scene_flow, alloc_size, cudaMemcpyDeviceToHost);
 	check_cuda_error( "Copy of output mesh scene flow to host failed " , err);
 
 	// Now unpack from memory to vector
@@ -265,6 +269,7 @@ void update_voxel_grid_from_mesh_scene_flow(
 	    translation_data,			//	Deformation data for the TSDF
 	    volume->size()				//	Dimensions of the TSDF in voxels
 	);
+	cudaDeviceSynchronize();
 }
 
 
