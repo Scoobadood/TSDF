@@ -35,11 +35,23 @@ int3 world_to_pixel( const float3 & world_coordinate, const Mat44 & inv_pose, co
 
 
 __global__
+/**
+ * We have scene flow data for a number of mesh vertcies (ie points in 3-space)
+ * We want to apply this scene flow update to the TSDF volume deformation by
+ * updating voxels within a radius of the mesh node
+ * Voxels within the neghbourhood of more than one mesh node may receive multiple
+ * updates. These are weighted.
+ * @param mesh_scene_flow Array of N displacements
+ * @param mesh_vertices Array of N vertex coords corresponding to the displacements
+ * @param num_mesh_vertices Number of elements in the first two arrays
+ * @param voxel_translations The existing deformation field
+ * @size The dimensions of the defrmation field
+ */
 void apply_scene_flow_to_tsdf_kernel(
     const float3		*mesh_scene_flow,			//	The scene flow per mesh vertex
     const float3	  	*mesh_vertices,				//	The coordinates of the mesh vertex
     int 				num_mesh_vertices,			//	Number of vertices in the mesh
-    float3				*voxel_translations,			//	Defromation data for the TSDF
+    float3				*voxel_translations,		//	Deformation data for the TSDF
     dim3				size						//	Deimsnions of the TSDF in voxels
 ) {
 
@@ -47,7 +59,7 @@ void apply_scene_flow_to_tsdf_kernel(
 	int vy = threadIdx.y + blockIdx.y * blockDim.y;
 	int vz = threadIdx.z + blockIdx.z * blockDim.z;
 
-	// If this thread is in range
+	// If this y/z cordinate is legitimate
 	if ( vy < size.y && vz < size.z ) {
 
 
@@ -254,10 +266,12 @@ void update_voxel_grid_from_mesh_scene_flow(
  */
 void update_tsdf( const TSDFVolume * volume, const Camera * camera, uint16_t width, uint16_t height, const Eigen::Vector3f translation, const Eigen::Vector3f rotation, const Eigen::Matrix<float, 3, Eigen::Dynamic> residuals ) {
 
+	// Get the mesh from the current TSDF
 	std::vector<float3> vertices;
 	std::vector<int3> triangles;
 	extract_surface( volume, vertices, triangles);
 
+	// Populate the scene_flow with residula data
 	float3 * scene_flow = new float3[ width * height];
 	if ( scene_flow ) {
 		for ( int i = 0; i < width * height; i++ ) {
@@ -267,9 +281,13 @@ void update_tsdf( const TSDFVolume * volume, const Camera * camera, uint16_t wid
 		}
 
 
+		// Construct another vector to hold the scene flow just for the mesh
 		std::vector<float3> mesh_scene_flow;
+
+		// Populate this from the original scene flow data
 		get_scene_flow_for_mesh( vertices, camera, width, height, scene_flow, mesh_scene_flow );
 
+		// And update the TSDF voxel centres using the mesh data
 		const float3 * vertex_data = (const float3 *) & (vertices[0]);
 		const float3 * mesh_scene_flow_data = (const float3 *) & (mesh_scene_flow[0]);
 		update_voxel_grid_from_mesh_scene_flow( volume, mesh_scene_flow_data, vertex_data, vertices.size());

@@ -541,8 +541,10 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     check_cuda_error( "Failed to copy depth map to GPU", err);
 
     // Call the kernel
-    dim3 block( 1, 32, 32 );
+    dim3 block( 1, 16, 16 );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
+
+    std::cout << "Executing kernel with grid["<<grid.x<<", "<<grid.y<<", "<<grid.z<<"]" << std::endl;
     integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
     err = cudaGetLastError();
     check_cuda_error( "Integrate kernel failed", err);
