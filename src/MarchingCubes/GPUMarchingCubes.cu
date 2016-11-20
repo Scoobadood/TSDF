@@ -431,8 +431,11 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 	}
 
 	// Free memory and done
-	cudaFree( d_vertices);
-	cudaFree( d_triangles);
+	err = cudaFree( d_vertices);
+	check_cuda_error( "extract_vertices: Free device vertex memory failed " , err);
+	err = cudaFree( d_triangles);
+	check_cuda_error( "extract_vertices: Free device triangle memory failed " , err);
+
 	delete [] h_vertices;
 	delete [] h_triangles;
 }

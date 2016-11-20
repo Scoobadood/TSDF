@@ -207,9 +207,12 @@ void get_scene_flow_for_mesh( const std::vector<float3> vertices, const Camera *
 	mesh_scene_flow.assign( h_mesh_scene_flow, h_mesh_scene_flow + vertices.size());
 
 	// Now tidy up memory
-	cudaFree( d_mesh_scene_flow );
-	cudaFree( d_mesh_vertices );
-	cudaFree( d_scene_flow );
+	err = cudaFree( d_mesh_scene_flow );
+	check_cuda_error( "get_scene_flow_for_mesh: Couldn't free device mesh scene flow " , err);
+	err = cudaFree( d_mesh_vertices );
+	check_cuda_error( "get_scene_flow_for_mesh: Couldn't free device vertices " , err);
+	err = cudaFree( d_scene_flow );
+	check_cuda_error( "get_scene_flow_for_mesh: Couldn't free device scene flow " , err);
 	delete [] h_mesh_scene_flow;
 }
 
