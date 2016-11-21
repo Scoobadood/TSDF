@@ -559,74 +559,83 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
 
 #pragma mark - Import/Export
 
-//TODO: Put load and save into base class. Block transfer data from memory. Write as binary file at least an option.
 /**
- * Save the TSDF to file
+ * Save the TSDF to a binary file
  * @param The filename
  * @return true if the file saved OK otherwise false.
  */
 bool TSDFVolume::save_to_file( const std::string & file_name) const {
     using namespace std;
 
-    bool success = false;
+    bool success = true;
 
     // Copy to local memory
-    float * host_voxels;
-    float * host_weights;
+    float * host_voxels = nullptr;
+    float * host_weights = nullptr;
+    float * host_deformation = nullptr;
 
     size_t num_voxels = m_size.x * m_size.y * m_size.z;
+    cudaError_t err;
+
+    // Copy distance data from device to host
     host_voxels = new float[ num_voxels ];
     if ( host_voxels ) {
-        host_weights = new float[ num_voxels ];
-        if ( host_weights) {
-
-            // Copy data from card into local memeory
-            cudaMemcpy( host_voxels, m_voxels, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
-            cudaMemcpy( host_weights, m_weights, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
-
-
-
-            // Open file
-            ofstream ofs { file_name };
-            ofs << fixed << setprecision(3);
-
-            // Write Dimensions
-            ofs << "voxel size = " << m_size.x << " " << m_size.y << " " << m_size.z << std::endl;
-            ofs << "space size = " << m_physical_size.x << " " << m_physical_size.y << " " << m_physical_size.z << std::endl;
-
-            // Write data
-            for ( uint16_t y = 0; y < m_size.y ; y++ ) {
-                for ( uint16_t x = 0; x < m_size.x ; x++ ) {
-                    ofs << std::endl << "# y " << y << ", x " << x << " tsdf" << std::endl;
-
-                    for ( uint16_t z = 0; z < m_size.z ; z++ ) {
-                        size_t idx = index( x, y, z ) ;
-
-                        ofs << host_voxels[ idx ] << " ";
-                    }
-
-                    ofs << std::endl << "# y " << y << ", x " << x << " weights" << std::endl;
-                    for ( uint16_t z = 0; z < m_size.z ; z++ ) {
-                        size_t idx = index( x, y, z ) ;
-                        ofs  << host_weights[ idx ] << " ";
-                    }
-                }
-            }
-
-            // Close file
-            ofs.close();
-
-            delete [] host_voxels;
-            delete [] host_weights;
-            success = true;
-        } else {
-            delete [] host_voxels;
-            std::cout << "Couldn't allocate host_weights memory to save TSDF" << std::endl;
+        err = cudaMemcpy( host_voxels, m_voxels, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
+        if( err != cudaSuccess ) {
+            success = false;
+            std::cout << "Failed to copy voxel data from device memory [" << err << "] " << std::endl;
         }
     } else {
         std::cout << "Couldn't allocate host_voxels memory to save TSDF" << std::endl;
+        success = false;
     }
 
+
+    // Copy distance data from device to host
+    if( success ) {
+       host_weights = new float[ num_voxels ];
+        if ( host_weights) {
+            err = cudaMemcpy( host_weights, m_weights, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
+            if( err != cudaSuccess ) {
+                success = false;
+                std::cout << "Failed to copy weight data from device memory [" << err << "] " << std::endl;
+            }
+        } else {
+            success = false;
+            std::cout << "Couldn't allocate host_weights memory to save TSDF" << std::endl;
+        }
+    }
+
+
+    // Copy distance data from device to host
+    if( success ) {
+        host_deformation = new Float3[ num_voxels ];
+        if( host_deformation ) {
+            err = cudaMemcpy( host_deformation, m_voxel_translations, num_voxels * sizeof( float3 ), cudaMemcpyDeviceToHost);
+            if( err != cudaSuccess ) {
+                success = false;
+                std::cout << "Failed to copy deformation data from device memory [" << err << "] " << std::endl;
+            }
+        } else {
+            success = false;
+            std::cout << "Couldn't allocate host_weights memory to save TSDF" << std::endl;
+        }
+    }
+
+    ofstream ofs { file_name, ios::out | ios::binary };
+
+    // Write dimesnions
+    ofs.write( &m_size, sizeof( m_size ) );
+    ofs.write( &m_physical_size, sizeof( m_physical_size));
+    ofs.write( host_voxels, num_voxels * sizeof( float ) );
+    ofs.write( host_weights, num_voxels * sizeof( float ) );
+    ofs.write( host_deformation, num_voxels * sizeof( Float3 ) );
+    ofs.close();
+
+    // Free up memory
+    if( host_voxels != nullptr ) { delete[] host_voxels; }
+    if( host_weights != nullptr ) { delete[] host_weights; }
+    if( host_deformation != nullptr ) { delete[] host_deformation; }
 
     return success;
 }
@@ -638,6 +647,13 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
  * @return true if the file saved OK otherwise false.
  */
 bool TSDFVolume::load_from_file( const std::string & file_name) {
+    ifstream ifs{ file_name, ios::in | ios::binary };
+
+    // Load dimensions
+    // Load data
+    // Move to device
+    
+
     std::cout << "Invalid method call: load_from_file" << std::endl;
     return false;
 }
