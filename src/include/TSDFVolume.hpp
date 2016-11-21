@@ -254,7 +254,5 @@ protected:
 
 // Storage for per voxel transform on device
     float3 * m_voxel_translations;
-    float3 * m_voxel_rotations;
-
 };
 #endif /* TSDFVolume_hpp */

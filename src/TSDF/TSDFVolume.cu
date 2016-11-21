@@ -299,14 +299,11 @@ TSDFVolume::~TSDFVolume() {
  * @param physical_size
  */
 TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL} {
-
-    std::cout << "TSDFVolume::ctor called." << std::endl;
-
     if ( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) &&
             ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
         set_size( size.x, size.y, size.z , physical_size.x, physical_size.y, physical_size.z );
     } else {
-        throw std::invalid_argument( "Attempt to construct CPUTSDFVolume with zero or negative size" );
+        throw std::invalid_argument( "Attempt to construct TSDFVolume with zero or negative size" );
     }
 }
 
@@ -447,7 +444,8 @@ void TSDFVolume::set_translation_data( Float3 *data) {
 
 
 /**
- * Reset the defomation grid.
+ * Reset the defomation grid by setting each transaltion point to the effectve, reglar position
+ * in space of that voxel centre.
  * @param translations X x Y x Z array of float3s
  * @param grid_size The size of the voxel grid
  * @param voxel_size The size of an individual voxel
@@ -467,8 +465,6 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
         // The next (x_size) elements from here are the x coords
         size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
 
-        // We want to iterate over the entire voxel space
-        // Each thread should be a Y,Z coordinate with the thread iterating over x
         size_t voxel_index = base_voxel_index;
         for ( int vx = 0; vx < grid_size.x; vx++ ) {
             translations[voxel_index].x = (( vx + 0.5f ) * voxel_size.x) + grid_offset.x;
@@ -492,7 +488,6 @@ void TSDFVolume::clear( ) {
 
     cudaMemset( m_weights, 0, data_size );
     cudaMemset( m_voxels, 0, data_size );
-    cudaMemset( m_voxel_rotations, 0, m_size.x * m_size.y * m_size.z * sizeof( float3) );
 
     // Now initialise the translations
     dim3 block( 1, 32, 32 );
@@ -541,7 +536,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     check_cuda_error( "Failed to copy depth map to GPU", err);
 
     // Call the kernel
-    dim3 block( 1, 16, 16  );
+    dim3 block( 1, 32, 32  );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 
     std::cout << "Executing kernel with grid["<<grid.x<<", "<<grid.y<<", "<<grid.z<<"]" << std::endl;
@@ -652,7 +647,7 @@ bool TSDFVolume::load_from_file( const std::string & file_name) {
     // Load dimensions
     // Load data
     // Move to device
-    
+
 
     std::cout << "Invalid method call: load_from_file" << std::endl;
     return false;
