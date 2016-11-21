@@ -28,14 +28,7 @@ TSDFVolume * make_tsdf(int num_images ) {
     Camera camera{ 591.1f, 590.1f, 331.0f, 234.6f };
 
     // Create TUMDataLoader
-    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
-
-    // Load depth image
-    uint32_t width{0};
-    uint32_t height{0};
-    Vector3f camera_location;
-    Vector3f camera_focus;
-
+    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
 
     // Construct TSDF Volume
     for ( int i = 0; i < num_images; i++ ) {
@@ -172,7 +165,7 @@ int main( int argc, const char * argv[] ) {
         extract_surface( volume, verts, triangles);
 
         // Save to PLY file
-        std::cout << "Writing to PLY" << std::endl;
+        std::cout << "Writing "<< verts.size() << " vertices and " << triangles.size() << " triangles to PLY" << std::endl;
         write_to_ply( "/home/dave/Desktop/mesh.ply", verts, triangles);
         delete volume;
     } else {
