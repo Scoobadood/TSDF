@@ -62,21 +62,20 @@ void apply_scene_flow_to_tsdf_kernel(
 	// If this y/z cordinate is legitimate
 	if ( vy < size.y && vz < size.z ) {
 
-
 		// The next (x_size) elements from here are the x coords
 		size_t base_voxel_index =  ((size.x * size.y) * vz ) + (size.x * vy);
 
 		// Iterate across X coordinate
 		size_t voxel_index = base_voxel_index;
-		for ( int vx = 0; vx < size.x; vx++ ) {
 
+		for ( int vx = 0; vx < size.x; vx++ ) {
 
 			// For any vertex in the mesh which is within a given neighbourhood of this voxel centre
 			// Update the voxel centre coordinates with the scene flow of that vertex
 			float3 deformation{ 0.0f, 0.0f, 0.0f};
 			int    num_impacting_mesh_nodes = 0;
 
-			for ( int i = 0; i < num_mesh_vertices; i++ ) {
+			for ( long i = 0; i < num_mesh_vertices; i++ ) {
 				// TODO: Replace this with a radial basis function for weighted deformation
 				float3 vector_to_vertex = f3_sub( voxel_translations[voxel_index], mesh_vertices[i]);
 				float dist_to_vertex = f3_norm( vector_to_vertex);
@@ -86,7 +85,8 @@ void apply_scene_flow_to_tsdf_kernel(
 					num_impacting_mesh_nodes++;
 				}
 			}
-			if( num_impacting_mesh_nodes > 0 ) {
+			printf( "done voxel %d %d %d\n" , vx, vy, vz );
+			if ( num_impacting_mesh_nodes > 0 ) {
 				deformation = f3_mul_scalar( 1.0f / num_impacting_mesh_nodes, deformation );
 				voxel_translations[voxel_index]  = f3_add( voxel_translations[voxel_index],  deformation );
 			}
@@ -115,13 +115,12 @@ void mesh_scene_flow_kernel(
 
 	// Vertex index -
 	int vertex_index = 	threadIdx.x + (blockIdx.x * blockDim.x);
-	if( vertex_index < num_vertices ) {
+	if ( vertex_index < num_vertices ) {
 		// Grab the vertex
 		float3 vertex = mesh_vertices[vertex_index];
 
 		// Transform to camera space
 		int3 camera_coord = world_to_pixel( vertex, inv_pose, k );
-printf( "cam coord %d %d %d\n", camera_coord.x, camera_coord.y, camera_coord.z);
 
 		// Scene flow index...
 		int scene_flw_index = camera_coord.y * sf_width + camera_coord.x;
@@ -145,12 +144,12 @@ printf( "cam coord %d %d %d\n", camera_coord.x, camera_coord.y, camera_coord.z);
  * @param mesh_scene_flow An output vector fo the scene flow values for each vertex of he mesh
  */
 __host__
-void get_scene_flow_for_mesh(	const std::vector<float3> vertices, 
-								const Camera * camera, 
-								uint32_t sf_width, 
-								uint32_t sf_height, 
-								const float3 * scene_flow, 
-								std::vector<float3>& mesh_scene_flow ) {
+void get_scene_flow_for_mesh(	const std::vector<float3> vertices,
+                                const Camera * camera,
+                                uint32_t sf_width,
+                                uint32_t sf_height,
+                                const float3 * scene_flow,
+                                std::vector<float3>& mesh_scene_flow ) {
 
 	std::cout << "-- get_scene_flow_for_mesh" << std::endl;
 
@@ -211,7 +210,7 @@ void get_scene_flow_for_mesh(	const std::vector<float3> vertices,
 
 	dim3 block( 128, 1, 1 );
 	dim3 grid ( divUp( vertices.size(), block.x ), 1, 1 );
-	std::cout << "--- Launch mesh_scene_flow_kernel: grid [" << grid.x << ", " << grid.y << ", " <<grid.z << "] " << std::endl;
+	std::cout << "--- Launch mesh_scene_flow_kernel: grid [" << grid.x << ", " << grid.y << ", " << grid.z << "] " << std::endl;
 	mesh_scene_flow_kernel <<< grid, block >>>(
 	    d_mesh_vertices, 		// Input mesh (device memory)
 	    vertices.size(),
@@ -257,11 +256,14 @@ void update_voxel_grid_from_mesh_scene_flow(
     const float3 * mesh_vertices,		// Assumed to be on device
     int num_vertices) {
 
+	std::cout << "-- update_voxel_grid_from_mesh_scene_flow began for "<<num_vertices<<" vertices" << std::endl;
+
 	dim3 block( 1, 32, 32 );
 	dim3 grid ( 1, divUp( volume->size().y, block.y ), divUp( volume->size().z, block.z ));
 
 	float3 *translation_data = (float3 *) volume->translation_data();
 
+	std::cout << "--- Launch apply_scene_flow_to_tsdf_kernel: grid [" << grid.x << ", " << grid.y << ", " << grid.z << "] " << std::endl;
 	apply_scene_flow_to_tsdf_kernel <<< grid, block >>> (
 	    mesh_scene_flow,			//	The scene flow per mesh vertex
 	    mesh_vertices,				//	The coordinates of the mesh vertex
@@ -270,6 +272,11 @@ void update_voxel_grid_from_mesh_scene_flow(
 	    volume->size()				//	Dimensions of the TSDF in voxels
 	);
 	cudaDeviceSynchronize();
+	cudaError_t err = cudaGetLastError();
+	check_cuda_error( "update_voxel_grid_from_mesh_scene_flow kernel failed " , err);
+
+
+	std::cout << "-- update_voxel_grid_from_mesh_scene_flow ended ok" << std::endl;
 }
 
 
@@ -281,13 +288,13 @@ void update_voxel_grid_from_mesh_scene_flow(
  * @param rotation The Global rotation
  * @param residuals Per voxel ransation after globals are appliedd
  */
-void update_tsdf(	const TSDFVolume 								* volume, 
-					const Camera 									* camera, 
-					uint16_t 										width, 
-					uint16_t 										height, 
-					const Eigen::Vector3f 							translation, 
-					const Eigen::Vector3f 							rotation, 
-					const Eigen::Matrix<float, 3, Eigen::Dynamic> 	residuals ) {
+void update_tsdf(	const TSDFVolume 								* volume,
+                    const Camera 									* camera,
+                    uint16_t 										width,
+                    uint16_t 										height,
+                    const Eigen::Vector3f 							translation,
+                    const Eigen::Vector3f 							rotation,
+                    const Eigen::Matrix<float, 3, Eigen::Dynamic> 	residuals ) {
 
 	std::cout << "- update_tsdf" << std::endl;
 	// Get the mesh from the current TSDF as a set of triangles and vertices
@@ -297,7 +304,7 @@ void update_tsdf(	const TSDFVolume 								* volume,
 	extract_surface( volume, vertices, triangles);
 
 	// If the mesh exists
-	if( vertices.size() > 0 ) {
+	if ( vertices.size() > 0 ) {
 
 
 		// Convert residual data to an array of float3
@@ -319,7 +326,7 @@ void update_tsdf(	const TSDFVolume 								* volume,
 			// Delete scene flow as it's no longer needed
 			delete[] scene_flow;
 
-			if( mesh_scene_flow.size() == vertices.size() ) {
+			if ( mesh_scene_flow.size() == vertices.size() ) {
 
 				// Transfer the mesh scene flow data nd the vertex data into device memory
 				float3 * d_mesh_vertices;
@@ -347,7 +354,7 @@ void update_tsdf(	const TSDFVolume 								* volume,
 
 				std::cout << "- update_tsdf exited ok" << std::endl;
 			} else {
-				std::cout << "update_tsdf: Mesh scene flow vector is the wrong size ["<<mesh_scene_flow.size()<<"] when it should have ["<<vertices.size()<<"] elements" << std::endl;
+				std::cout << "update_tsdf: Mesh scene flow vector is the wrong size [" << mesh_scene_flow.size() << "] when it should have [" << vertices.size() << "] elements" << std::endl;
 			}
 		} else {
 			std::cout << "Couldn't allocate memory for scene flow" << std::endl;
