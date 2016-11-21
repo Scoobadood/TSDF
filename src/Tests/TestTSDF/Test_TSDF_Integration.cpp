@@ -58,7 +58,7 @@ TEST(  , givenManyImages ) {
 
     /*** SET PARAMETERS HERE ***/
 
-    uint16_t voxels = 300;
+    uint16_t voxels = 64;
     uint16_t num_images = 25;
     bool     save = true;
     bool     raycast = true;
@@ -66,7 +66,8 @@ TEST(  , givenManyImages ) {
 
 
     // Make volume
-    TSDFVolume * volume = new TSDFVolume( voxels, voxels, voxels, 2000, 2000, 2000);
+    TSDFVolume * volume = new TSDFVolume( voxels, voxels, voxels, 4000, 4000, 4000);
+    volume->offset( -2000, -2000, 2000 );
 
     // And camera
     Camera camera = make_kinect();

@@ -283,10 +283,6 @@ TSDFVolume::~TSDFVolume() {
         cudaFree( m_weights );
         m_weights = 0;
     }
-    if ( m_voxel_rotations ) {
-        cudaFree( m_voxel_rotations );
-        m_voxel_rotations = 0;
-    }
     if ( m_voxel_translations ) {
         cudaFree( m_voxel_translations );
         m_voxel_translations = 0;
@@ -298,7 +294,7 @@ TSDFVolume::~TSDFVolume() {
  * @param size
  * @param physical_size
  */
-TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL} {
+TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL} {
     if ( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) &&
             ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
         set_size( size.x, size.y, size.z , physical_size.x, physical_size.y, physical_size.z );
@@ -317,7 +313,7 @@ TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offs
  * @param psize_y Physical size in Y dimension in mm
  * @param psize_z Physical size in Z dimension in mm
  */
-TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z ) {
+TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z )  : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL}{
     if ( ( volume_x > 0 ) && ( volume_y > 0 ) && ( volume_z > 0 ) &&
             ( psize_x > 0 ) && ( psize_y > 0 ) && ( psize_z > 0 ) ) {
 
@@ -353,6 +349,10 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
             cudaFree( m_weights );
             m_weights = 0;
         }
+        if ( m_voxel_translations ) {
+            cudaFree( m_voxel_translations );
+            m_weights = 0;
+        }
 
         m_size = dim3 { volume_x, volume_y, volume_z };
         m_physical_size = float3 { psize_x, psize_y, psize_z };
@@ -386,14 +386,6 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
         if ( err != cudaSuccess ) {
             cudaFree( m_voxels );
             cudaFree( m_weights );
-            throw std::bad_alloc( );
-        }
-
-        err = cudaMalloc( &m_voxel_rotations, volume_x * volume_y * volume_z * sizeof( float3 ) );
-        if ( err != cudaSuccess ) {
-            cudaFree( m_voxels );
-            cudaFree( m_weights );
-            cudaFree( m_voxel_translations );
             throw std::bad_alloc( );
         }
 
@@ -540,6 +532,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 
     std::cout << "Executing kernel with grid["<<grid.x<<", "<<grid.y<<", "<<grid.z<<"]" << std::endl;
+    check_cuda_error( "Error before executing kernel", err);
     integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
     err = cudaGetLastError();
     check_cuda_error( "Integrate kernel failed", err);
@@ -567,7 +560,7 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
     // Copy to local memory
     float * host_voxels = nullptr;
     float * host_weights = nullptr;
-    float * host_deformation = nullptr;
+    float3 * host_deformation = nullptr;
 
     size_t num_voxels = m_size.x * m_size.y * m_size.z;
     cudaError_t err;
@@ -604,7 +597,7 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
 
     // Copy distance data from device to host
     if( success ) {
-        host_deformation = new Float3[ num_voxels ];
+        host_deformation = new float3[ num_voxels ];
         if( host_deformation ) {
             err = cudaMemcpy( host_deformation, m_voxel_translations, num_voxels * sizeof( float3 ), cudaMemcpyDeviceToHost);
             if( err != cudaSuccess ) {
@@ -620,11 +613,11 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
     ofstream ofs { file_name, ios::out | ios::binary };
 
     // Write dimesnions
-    ofs.write( &m_size, sizeof( m_size ) );
-    ofs.write( &m_physical_size, sizeof( m_physical_size));
-    ofs.write( host_voxels, num_voxels * sizeof( float ) );
-    ofs.write( host_weights, num_voxels * sizeof( float ) );
-    ofs.write( host_deformation, num_voxels * sizeof( Float3 ) );
+    ofs.write( (char *) &m_size, sizeof( m_size ) );
+    ofs.write( (char *)&m_physical_size, sizeof( m_physical_size));
+    ofs.write( (char *)host_voxels, num_voxels * sizeof( float ) );
+    ofs.write( (char *)host_weights, num_voxels * sizeof( float ) );
+    ofs.write( (char *)host_deformation, num_voxels * sizeof( Float3 ) );
     ofs.close();
 
     // Free up memory
@@ -642,6 +635,8 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
  * @return true if the file saved OK otherwise false.
  */
 bool TSDFVolume::load_from_file( const std::string & file_name) {
+    using namespace std;
+
     ifstream ifs{ file_name, ios::in | ios::binary };
 
     // Load dimensions
