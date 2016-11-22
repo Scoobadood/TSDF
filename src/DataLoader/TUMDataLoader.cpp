@@ -52,18 +52,18 @@ Eigen::Matrix4f TUMDataLoader::to_pose( float vars[7] ) const {
     float y = vars[4];
     float z = vars[5];
 
-    // Convert the implicit quaternion in vars 3-6 into a RH rotation matrix
+    // Convert the implicit quaternion in vars 3-6 into a LH rotation matrix
     Matrix4f pose = Matrix4f::Zero();
     pose(0,0) = 1 - 2 * ( y*y + z*z );
-    pose(0,1) = 2 * ( x*y + w*z);
-    pose(0,2) = 2 * ( x*z - w*y);
+    pose(1,0) = 2 * ( x*y + w*z);
+    pose(2,0) = 2 * ( x*z - w*y);
 
-    pose(1,0) = 2 * ( x*y - w*z );
+    pose(0,1) = 2 * ( x*y - w*z );
     pose(1,1) = 1 - 2 * ( x*x + z*z );
-    pose(1,2) = 2 * ( y*z + w*x );
+    pose(2,1) = 2 * ( y*z + w*x );
 
-    pose(2,0) = 2 * ( x*z + w*y );
-    pose(2,1) = 2 * ( y*z - w*x );
+    pose(0,2) = 2 * ( x*z + w*y );
+    pose(1,2) = 2 * ( y*z - w*x );
     pose(2,2) = 1 - 2 * ( x*x + y*y );
 
 
