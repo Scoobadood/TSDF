@@ -44,19 +44,26 @@ TUMDataLoader::TUMDataLoader( const std::string& directory ) {
 Eigen::Matrix4f TUMDataLoader::to_pose( float vars[7] ) const {
     using namespace Eigen;
 
-    // Extract rotation matrix
-    Quaternionf qq { vars[6], vars[3], vars[4], vars[5] };
+    float w = vars[6];
+    float x = vars[3];
+    float y = vars[4];
+    float z = vars[5];
 
-	// This represents the optical axis but since our optical axis is [0 0 -1] we need a 180 degree
-	// rotation around Y axis before this
-    qq = Quaternionf{ 0, 0, 1, 0 } * qq;
-
-    Matrix3f r = qq.toRotationMatrix();
-
-    // Start building  matrix
+    // Convert the implicit quaternion in vars 3-6 into a RH rotation matrix
     Matrix4f pose = Matrix4f::Zero();
+    pose(0,0) = 1 - 2 * ( y*y + z*z );
+    pose(0,1) = 2 * ( x*y + w*z);
+    pose(0,2) = 2 * ( x*z - w*y);
 
-    pose.block<3,3>(0,0) = r;
+    pose(1,0) = 2 * ( x*y - w*z );
+    pose(1,1) = 1 - 2 * ( x*x + z*z );
+    pose(1,2) = 2 * ( y*z + w*x );
+
+    pose(2,0) = 2 * ( x*z + w*y );
+    pose(2,1) = 2 * ( y*z - w*x );
+    pose(2,2) = 1 - 2 * ( x*x + y*y );
+
+    // Location
     pose( 0, 3) = vars[0] * 1000.0f;
     pose( 1, 3) = vars[1] * 1000.0f;
     pose( 2, 3) = vars[2] * 1000.0f;
