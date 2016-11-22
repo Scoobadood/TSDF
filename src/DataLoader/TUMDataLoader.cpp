@@ -38,8 +38,11 @@ TUMDataLoader::TUMDataLoader( const std::string& directory ) {
 /**
  * Create a pose matrix based on
  * 7 float parameters (as provided by TUM groundtruth data)
- * @param vars 0, 1 and 2 are a translation
- * @param vars 3,4,5,6 are x,y,z, w components of a quaternion dewscribing the facing
+ * qx qy qz qw (4 floats) give the orientation of the optical center of the color camera 
+ * in form of a unit quaternion with respect to the world origin as defined by the 
+ * motion capture system.
+ * We assume this is a left handed coordinate system and +ve Z is into the scene
+ * @param vars 0, 1 and 2 are a translation, 3,4,5,6 are x,y,z, w components of a quaternion describing the facing
  */
 Eigen::Matrix4f TUMDataLoader::to_pose( float vars[7] ) const {
     using namespace Eigen;
@@ -52,15 +55,15 @@ Eigen::Matrix4f TUMDataLoader::to_pose( float vars[7] ) const {
     // Convert the implicit quaternion in vars 3-6 into a RH rotation matrix
     Matrix4f pose = Matrix4f::Zero();
     pose(0,0) = 1 - 2 * ( y*y + z*z );
-    pose(1,0) = 2 * ( x*y + w*z);
-    pose(2,0) = 2 * ( x*z - w*y);
+    pose(0,1) = 2 * ( x*y + w*z);
+    pose(0,2) = 2 * ( x*z - w*y);
 
-    pose(0,1) = 2 * ( x*y - w*z );
+    pose(1,0) = 2 * ( x*y - w*z );
     pose(1,1) = 1 - 2 * ( x*x + z*z );
-    pose(2,1) = 2 * ( y*z + w*x );
+    pose(1,2) = 2 * ( y*z + w*x );
 
-    pose(0,2) = 2 * ( x*z + w*y );
-    pose(1,2) = 2 * ( y*z - w*x );
+    pose(2,0) = 2 * ( x*z + w*y );
+    pose(2,1) = 2 * ( y*z - w*x );
     pose(2,2) = 1 - 2 * ( x*x + y*y );
 
 

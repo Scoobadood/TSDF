@@ -3,6 +3,7 @@ OBJ_DIR = obj
 BIN_DIR = bin
 
 NV_ARCH=-gencode arch=compute_50,code=compute_50
+
 vpath %.cpp $(SRC_DIR):\
 	$(SRC_DIR)/Tests:\
 	$(SRC_DIR)/Tests/TestTSDF:\
@@ -45,15 +46,21 @@ _OBJECTS=$(SOURCES:.cpp=.o)
 _CUDA_OBJECTS=$(CUDA_SOURCES:.cu=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(_OBJECTS)) $(patsubst %,$(OBJ_DIR)/%,$(_CUDA_OBJECTS))
 
+all: Integration Raycasting Camera
 
 Integration: $(BIN_DIR)/test_integrate
 Raycasting:  $(BIN_DIR)/test_raycast
+Camera:  $(BIN_DIR)/test_camera
+
+	
+$(BIN_DIR)/test_camera: $(OBJECTS) $(OBJ_DIR)/Test_Camera.o
+	$(NVCC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/Test_Camera.o -o $(BIN_DIR)/test_camera
 
 $(BIN_DIR)/test_integrate: $(OBJECTS) $(OBJ_DIR)/Test_TSDF_Integration.o
 	$(NVCC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/Test_TSDF_Integration.o -o $(BIN_DIR)/test_integrate
 
 $(BIN_DIR)/test_raycast: $(OBJECTS) $(OBJ_DIR)/Test_TSDF_RayCast.o 
-	$(NVCC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/Test_TSDF_RayCast.o  -o $(BIN_DIR)/test_raycast
+	$(NVCC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/Test_TSDF_RayCast.o -o $(BIN_DIR)/test_raycast
 
 $(OBJ_DIR)/%.o : %.cpp
 	$(NVCC) $(CFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)

@@ -7,9 +7,11 @@
 //
 
 #include <gtest/gtest.h>
-#include "../KinFu/Camera.hpp"
-#include "../KinFu/Utilities/DepthMapUtilities.hpp"
-#include "../KinFu/Utilities/RenderUtilities.hpp"
+#include "../../include/Camera.hpp"
+#include "../../include/RenderUtilities.hpp"
+#include "../../include/TUMDataLoader.hpp"
+#include "../../include/DepthImage.hpp"
+
 
 #include "TestHelpers.hpp"
 
@@ -30,7 +32,7 @@ static Eigen::Vector3f world_coordinates[] = {
     Eigen::Vector3f{ 100, 100, 100 } };
 
 TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeZThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -46,7 +48,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeZThenCameraCoo
 }
 
 TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeXThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -63,7 +65,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeXThenCameraCoo
 }
 
 TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeYThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -80,7 +82,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeYThenCameraCoo
 }
 
 TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveYThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -97,7 +99,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveYThenCameraCoo
 }
 
 TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveXThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -114,7 +116,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveXThenCameraCoo
 }
 
 TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveZThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -132,7 +134,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveZThenCameraCoo
 
 #pragma Translation Only
 TEST( Camera, givenWorldCoordinateWhenCameraOnXAxisFacingNegativeZThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -149,7 +151,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraOnXAxisFacingNegativeZThenCameraCoor
 }
 
 TEST( Camera, givenWorldCoordinateWhenCameraOnYAxisFacingNegativeZThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -165,7 +167,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraOnYAxisFacingNegativeZThenCameraCoor
     }
 }
 TEST( Camera, givenWorldCoordinateWhenCameraOnZAxisFacingNegativeZThenCameraCoordinateIsCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -183,7 +185,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraOnZAxisFacingNegativeZThenCameraCoor
 
 #pragma Translation and Rotation through unit cube vertices
 TEST( Camera, givenWorldCoordinateWhenCameraOn_m1_m1_m1_ThenCameraCoordinateCorrect ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -208,7 +210,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraOn_m1_m1_m1_ThenCameraCoordinateCorr
 #pragma mark - pixel to image plane
 
 TEST( Camera, givenPointWhenInCentreOfImageThenCamPointIsOrigin ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam{ 500.0f, 500.0f, 320.0f, 240.0f };
@@ -223,7 +225,7 @@ TEST( Camera, givenPointWhenInCentreOfImageThenCamPointIsOrigin ) {
 
 
 TEST( Camera, givenPixelAt_0_0_ConvertToCamAndBackIsOK ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -243,7 +245,7 @@ TEST( Camera, givenPixelAt_0_0_ConvertToCamAndBackIsOK ) {
 }
 
 TEST( Camera, givenPixelAt_MaxX_0_ConvertToCamAndBackIsOK ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -262,7 +264,7 @@ TEST( Camera, givenPixelAt_MaxX_0_ConvertToCamAndBackIsOK ) {
 }
 
 TEST( Camera, givenPixelAt_0_MaxY_ConvertToCamAndBackIsOK ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -281,7 +283,7 @@ TEST( Camera, givenPixelAt_0_MaxY_ConvertToCamAndBackIsOK ) {
 }
 
 TEST( Camera, givenPixelAt_MaxX_MaxY_ConvertToCamAndBackIsOK ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -303,7 +305,7 @@ TEST( Camera, givenPixelAt_MaxX_MaxY_ConvertToCamAndBackIsOK ) {
 #pragma mark - Pose
 
 TEST( Camera, givenDefaultConstructorThenPoseIsIdentity ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -311,7 +313,7 @@ TEST( Camera, givenDefaultConstructorThenPoseIsIdentity ) {
 }
 
 TEST( Camera, givenMoveToThenPoseUpdatesCorrcetly ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -328,7 +330,7 @@ TEST( Camera, givenMoveToThenPoseUpdatesCorrcetly ) {
 
 
 TEST( Camera, givenLookAtOriginWhenInFrontThenPoseLooksBack ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -349,7 +351,7 @@ TEST( Camera, givenLookAtOriginWhenInFrontThenPoseLooksBack ) {
 
 
 TEST( Camera, givenLookAtOriginWhenRightOfOriginThenPoseLooksLeft ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -369,7 +371,7 @@ TEST( Camera, givenLookAtOriginWhenRightOfOriginThenPoseLooksLeft ) {
 }
 
 TEST( Camera, givenLookAtOriginWhenLeftOfOriginThenPoseLooksRight ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -388,7 +390,7 @@ TEST( Camera, givenLookAtOriginWhenLeftOfOriginThenPoseLooksRight ) {
 }
 
 TEST( Camera, givenLookAtOriginWhenBehindOriginThenPoseLooksFront ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -407,7 +409,7 @@ TEST( Camera, givenLookAtOriginWhenBehindOriginThenPoseLooksFront ) {
 }
 
 TEST( Camera, givenLookAtOriginWhenAboveThenPoseLooksDown ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -426,7 +428,7 @@ TEST( Camera, givenLookAtOriginWhenAboveThenPoseLooksDown ) {
 }
 
 TEST( Camera, givenLookAtOriginWhenBelowThenPoseLooksUp ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -447,7 +449,7 @@ TEST( Camera, givenLookAtOriginWhenBelowThenPoseLooksUp ) {
 
 
 TEST( Camera, givenCameraThenSettingPoseWorks ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
@@ -463,23 +465,30 @@ TEST( Camera, givenCameraThenSettingPoseWorks ) {
 
 
 TEST( Camera, givenDepthMapThenGenerateNormalMap ) {
-    using namespace phd;
+    
     using namespace Eigen;
 
     Camera cam = make_kinect();
 
-    // Load depth image
-    uint32_t width;
-    uint32_t height;
-    uint16_t * depthmap = read_tum_depth_map("/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz/depth/1305031102.160407.png", width, height);
+    TUMDataLoader tum{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz"};
 
+
+    // Load depth image
+    Matrix4f pose;
+    DepthImage * di = tum.next( pose );
 
     Matrix<float, 3, Dynamic> vertices;
     Matrix<float, 3, Dynamic> normals;
 
-    cam.depth_image_to_vertices_and_normals(depthmap, width, height, vertices, normals);
+    cam.depth_image_to_vertices_and_normals(di->data(), di->width(), di->height(), vertices, normals);
 
-    save_normals_as_colour_png("/Users/Dave/Desktop/normals_tum.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/render_tum.png", width, height, vertices, normals, cam, Vector3f{10000, 10000, 1000});
+    save_normals_as_colour_png("/home/dave/Desktop/cam_test_normals_tum.png", di->width(), di->height(), normals);
+    save_rendered_scene_as_png("/home/dave/Desktop/cam_test_render_tum.png", di->width(), di->height(), vertices, normals, cam, Vector3f{10000, 10000, 1000});
 
+    delete di;
+}
+
+int main( int argc, char *argv[] ) {
+    testing::InitGoogleTest(&argc, argv );
+    return RUN_ALL_TESTS();
 }
