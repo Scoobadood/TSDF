@@ -97,7 +97,7 @@ DepthImage * TUMDataLoader::next( Eigen::Matrix4f& pose )  {
 
 			// TUM data is 5000 to 1m
 			// we want mm so divide by 5.
-			image->scale_depth( 0.2f )
+			image->scale_depth( 0.2f );
 			pose = to_pose( dr.data );
 		} else {
 			std::cerr << "Couldn't find file " << dr.file_name << std::endl;

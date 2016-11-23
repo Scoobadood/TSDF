@@ -48,7 +48,7 @@ TEST(  , givenManyImages ) {
     Eigen::Matrix4f pose;
     int i = 0;
 	
-    while( ( di = data_loader.next(pose ) ) != nullptr && ( i<2)) {
+    while( ( di = data_loader.next(pose ) ) != nullptr && ( i<1)) {
     
         std::cout << "Integrating " << i << std::endl;
 
@@ -85,7 +85,6 @@ int width{640}, height{480};
 
             // Set location
             camera.set_pose( g_cam_pose );
-
             // Raycast volume
             volume->raycast( width, height, camera, vertices, normals);
 
