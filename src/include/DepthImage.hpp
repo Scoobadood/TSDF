@@ -16,6 +16,13 @@ public:
 	 */
 	~DepthImage( );
 
+
+	/**
+	 * Scale the depth values by some factor
+	 * @param factor The factor
+	 */
+	void scale_depth( const float factor ) ;
+	
 	/**
 	 * @return the width of the depth image
 	 */

@@ -41,11 +41,6 @@ TEST(  , givenManyImages ) {
     // And camera
     Camera camera = make_kinect();
 
-    // Load depth image
-    Vector3f camera_location;
-    Vector3f camera_focus;
-
-
     BilateralFilter bf{ 2, 2};
 
     TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
@@ -53,7 +48,7 @@ TEST(  , givenManyImages ) {
     Eigen::Matrix4f pose;
     int i = 0;
 	
-    while( ( di = data_loader.next(pose ) ) != nullptr && ( i<10)) {
+    while( ( di = data_loader.next(pose ) ) != nullptr && ( i<2)) {
     
         std::cout << "Integrating " << i << std::endl;
 
