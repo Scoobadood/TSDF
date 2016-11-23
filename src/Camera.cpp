@@ -12,6 +12,7 @@
 #include "include/Camera.hpp"
 #include "include/Definitions.hpp"
 
+const float EPS = 1e-6;
 
 /**
  * Common construction code
@@ -137,25 +138,35 @@ void Camera::look_at( const Eigen::Vector3f & world_coordinate ) {
 
     // Compute ray from current location to look_at point
     Vector3f cam_position = m_pose.block(0, 3, 3, 1);
-    Vector3f forward = (world_coordinate - cam_position);
-    forward.normalize();
 
-    // If forward is straight down or up, make 'up' be the -vez axis otherwise it's the +ve y axis
-    Vector3f up;
-    if( ( forward.y() == 1.0f) || ( forward.y() == -1) ) {
-        up << 0.0, 0.0, forward.y();
-    } else {
+    // Forward vector is the world coordinate - cam coordinate, i.e. if looking down the z axis then 
+    // forward is (0,0,1)T
+    Vector3f forward = ( world_coordinate - cam_position );
+    forward.normalize();
+	Vector3f up;
+
+	if( ( fabs( forward.x() ) < EPS ) && fabs( forward.z() ) < EPS ) {
+		if( forward.y() < 0 ) {
+    // If forward is straight down, make up be +ve z axis
+        up << 0.0, 0.0, 1;
+    } else if ( forward.y() > 0 ) {
+        // If forward is straight up, make up -ve z
+        up << 0.0, 0.0, -1;
+    } 
+} else {
+        //Otherwise,up is +ve y
         up << 0.0, 1.0, 0.0;
     }
 
-    Vector3f side = forward.cross( up );
-    side.normalize();
+    Vector3f left = up.cross( forward );
+    left.normalize();
 
-    up = side.cross( forward );
+    up = forward.cross( left );
+	up.normalize();
 
-    m_pose(0,0) = side.x();
-    m_pose(1,0) = side.y();
-    m_pose(2,0) = side.z();
+    m_pose(0,0) = left.x();
+    m_pose(1,0) = left.y();
+    m_pose(2,0) = left.z();
     m_pose(3,0) = 0.0f;
 
     m_pose(0,1) = up.x();
@@ -163,9 +174,9 @@ void Camera::look_at( const Eigen::Vector3f & world_coordinate ) {
     m_pose(2,1) = up.z();
     m_pose(3,1) = 0.0f;
 
-    m_pose(0,2) = -forward.x();
-    m_pose(1,2) = -forward.y();
-    m_pose(2,2) = -forward.z();
+    m_pose(0,2) = forward.x();
+    m_pose(1,2) = forward.y();
+    m_pose(2,2) = forward.z();
     m_pose(3,2) = 0.0f;
 
     m_pose(3,3) = 1.0f;

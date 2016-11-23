@@ -11,7 +11,8 @@
 #include "math_constants.h"
 
 /**
- * Convert a pixel position in the image to a 3D camera coordinate
+ * Compute a direction vector, in world coordinates, from cam centre
+ * through the given pixel.
  * @param origin The camera position in world coordinates
  * @param pix_x The x pixel coordinate
  * @param pix_y The y pixel coordinate

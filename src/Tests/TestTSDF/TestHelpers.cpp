@@ -98,6 +98,8 @@ void create_wall_in_TSDF( TSDFVolume & volume, float depth ) {
 
 }
 
+
+// Left handed system
 Eigen::Matrix4f make_y_axis_rotation( float theta, Eigen::Vector3f pos ) {
 
     float cos_theta = cosf( theta );
@@ -111,6 +113,7 @@ Eigen::Matrix4f make_y_axis_rotation( float theta, Eigen::Vector3f pos ) {
 
     return rot;
 }
+// Left handed system
 Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos ) {
 
     float cos_theta = cosf( theta );
@@ -124,6 +127,7 @@ Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos ) {
 
     return rot;
 }
+// Left handed system
 Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos ) {
 
     float cos_theta = cosf( theta );

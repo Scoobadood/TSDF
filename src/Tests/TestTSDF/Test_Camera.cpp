@@ -31,7 +31,7 @@ static Eigen::Vector3f world_coordinates[] = {
     Eigen::Vector3f{ 100, 0, 100 },
     Eigen::Vector3f{ 100, 100, 100 } };
 
-TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeZThenCameraCoordinateIsCorrect ) {
+TEST( Camera, at_0_0_0__facing_0_0_1i) {
     
     using namespace Eigen;
 
@@ -47,63 +47,12 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeZThenCameraCoo
     }
 }
 
-TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeXThenCameraCoordinateIsCorrect ) {
+TEST( Camera, at_0_0_0__facing_m1_0_0) {
     
     using namespace Eigen;
 
     Camera cam = make_kinect();
     cam.look_at(-1.0f, 0.0f, 0.0f );
-
-    Vector3f camera_coordinate;
-    for( int i=0; i< 8; i++ ) {
-        camera_coordinate = cam.world_to_camera(world_coordinates[i]);
-
-        EXPECT_NEAR( camera_coordinate.x(), -world_coordinates[i].z(), EPS );
-        EXPECT_NEAR( camera_coordinate.y(), world_coordinates[i].y(), EPS );
-        EXPECT_NEAR( camera_coordinate.z(), world_coordinates[i].x(), EPS );
-    }
-}
-
-TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingNegativeYThenCameraCoordinateIsCorrect ) {
-    
-    using namespace Eigen;
-
-    Camera cam = make_kinect();
-    cam.look_at(0.0f, -1.0f, 0.0f );
-
-    Vector3f camera_coordinate;
-    for( int i=0; i< 8; i++ ) {
-        camera_coordinate = cam.world_to_camera(world_coordinates[i]);
-
-        EXPECT_NEAR( camera_coordinate.x(), world_coordinates[i].x(), EPS );
-        EXPECT_NEAR( camera_coordinate.y(), -world_coordinates[i].z(), EPS );
-        EXPECT_NEAR( camera_coordinate.z(), world_coordinates[i].y(), EPS );
-    }
-}
-
-TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveYThenCameraCoordinateIsCorrect ) {
-    
-    using namespace Eigen;
-
-    Camera cam = make_kinect();
-    cam.look_at(0.0f, 1.0f, 0.0f );
-
-    Vector3f camera_coordinate;
-    for( int i=0; i< 8; i++ ) {
-        camera_coordinate = cam.world_to_camera(world_coordinates[i]);
-
-        EXPECT_NEAR( camera_coordinate.x(), world_coordinates[i].x(), EPS );
-        EXPECT_NEAR( camera_coordinate.y(), world_coordinates[i].z(), EPS );
-        EXPECT_NEAR( camera_coordinate.z(), -world_coordinates[i].y(), EPS );
-    }
-}
-
-TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveXThenCameraCoordinateIsCorrect ) {
-    
-    using namespace Eigen;
-
-    Camera cam = make_kinect();
-    cam.look_at(1.0f, 0.0f, 0.0f );
 
     Vector3f camera_coordinate;
     for( int i=0; i< 8; i++ ) {
@@ -115,12 +64,63 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveXThenCameraCoo
     }
 }
 
-TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveZThenCameraCoordinateIsCorrect ) {
+TEST( Camera, at_0_0_0__facing_0_m1_0 ) {
     
     using namespace Eigen;
 
     Camera cam = make_kinect();
-    cam.look_at(0.0f, 0.0f, 1.0f );
+    cam.look_at(0.0f, -1.0f, 0.0f );
+
+    Vector3f camera_coordinate;
+    for( int i=0; i< 8; i++ ) {
+        camera_coordinate = cam.world_to_camera(world_coordinates[i]);
+
+        EXPECT_NEAR( camera_coordinate.x(), world_coordinates[i].x(), EPS );
+        EXPECT_NEAR( camera_coordinate.y(), world_coordinates[i].z(), EPS );
+        EXPECT_NEAR( camera_coordinate.z(), -world_coordinates[i].y(), EPS );
+    }
+}
+
+TEST( Camera, at_0_0_0__facing_0_1_0 ) {
+    
+    using namespace Eigen;
+
+    Camera cam = make_kinect();
+    cam.look_at(0.0f, 1.0f, 0.0f );
+
+    Vector3f camera_coordinate;
+    for( int i=0; i< 8; i++ ) {
+        camera_coordinate = cam.world_to_camera(world_coordinates[i]);
+
+        EXPECT_NEAR( camera_coordinate.x(), world_coordinates[i].x(), EPS );
+        EXPECT_NEAR( camera_coordinate.y(), -world_coordinates[i].z(), EPS );
+        EXPECT_NEAR( camera_coordinate.z(), world_coordinates[i].y(), EPS );
+    }
+}
+
+TEST( Camera, at_0_0_0__facing_1_0_0 ) {
+    
+    using namespace Eigen;
+
+    Camera cam = make_kinect();
+    cam.look_at(1.0f, 0.0f, 0.0f );
+
+    Vector3f camera_coordinate;
+    for( int i=0; i< 8; i++ ) {
+        camera_coordinate = cam.world_to_camera(world_coordinates[i]);
+
+        EXPECT_NEAR( camera_coordinate.x(), -world_coordinates[i].z(), EPS );
+        EXPECT_NEAR( camera_coordinate.y(), world_coordinates[i].y(), EPS );
+        EXPECT_NEAR( camera_coordinate.z(), world_coordinates[i].x(), EPS );
+    }
+}
+
+TEST( Camera, at_0_0_0__facing_0_0_m1 ) {
+    
+    using namespace Eigen;
+
+    Camera cam = make_kinect();
+    cam.look_at(0.0f, 0.0f, -1.0f );
 
     Vector3f camera_coordinate;
     for( int i=0; i< 8; i++ ) {
@@ -133,7 +133,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraAtOriginFacingPositiveZThenCameraCoo
 }
 
 #pragma Translation Only
-TEST( Camera, givenWorldCoordinateWhenCameraOnXAxisFacingNegativeZThenCameraCoordinateIsCorrect ) {
+TEST( Camera, at_100_0_0__facing_0_0_0 ) {
     
     using namespace Eigen;
 
@@ -150,7 +150,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraOnXAxisFacingNegativeZThenCameraCoor
     }
 }
 
-TEST( Camera, givenWorldCoordinateWhenCameraOnYAxisFacingNegativeZThenCameraCoordinateIsCorrect ) {
+TEST( Camera, at_0_100_0__facing_0_0_0 ) {
     
     using namespace Eigen;
 
@@ -166,7 +166,7 @@ TEST( Camera, givenWorldCoordinateWhenCameraOnYAxisFacingNegativeZThenCameraCoor
         EXPECT_NEAR( camera_coordinate.z(), world_coordinates[i].z(), EPS );
     }
 }
-TEST( Camera, givenWorldCoordinateWhenCameraOnZAxisFacingNegativeZThenCameraCoordinateIsCorrect ) {
+TEST( Camera, at_0_0_100__facing_0_0_0i__default) {
     
     using namespace Eigen;
 
@@ -329,7 +329,7 @@ TEST( Camera, givenMoveToThenPoseUpdatesCorrcetly ) {
 
 
 
-TEST( Camera, givenLookAtOriginWhenInFrontThenPoseLooksBack ) {
+TEST( Camera, at_0_0_100__facing_0_0_0__active_look ) {
     
     using namespace Eigen;
 
@@ -341,7 +341,7 @@ TEST( Camera, givenLookAtOriginWhenInFrontThenPoseLooksBack ) {
 
     Matrix4f pose = cam.pose();
 
-    Matrix4f expected = make_y_axis_rotation(0, camera_postion);
+    Matrix4f expected = make_y_axis_rotation(-M_PI, camera_postion);
     for( int i=0; i<16; i++ ) {
         int r = i%4;
         int c = i/4;
@@ -350,7 +350,7 @@ TEST( Camera, givenLookAtOriginWhenInFrontThenPoseLooksBack ) {
 }
 
 
-TEST( Camera, givenLookAtOriginWhenRightOfOriginThenPoseLooksLeft ) {
+TEST( Camera, at_100_0_0__facing_0_0_0__active_look) {
     
     using namespace Eigen;
 
@@ -362,7 +362,7 @@ TEST( Camera, givenLookAtOriginWhenRightOfOriginThenPoseLooksLeft ) {
     Matrix4f pose = cam.pose();
 
 
-    Matrix4f expected = make_y_axis_rotation(M_PI_2, camera_postion);
+    Matrix4f expected = make_y_axis_rotation(-M_PI_2, camera_postion);
     for( int i=0; i<16; i++ ) {
         int r = i%4;
         int c = i/4;
@@ -370,7 +370,7 @@ TEST( Camera, givenLookAtOriginWhenRightOfOriginThenPoseLooksLeft ) {
     }
 }
 
-TEST( Camera, givenLookAtOriginWhenLeftOfOriginThenPoseLooksRight ) {
+TEST( Camera, at_m100_0_0__facing_0_0_0__active_look ) {
     
     using namespace Eigen;
 
@@ -381,7 +381,7 @@ TEST( Camera, givenLookAtOriginWhenLeftOfOriginThenPoseLooksRight ) {
     cam.look_at(Vector3f::Zero() );
     Matrix4f pose = cam.pose();
 
-    Matrix4f expected = make_y_axis_rotation(-M_PI_2, camera_postion);
+    Matrix4f expected = make_y_axis_rotation(M_PI_2, camera_postion);
     for( int i=0; i<16; i++ ) {
         int r = i%4;
         int c = i/4;
@@ -389,7 +389,7 @@ TEST( Camera, givenLookAtOriginWhenLeftOfOriginThenPoseLooksRight ) {
     }
 }
 
-TEST( Camera, givenLookAtOriginWhenBehindOriginThenPoseLooksFront ) {
+TEST( Camera, at_0_0_m100__facing_0_0_0__active_look) {
     
     using namespace Eigen;
 
@@ -400,7 +400,7 @@ TEST( Camera, givenLookAtOriginWhenBehindOriginThenPoseLooksFront ) {
     cam.look_at(Vector3f::Zero() );
     Matrix4f pose = cam.pose();
 
-    Matrix4f expected = make_y_axis_rotation(M_PI, camera_postion);
+    Matrix4f expected = make_y_axis_rotation(0, camera_postion);
     for( int i=0; i<16; i++ ) {
         int r = i%4;
         int c = i/4;
@@ -408,7 +408,7 @@ TEST( Camera, givenLookAtOriginWhenBehindOriginThenPoseLooksFront ) {
     }
 }
 
-TEST( Camera, givenLookAtOriginWhenAboveThenPoseLooksDown ) {
+TEST( Camera, at_0_100_0__facing_0_0_0__active_look ) {
     
     using namespace Eigen;
 
@@ -419,7 +419,7 @@ TEST( Camera, givenLookAtOriginWhenAboveThenPoseLooksDown ) {
     cam.look_at(Vector3f::Zero() );
     Matrix4f pose = cam.pose();
 
-    Matrix4f expected = make_x_axis_rotation(-M_PI_2, camera_postion);
+    Matrix4f expected = make_x_axis_rotation(M_PI_2, camera_postion);
     for( int i=0; i<16; i++ ) {
         int r = i / 4;
         int c = i % 4;
@@ -438,7 +438,7 @@ TEST( Camera, givenLookAtOriginWhenBelowThenPoseLooksUp ) {
     cam.look_at(Vector3f::Zero() );
     Matrix4f pose = cam.pose();
 
-    Matrix4f expected = make_x_axis_rotation(M_PI_2, camera_postion);
+    Matrix4f expected = make_x_axis_rotation(-M_PI_2, camera_postion);
     for( int i=0; i<16; i++ ) {
         int r = i / 4;
         int c = i % 4;
