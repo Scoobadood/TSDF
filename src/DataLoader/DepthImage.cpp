@@ -35,6 +35,19 @@ DepthImage::~DepthImage( ) {
 	}
 }
 
+/**
+ * Scale the depth values by some factor
+ * @param factor The factor
+ */
+void scale_depth( const float factor ) {
+	size_t num_entries = m_width * m_height;
+
+	if( m_data ) {
+		for( int i=0; i<num_entries; i++ ) {
+			m_data[i] = (uint16_t)( (float) m_data[i] * factor);
+		}
+	}
+}
 
 
 /**
