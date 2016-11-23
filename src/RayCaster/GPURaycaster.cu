@@ -21,16 +21,23 @@
  * @return The unit direction vector for the ray in world coordinate space
  */__device__
 float3 compute_ray_direction_at_pixel( const float3& origin, uint16_t pix_x, uint16_t pix_y, const Mat33& rot, const Mat33& kinv ) {
-    // Get the pixel coordinate in camera plane
-    float3 pix_h { static_cast<float>(pix_x), static_cast<float>(pix_y), 1.0f };
+    // Get the pixel coordinate in image plane
+    float3 pix_h { 
+        static_cast<float>(pix_x), 
+        static_cast<float>(pix_y), 
+        1.0f 
+    };
+
+    // Convert this to image plane by multipling by inv K
     float3 im_plane_coord = m3_f3_mul( kinv, pix_h );
 
-    // Make this point 1mm in front of the camera (in camera coords)
-    im_plane_coord.z = -1;
-
     // Convert this vector to world coordinate frame
-    float3 world_vector = m3_f3_mul( rot, im_plane_coord);
+    // We'd normally add in the camera origin but since we
+    // want the direction, we'd deduct the camera origin
+    // at the very next step so we'll just do the rotation instead.
+    float3 world_vector = m3_f3_mul( rot, im_plane_coord );
 
+    // Convert to unit vector
     f3_normalise( world_vector);
 
     return world_vector;
@@ -81,6 +88,11 @@ float trilinearly_interpolate( const float3 point,
     lower.y = (point.y < v_centre.y) ? voxel.y - 1 : voxel.y;
     lower.z = (point.z < v_centre.z) ? voxel.z - 1 : voxel.z;
 
+    // Handle lower out of bounds
+    lower.x = max( lower.x, 0 );
+    lower.y = max( lower.y, 0 );
+    lower.z = max( lower.z, 0 );
+
     // Compute u,v,w
     float3 lower_centre = centre_of_voxel_at( lower.x, lower.y, lower.z, voxel_size );
     float3 uvw = f3_sub( point, lower_centre );
@@ -114,7 +126,7 @@ float trilinearly_interpolate( const float3 point,
 
 /**
  * For a given dimension check whether the ray can intersect the volume
- * Surviving this method doesn't mean it does intersect, just that it could
+ * If this method returns true, it doesn't mean tha the ray _does_ intersect, just that it could
  * @param space_min The minimum bound of the voxel space in the current dimension
  * @param space_max The maximum bound of the voxel space in the current dimension
  * @param origin The starting point of the ray in the current dimension
@@ -135,24 +147,24 @@ bool can_intersect_in_dimension( float space_min, float space_max, float origin,
     } else {
 
         // compute intersection distance of the planes
-        float t1 = ( space_min - origin ) / direction;
-        float t2 = ( space_max - origin ) / direction;
+        float distance_to_space_min = ( space_min - origin ) / direction;
+        float distance_to_space_max = ( space_max - origin ) / direction;
 
-        // If t1 > t2 swap (t1, t2) since t1 intersection with near plane
-        if( t1 > t2 ) {
-            float temp_t = t1;
-            t1 = t2;
-            t2 = temp_t;
+        // If distance_to_space_min > distance_to_space_max swap (distance_to_space_min, distance_to_space_max) since distance_to_space_min intersection with near plane
+        if( distance_to_space_min > distance_to_space_max ) {
+            float temp_t = distance_to_space_min;
+            distance_to_space_min = distance_to_space_max;
+            distance_to_space_max = temp_t;
         }
 
-        // if t1 > t_near set t_near = t1 : We want largest t_near
-        if( t1 > near_t ) {
-            near_t = t1;
+        // if distance_to_space_min > t_near set t_near = distance_to_space_min : We want largest t_near
+        if( distance_to_space_min > near_t ) {
+            near_t = distance_to_space_min;
         }
 
-        //If t2 < t_far set t_far="t2"  want smallest t_far
-        if( t2 < far_t ) {
-            far_t = t2;
+        //If distance_to_space_max < t_far set t_far="distance_to_space_max"  want smallest t_far
+        if( distance_to_space_max < far_t ) {
+            far_t = distance_to_space_max;
         }
 
         // If Tnear > Tfar box is missed so return false
@@ -239,7 +251,7 @@ bool  compute_near_and_far_t( const float3 & origin, const float3 & direction, c
 }
 /**
  * Walk a ray from the camera onto the TSDF determining where (if at all) it
- * intersects the ISO surface defcined by the TSDF
+ * intersects the ISO surface defined by the TSDF
  * @param origin The position of the camera in world coordinates
  * @param rot The camera pose rotation matrix in world terms
  * @param kinv The camera's intrinsic matrix inverse
@@ -251,24 +263,29 @@ bool  compute_near_and_far_t( const float3 & origin, const float3 & direction, c
  * @param vertex The 3D world coordinate of the vertex intersected by this ray if it exists or {NaN, NaN, NaN}
  */
 __global__
-void process_ray(const float3 origin, const Mat33 rot, const Mat33 kinv,
-                 uint16_t max_x, uint16_t max_y,
-                 const float3 space_min, const float3 space_max,
-                 const dim3 voxel_grid_size, const float3 voxel_size,
-                 const float *tsdf_values,
-                 float3 *vertices) {
+void process_ray(   const float3        origin, 
+                    const Mat33         rot, 
+                    const Mat33         kinv,
+                    uint16_t            max_x, 
+                    uint16_t            max_y,
+                    const float3        space_min, 
+                    const float3        space_max,
+                    const dim3          voxel_grid_size, 
+                    const float3        voxel_size,
+                    const float         * tsdf_values,
+                    float3              * vertices) {
 
     int imx = threadIdx.x + blockIdx.x * blockDim.x;
     int imy = threadIdx.y + blockIdx.y * blockDim.y;
 
-    // Terminat eearly if the index is out of bounds
+    // Terminate early if the index is out of bounds
     if ( imx >= max_x || imy >= max_y ) {
         return;
     }
 
     size_t idx = imy * max_x + imx;
 
-    // Compute the ray direction for this pixel
+    // Compute the ray direction for this pixel in world coordinates
     // which is R K-1 (x,y,1)T
     float3 direction      = compute_ray_direction_at_pixel( origin, imx, imy, rot, kinv );
 
@@ -279,7 +296,7 @@ void process_ray(const float3 origin, const Mat33 rot, const Mat33 kinv,
     // Only do this if the ray intersects space
     float3 current_point { CUDART_NAN_F, CUDART_NAN_F, CUDART_NAN_F};
     if( intersects ) {
-        // Start pooint in world coords
+        // Start point in world coords
         float3 start_point = f3_add( origin, f3_mul_scalar( near_t, direction ) );
 
         // Adjust to be in voxel grid coords
@@ -385,43 +402,6 @@ void compute_normals( uint16_t width, uint16_t height, const float3 * vertices, 
     }
 }
 
-/**
- * POC CUDA kernel to generate vertices as for a sphere in the
- * provided vertex matrix
- * @param width The width of the image
- * @param height The height of the image
- * @param vertices A pointer to an array of width*height*3 floats
- */
-__global__
-void make_sphere( uint16_t width, uint16_t height, float3 * vertices ) {
-    int imx = threadIdx.x + blockIdx.x * blockDim.x;
-    int imy = threadIdx.y + blockIdx.y * blockDim.y;
-
-    // Terminat eearly if the index is out of bounds
-    if ( imx >= width || imy > height ) {
-        return;
-    }
-
-    size_t idx = (imy * width + imx);
-
-    // radius is 3/8 of smallest of height and width
-    float r = min( 0.75f * width, 0.75f * height) / 2.0f;
-    float dx = abs((width/2.0f) - imx);
-    float dy = abs((height/2.0f) - imy);
-    float r2 = r*r;
-    float dx2 = dx*dx;
-    float dy2 = dy*dy;
-
-    if( dx2+dy2 < r2) {
-        vertices[idx].x = width/2.0f - imx;
-        vertices[idx].y = height/2.0f - imy;
-        vertices[idx].z = sqrt(r2 - dx2 - dy2);
-    } else {
-        vertices[idx].x = CUDART_NAN_F;
-        vertices[idx].y = CUDART_NAN_F;
-        vertices[idx].z = CUDART_NAN_F;
-    }
-}
 
 
 __host__
@@ -468,6 +448,7 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     float3 voxel_size = volume.voxel_size();
 
     // Set up rotation matrices for pose and Kinv
+    // Eigen stores data in column major format.
     const float *pose = camera.pose().data();
     Mat33 rot {
         pose[0], pose[1], pose[2],
@@ -484,28 +465,19 @@ float3 * get_vertices(  const TSDFVolume&  volume,
 
     // Set up world coords for min and max extremes of the voxel space
     float3 space_min = volume.offset();
-
     float3 space_max = volume.offset()+volume.physical_size( );
 
 
     cudaError_t err;
 
     // Allocate storage on device for TSDF data
-    float * d_tsdf_values;
-    size_t tsdf_data_size = voxel_grid_size.x * voxel_grid_size.y * voxel_grid_size.z * sizeof( float );
-    err = cudaMalloc( &d_tsdf_values, tsdf_data_size);
-    check_cuda_error( "TSDF alloc failed " , err );
+    const float * d_tsdf_values = volume.distance_data();
 
-    // Copy TSDF data to device
-    err = cudaMemcpy( d_tsdf_values, volume.distance_data(), tsdf_data_size, cudaMemcpyHostToDevice );
-    check_cuda_error( "TSDF Memcpy failed ", err);
-
-    // Allocate storage for vertcies on device
+    // Allocate storage for vertices on device
     size_t data_size = width * height * sizeof( float3 );
     float3 * d_vertices;
     err = cudaMalloc( &d_vertices, data_size );
     check_cuda_error( "Vertices alloc failed ", err);
-
 
     // Execute the kernel
     dim3 block( 32, 32 );
@@ -513,11 +485,6 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     process_ray<<<grid, block>>>( origin, rot, kinv, width, height, space_min, space_max, voxel_grid_size, voxel_size, d_tsdf_values, d_vertices );
     err = cudaDeviceSynchronize( );
     check_cuda_error( "process_ray failed " , err);
-
-
-    // Remove TSDF data from device
-    err = cudaFree( d_tsdf_values );
-    check_cuda_error( "Failed to free TSDF values from device " , err);
 
     return d_vertices;
 }
@@ -536,50 +503,6 @@ float3 * compute_normals( uint16_t width, uint16_t height, float3 * d_vertices )
     check_cuda_error( "compute_normals failed ", err);
 
     return d_normals;
-}
-
-__host__
-void sphere_cast(const TSDFVolume & volume,
-                 const Camera & camera,
-                 uint16_t width, uint16_t height,
-                 Eigen::Matrix<float, 3, Eigen::Dynamic> & vertices,
-                 Eigen::Matrix<float, 3, Eigen::Dynamic> & normals ) {
-
-    using namespace Eigen;
-
-
-    // Allocate storage on device for verts and normals
-    size_t data_size = width * height * sizeof( float3 );
-    cudaError_t err;
-    dim3 block( 32, 32 );
-    dim3 grid ( divUp( width, block.x ), divUp( height, block.y ) );
-
-
-    // Call a simple CUDA kernel to fill the vertex array with a sphere
-    float3 * d_vertices;
-    err = cudaMalloc( &d_vertices, data_size );
-    assert( err == cudaSuccess );
-    make_sphere <<< grid, block>>>( width, height, d_vertices );
-
-    // Copy vertex data back
-    vertices.resize( 3, width*height);
-    float  *h_vertices = vertices.data();
-    err = cudaMemcpy( h_vertices, d_vertices, data_size, cudaMemcpyDeviceToHost);
-
-    // Compute normals
-    float3 * d_normals;
-    err = cudaMalloc( &d_normals,  data_size );
-    assert( err == cudaSuccess );
-
-    // Copy normal data back
-    compute_normals<<<grid, block>>>(width, height, d_vertices, d_normals);
-    normals.resize( 3, width*height);
-    float  *h_normals = normals.data();
-    err = cudaMemcpy( h_normals, d_normals, data_size, cudaMemcpyDeviceToHost);
-
-    // Free device memory
-    cudaFree( d_vertices );
-    cudaFree( d_normals );
 }
 
 /**

@@ -111,6 +111,8 @@ int main( int argc, const char * argv[] ) {
                 if( n > 0 ) {
                     std::cout << "Make TSDF" << std::endl;
                     volume = make_tsdf( n);
+                    volume->save_to_file( "/home/dave/Desktop/volume.bin");
+
                 } else {
                     std::cout << "Invalid frame count " << n << std::endl;
                 }

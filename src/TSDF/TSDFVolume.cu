@@ -88,12 +88,22 @@ void set_weight( const dim3& m_size, float * m_weights, int x, int y, int z, flo
 }
 
 /**
- * Convert a depth to a 3D vertex in camera space
+ * Convert a pixel coordinate in a depth map into a 3D vertex in camera space
+ * by back projecting using inv K
+ * @param depth The depth in mm
+ * @param x The x coorindate in the pixel image
+ * @param y The y coordinate in the pixel image
+ * @param kinf invers K (intrinsic matrix)
+ * @return a 3D camera space coordinate of the point
  */
 __device__
 float3 depth_to_vertex( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv ) {
+    // initialise to NANs
     float3 vertex{ CUDART_NAN_F , CUDART_NAN_F, CUDART_NAN_F };
+
+    // Depth should be > 0 for us to have got to this point
     if ( depth != 0 ) {
+
         // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
         float3 cam_point{
             kinv.m11 * x + kinv.m12 * y + kinv.m13,
@@ -101,36 +111,34 @@ float3 depth_to_vertex( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kin
             kinv.m31 * x + kinv.m32 * y + kinv.m33
         };
 
-        vertex.x = cam_point.x * -depth;
-        vertex.y = cam_point.y * -depth;
-        vertex.z = cam_point.z * -depth;
+        vertex.x = cam_point.x * depth;
+        vertex.y = cam_point.y * depth;
+        vertex.z = cam_point.z * depth;
     }
 
     return vertex;
 
 }
 /**
- * Convert a world coordinate into camera space in the camera image
- * by multiplying by pose matrix inverse, then by K then dividing through by
+ * Convert a camera coordinate into pixel space in the camera image
+ * by multiplying by K - the intrinsice matrix - then dividing through by
  * z coordinate to project down.
- * @param world_coordinate The world coordinate to convert
- * @param inv_pose The 4x4 inverse pose matrix
+ *
+ * @param camera_coordinate The camera coordinate to convert
  * @param K The camera intrinsic matrix
- * @return a 2D integral pixel value (u,v)
+ * @return a 2D integral pixel value (u,v) z value is 1
  */
 __device__
 int3 camera_to_pixel( const float3& camera_coordinate, const Mat33& k ) {
-    // Project
-    float3 image_coordinate {
-        camera_coordinate.x / camera_coordinate.z,
-        camera_coordinate.y / camera_coordinate.z,
-        1.0f
-    };
+    float image_x = (k.m11 * camera_coordinate.x) + ( k.m12 * camera_coordinate.y) + (k.m13);
+    float image_y = (k.m21 * camera_coordinate.x) + ( k.m22 * camera_coordinate.y) + (k.m23);
+
+    float w = (k.m31 * camera_coordinate.x) + ( k.m32 * camera_coordinate.y) + (k.m33);
 
     // Adjust by cam intrinsics
     int3 pixel_coordinate {
-        static_cast<int>(floor( ( k.m11 * image_coordinate.x) + (k.m12 * image_coordinate.y) + k.m13 )),
-        static_cast<int>(floor( ( k.m21 * image_coordinate.x) + (k.m22 * image_coordinate.y) + k.m23 )),
+        static_cast<int>(floor( image_x / w ) ),
+        static_cast<int>(floor( image_y / w ) ),
         1
     };
 
@@ -206,68 +214,56 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
             // Convert world to camera coords
             float3 centre_of_voxel_in_cam = world_to_camera( centre_of_voxel, inv_pose );
 
-            // Project into image plane
+            // Project into depth map pixel (u) 
             int3   centre_of_voxel_in_pix = camera_to_pixel( centre_of_voxel_in_cam, k );
 
             // if this point is in the camera view frustum...
-            if ( ( centre_of_voxel_in_pix.x >= 0 ) && 
-                 ( centre_of_voxel_in_pix.x < width ) && 
-                 ( centre_of_voxel_in_pix.y >= 0 ) &&
-                 ( centre_of_voxel_in_pix.y < height) ) {
-
-                // Round to nearest pixel
-                uint16_t voxel_pixel_x = static_cast<uint16_t>( round( (float) centre_of_voxel_in_pix.x) );
-                uint16_t voxel_pixel_y = static_cast<uint16_t>( round( (float) centre_of_voxel_in_pix.y) );
+            if ( ( centre_of_voxel_in_pix.x >= 0 ) && ( centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 ) && ( centre_of_voxel_in_pix.y < height) ) {
 
                 // Extract the depth to the surface at this point
-                uint32_t voxel_image_index = voxel_pixel_y * width + voxel_pixel_x;
-                uint16_t surface_depth = depth_map[ voxel_image_index ];
+                uint32_t voxel_pixel_index = centre_of_voxel_in_pix.y * width + centre_of_voxel_in_pix.x;
+                uint16_t surface_depth = depth_map[ voxel_pixel_index ];
 
                 // If the depth is valid
                 if ( surface_depth > 0 ) {
 
-                    // Project depth entry to a vertex
-                    float3 surface_vertex = depth_to_vertex( surface_depth, voxel_pixel_x, voxel_pixel_y, kinv);
+                    // Project depth entry to a vertex ( in camera space)
+                    float3 surface_vertex = depth_to_vertex( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv);
 
+                    // Compute Global Space distance of the voxel centre from the camera
+                    float voxel_distance = sqrt( (centre_of_voxel_in_cam.x * centre_of_voxel_in_cam.x ) + (centre_of_voxel_in_cam.y * centre_of_voxel_in_cam.y ) + (centre_of_voxel_in_cam.z * centre_of_voxel_in_cam.z )  );
 
-                    // First approach ot getting SDF is based on absolute difference in distance
-                    // float voxel_distance = sqrt( (centre_of_voxel_in_cam.x * centre_of_voxel_in_cam.x ) + (centre_of_voxel_in_cam.y * centre_of_voxel_in_cam.y ) + (centre_of_voxel_in_cam.z * centre_of_voxel_in_cam.z )  );
-                    //float surface_distance = sqrt( surface_vertex.x*surface_vertex.x + surface_vertex.y*surface_vertex.y + surface_vertex.z*surface_vertex.z);
-                    // float sdf = surface_distance - voxel_distance;
+                    // Compute the distance of the surface vertex as seen through the pixel u from the camera
+                    float surface_distance = sqrt( surface_vertex.x*surface_vertex.x + surface_vertex.y*surface_vertex.y + surface_vertex.z*surface_vertex.z);
 
+                    // Compute the SDF as the difference of these two
+                    float sdf = surface_distance - voxel_distance;
 
-                    // Alternatve approach is based on difference in Z coords only
-                    // Note that for RHS camera, we expect Z coords here to be -ve
-                    // So SDF is (-surface.z) - (-voxel.z)
-                    // which is voxel.z - surface.z hence inversion
-                    // We'd also expect that surface_vertex.z is the same as -ve depth
-                    float sdf = centre_of_voxel_in_cam.z - surface_vertex.z;
-
-                    // Truncate
+                    // Truncate the sdf to the range -trunc_distance -> trunc_distance
                     float tsdf;
                     if ( sdf > 0 ) {
-                        tsdf = min( 1.0, sdf / trunc_distance);
+                        tsdf = min( sdf, trunc_distance);
                     } else {
-                        tsdf = max( -1.0, sdf / trunc_distance);
+                        tsdf = max( sdf, -trunc_distance);
                     }
 
                     // Extract prior weight
                     float prior_weight = m_weights[voxel_index];
                     float current_weight = 1.0f;
+                    float new_weight = prior_weight + current_weight;
+                    //  float new_weight = min( prior_weight + current_weight, m_max_weight );
 
                     float prior_distance = m_voxels[voxel_index];
-
-                    float new_weight = prior_weight + current_weight;
-//                    float new_weight = min( prior_weight + current_weight, m_max_weight );
                     float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
 
                     m_weights[voxel_index] = new_weight;
                     m_voxels[voxel_index] = new_distance;
-                } // End of point in frustrum
-            } // Voxel depth <= 0
+
+                } // End of depth > 0
+            } // End of point in frustrum
 
             voxel_index++;
-        } // For all Xss
+        } // End each voxel in this column
     }
 }
 
