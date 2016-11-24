@@ -37,7 +37,6 @@ TEST(  , givenManyImages ) {
 
     // Make volume
     TSDFVolume * volume = new TSDFVolume( voxels, voxels, voxels, 3000, 3000, 3000);
-    volume->offset( -1500, -1500, -1500 );
 
     // And camera
     Camera camera = make_kinect();
