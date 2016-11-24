@@ -410,10 +410,10 @@
 // }
 
 // Right on positive X axis
-TEST( TSDF_Raycasting, testRayCast_450_150_150 ) {
+TEST( TSDF_Raycasting, at_450_150_150__facing_150_150_150 ) {
     using namespace Eigen;
 
-    TSDFVolume volume{64, 64, 64, 300, 300, 300};
+    TSDFVolume volume{256, 256, 256, 256, 256, 256};
     create_sphere_in_TSDF(volume, 80);
 
     uint16_t width = 640;
@@ -421,6 +421,7 @@ TEST( TSDF_Raycasting, testRayCast_450_150_150 ) {
 
     Matrix<float, 3, Dynamic> vertices;
     Matrix<float, 3, Dynamic> normals;
+    
 
     Vector3f light_source{ 150, 300, 150 };
 
@@ -560,10 +561,10 @@ TEST( TSDF_Raycasting, testRayCast_450_150_150 ) {
 //     delete p;
 // }
 // Left front on -ve x axis, +ve z axis
-TEST( TSDF_Raycasting, testRayCast_m150_150_450 ) {
+TEST( TSDF_Raycasting, at_m150_150_450__facing_150_150_150 ) {
     using namespace Eigen;
 
-    TSDFVolume volume{64, 64, 64, 300, 300, 300};
+    TSDFVolume volume{256, 256, 256, 256, 256, 256};
     create_sphere_in_TSDF(volume, 80);
 
     uint16_t width = 640;

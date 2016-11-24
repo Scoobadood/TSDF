@@ -1,6 +1,7 @@
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
+NV_ARCH=-gencode arch=compute_50,code=compute_50
 
 vpath %.cpp $(SRC_DIR):\
 	    $(SRC_DIR)/Utilities:\
@@ -23,7 +24,7 @@ NVCC=/usr/local/cuda/bin/nvcc
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
 CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src -I=src/GPU -I=src/Utilities -c -ccbin=/usr/bin/gcc -std=c++11 -g
-LDFLAGS=-lpng
+LDFLAGS=$(NV_ARCH) -lpng
 SOURCES =	FileUtilities.cpp Definitions.cpp\
 			Camera.cpp \
 			DepthImage.cpp \
@@ -58,10 +59,10 @@ $(EXECUTABLE) : $(OBJECTS)
 	$(NVCC) $(LDFLAGS) $(OBJECTS) -o $(EXECUTABLE)
 
 $(OBJ_DIR)/%.o : %.cpp
-	$(NVCC) $(CFLAGS) $< -o $(OBJ_DIR)/$(@F)
+	$(NVCC) $(CFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 $(OBJ_DIR)/%.o : %.cu
-	$(NVCC) $(CFLAGS) -lineinfo -G -dc $< -o $(OBJ_DIR)/$(@F)
+	$(NVCC) $(CFLAGS) -lineinfo -G -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 clean:
 	rm $(OBJ_DIR)/*.o $(EXECUTABLE)

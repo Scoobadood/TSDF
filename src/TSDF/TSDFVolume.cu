@@ -22,28 +22,33 @@
 
 /**
  * Compute the index into the voxel space for a given x,y,z coordinate
+ * @param size The size (in voxels) of the volume
  * @param x The x coord
  * @param y The y coord
  * @param z The z coord
  * @return The index
  */
 __device__ __forceinline__
-size_t index( const dim3& m_size, int x, int y, int z ) {
-    return x + (y * m_size.x) + (z * m_size.x * m_size.y);
+size_t index( const dim3& size, int x, int y, int z ) {
+    return x + (y * size.x) + (z * size.x * size.y);
 };
 
 /**
+ * @param size The size (in voxels) of the volume
+ * @param distance_data The depth data for the volume
  * @param x The horizontal voxel coord
  * @param y The vertical voxel coord
  * @param z The depth voxel coord
  * @return The distance to the surface at that voxel
  */
 __device__ __forceinline__
-float distance( const dim3& m_size, float *m_voxels, int x, int y, int z ) {
-    return m_voxels[ index( m_size, x, y, z) ];
+float distance( const dim3& size, float *distance_data, int x, int y, int z ) {
+    return distance_data[ index( size, x, y, z) ];
 }
 
 /**
+ * @param size The size (in voxels) of the volume
+ * @param distance_data The depth data for the volume
  * @param x The horizontal voxel coord
  * @param y The vertical voxel coord
  * @param z The depth voxel coord
@@ -51,35 +56,27 @@ float distance( const dim3& m_size, float *m_voxels, int x, int y, int z ) {
  * @return The distance to the surface at that voxel
  */
 __device__ __forceinline__
-void set_distance(const  dim3& m_size, float * m_voxels, int x, int y, int z, float distance ) {
-    size_t idx = index( m_size, x, y, z );
-    m_voxels[ idx ] = distance;
+void set_distance(const  dim3& size, float * distance_data, int x, int y, int z, float distance ) {
+    size_t idx = index( size, x, y, z );
+    distance_data[ idx ] = distance;
 }
 
 /**
+ * @param size The size (in voxels) of the volume
+ * @param weights The weight data for the volume
  * @param x The horizontal voxel coord
  * @param y The vertical voxel coord
  * @param z The depth voxel coord
  * @return The weight at that voxel
  */
 __device__ __forceinline__
-float weight( const dim3& m_size, float * m_weights, int x, int y, int z ) {
-    return m_weights[ index(m_size, x, y, z) ];
+float weight( const dim3& size, float * weights, int x, int y, int z ) {
+    return weights[ index(size, x, y, z) ];
 }
 
 /**
- * Return the deformed voxel centre for the given voxel
- * @param x The horizontal voxel coord
- * @param y The vertical voxel coord
- * @param z The depth voxel coord
- * @return The weight at that voxel
- */
-__device__ __forceinline__
-float3  deformed_voxel_centre( const dim3& m_size, float3 * m_voxel_translations, int x, int y, int z )  {
-    return m_voxel_translations[ index(m_size, x, y, z)];
-}
-
-/**
+ * @param size The size (in voxels) of the volume
+ * @param weights The weight data for the volume
  * @param x The horizontal voxel coord
  * @param y The vertical voxel coord
  * @param z The depth voxel coord
@@ -87,8 +84,8 @@ float3  deformed_voxel_centre( const dim3& m_size, float3 * m_voxel_translations
  * @return The weight at that voxel
  */
 __device__ __forceinline__
-void set_weight( const dim3& m_size, float * m_weights, int x, int y, int z, float weight ) {
-    m_weights[ index(m_size, x, y, z) ] = weight;
+void set_weight( const dim3& size, float * weights, int x, int y, int z, float weight ) {
+    weights[ index(size, x, y, z) ] = weight;
 }
 
 /**
@@ -101,7 +98,7 @@ void set_weight( const dim3& m_size, float * m_weights, int x, int y, int z, flo
  * @return a 3D camera space coordinate of the point
  */
 __device__
-float3 depth_to_vertex_in_world( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv, const Mat44& pose ) {
+float3 depth_to_world_coordinate( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv, const Mat44& pose ) {
     // initialise to NANs
     float3 vertex{ CUDART_NAN_F , CUDART_NAN_F, CUDART_NAN_F };
 
@@ -142,15 +139,20 @@ float3 depth_to_vertex_in_world( uint16_t depth, uint16_t x, uint16_t y, const M
  */
 __device__
 int3 camera_to_pixel( const float3& camera_coordinate, const Mat33& k ) {
-    float image_x = (k.m11 * camera_coordinate.x) + ( k.m12 * camera_coordinate.y) + (k.m13);
-    float image_y = (k.m21 * camera_coordinate.x) + ( k.m22 * camera_coordinate.y) + (k.m23);
+    // Project down to image plane
+    float image_x = camera_coordinate.x / camera_coordinate.z;
+    float image_y = camera_coordinate.y / camera_coordinate.z;
 
-    float w = (k.m31 * camera_coordinate.x) + ( k.m32 * camera_coordinate.y) + (k.m33);
+    // And into pixel plane
+    image_x = (k.m11 * image_x) + ( k.m12 * image_y) + (k.m13);
+    image_y = (k.m21 * image_x) + ( k.m22 * image_y) + (k.m23);
+
+    // Nature of k is that last row is 0 0 1 so no need to de-homogenise
 
     // Adjust by cam intrinsics
     int3 pixel_coordinate {
-        static_cast<int>(floor( image_x / w ) ),
-        static_cast<int>(floor( image_y / w ) ),
+        static_cast<int>(floor( image_x ) ),
+        static_cast<int>(floor( image_y ) ),
         1
     };
 
@@ -181,28 +183,35 @@ float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) 
 }
 
 /**
- * @param m_voxels The voxel values (in devcie memory)
- * @param m_weights The weight values (in device memory)
- * @param m_size The voxel size of the space
- * @param m_physical_size The physical size of the space
- * @param m_offset The offset of the front, bottom, left corner
- * @param m_truncation_distance A distance, greater than the voxel diagonal, at which we truncate distance measures in the TSDF
+ * @param distance_data The voxel values (in devcie memory)
+ * @param weight_data The weight values (in device memory)
+ * @param voxel_grid_size The voxel size of the space
+ * @param voxel_space_size The physical size of the space
+ * @param offset The offset of the front, bottom, left corner
+ * @param trunc_distance A distance, greater than the voxel diagonal, at which we truncate distance measures in the TSDF
  * @param pose The camera pose matrix (maps cam to world, 4x4 )
  * @param inv_pose Inverse of the camera pose matrix (maps world to camera coords) (4x4)
  * @param k The caera's intrinsic parameters (3x3)
  * @param kinv Invers eof k (3x3)
  * @param width Width of the depth image
  * @param height Height of the depth image
- * @param d_depth_map Pointer to array of width*height uint16 types in devcie memory
+ * @param depth_map Pointer to array of width*height uint16 types in devcie memory
  */
 __global__
-void integrate_kernel(  float * m_voxels, float * m_weights,
-                        dim3 voxel_grid_size, float3 voxel_space_size,
-                        float3 * voxel_centres,
-                        float3 offset, const float trunc_distance,
-                        Mat44 pose, Mat44 inv_pose, 
- 			Mat33 k, Mat33 kinv,
-                        uint32_t width, uint32_t height, const uint16_t * depth_map) {
+void integrate_kernel(  float         * distance_data, 
+                        float         * weight_data,
+                        dim3            voxel_grid_size, 
+                        float3          voxel_space_size,
+                        float3        * voxel_centres,
+                        float3          offset, 
+                        const float     trunc_distance,
+                        Mat44           pose, 
+                        Mat44           inv_pose,
+                        Mat33           k, 
+                        Mat33           kinv,
+                        uint32_t        width, 
+                        uint32_t        height, 
+                        const uint16_t  * depth_map) {
 
     // Extract the voxel Y and Z coordinates we then iterate over X
     int vy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -213,10 +222,9 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
 
 
         // The next (x_size) elements from here are the x coords
-        size_t base_voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
+        size_t voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
 
         // For each voxel in this column
-        size_t voxel_index = base_voxel_index;
         for ( int vx = 0; vx < voxel_grid_size.x; vx++ ) {
 
             // Work out where in the image, the centre of this voxel projects
@@ -228,7 +236,7 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
             // Convert world to camera coords
             float3 centre_of_voxel_in_cam = world_to_camera( centre_of_voxel, inv_pose );
 
-            // Project into depth map pixel (u) 
+            // Project into depth map pixel (u)
             int3   centre_of_voxel_in_pix = camera_to_pixel( centre_of_voxel_in_cam, k );
 
             // if this point is in the camera view frustum...
@@ -242,16 +250,16 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                 if ( surface_depth > 0 ) {
 
                     // Project depth entry to a vertex ( in camera space)
-                    float3 surface_vertex = depth_to_vertex_in_world( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv, pose);
+                    float3 surface_vertex = depth_to_world_coordinate( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv, pose);
 
                     // Compute Global Space distance of the voxel centre from the camera
                     float voxel_distance = f3_norm(centre_of_voxel_in_cam);
 
                     // Compute the distance of the surface vertex as seen through the pixel u from the camera
                     float3 cam_surface_vector {
-                        surface_vertex.x - pose.m13,
-                        surface_vertex.y - pose.m23,
-                        surface_vertex.z - pose.m33
+                        surface_vertex.x - pose.m14,
+                        surface_vertex.y - pose.m24,
+                        surface_vertex.z - pose.m34
                     };
                     float surface_distance = f3_norm( cam_surface_vector );
 
@@ -266,20 +274,20 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                         tsdf = max( sdf, -trunc_distance);
                     }
 
-			// Convert further to be in the range -1 to 1 for raycaster
-tsdf = tsdf / trunc_distance;
+                    // Convert further to be in the range -1 to 1 for raycaster
+                    tsdf = tsdf / trunc_distance;
 
                     // Extract prior weight
-                    float prior_weight = m_weights[voxel_index];
+                    float prior_weight = weight_data[voxel_index];
                     float current_weight = 1.0f;
                     float new_weight = prior_weight + current_weight;
                     //  float new_weight = min( prior_weight + current_weight, m_max_weight );
 
-                    float prior_distance = m_voxels[voxel_index];
+                    float prior_distance = distance_data[voxel_index];
                     float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
 
-                    m_weights[voxel_index] = new_weight;
-                    m_voxels[voxel_index] = new_distance;
+                    weight_data[voxel_index] = new_weight;
+                    distance_data[voxel_index] = new_distance;
 
                 } // End of depth > 0
             } // End of point in frustrum
@@ -292,6 +300,8 @@ tsdf = tsdf / trunc_distance;
 
 
 TSDFVolume::~TSDFVolume() {
+    std::cout << "Destroying TSDFVolume" << std::endl;
+
     // Remove existing data
     if ( m_voxels ) {
         cudaFree( m_voxels ) ;
@@ -331,7 +341,7 @@ TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offs
  * @param psize_y Physical size in Y dimension in mm
  * @param psize_z Physical size in Z dimension in mm
  */
-TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z )  : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL}{
+TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z )  : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL} {
     if ( ( volume_x > 0 ) && ( volume_y > 0 ) && ( volume_z > 0 ) &&
             ( psize_x > 0 ) && ( psize_y > 0 ) && ( psize_z > 0 ) ) {
 
@@ -527,8 +537,8 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     std::cout << "Integrating depth map size " << width << "x" << height << std::endl;
 
     // Convert the input parameters to device (CUDA) types
-	Mat44 pose;
-	memcpy( &pose, camera.pose().data(), 16 * sizeof( float ) );
+    Mat44 pose;
+    memcpy( &pose, camera.pose().data(), 16 * sizeof( float ) );
 
     Mat44 inv_pose;
     memcpy( &inv_pose, camera.inverse_pose().data(), 16 * sizeof( float ) );
@@ -552,7 +562,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     dim3 block( 1, 20, 20  );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 
-    std::cout << "Executing kernel with grid["<<grid.x<<", "<<grid.y<<", "<<grid.z<<"]" << std::endl;
+    std::cout << "Executing kernel with grid[" << grid.x << ", " << grid.y << ", " << grid.z << "]" << std::endl;
     check_cuda_error( "Error before executing kernel", err);
     integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, pose, inv_pose, k, kinv, width, height, d_depth_map);
     err = cudaGetLastError();
@@ -588,9 +598,10 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
 
     // Copy distance data from device to host
     host_voxels = new float[ num_voxels ];
+    size_t depth_data_size = num_voxels * sizeof( float);
     if ( host_voxels ) {
-        err = cudaMemcpy( host_voxels, m_voxels, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
-        if( err != cudaSuccess ) {
+        err = cudaMemcpy( host_voxels, m_voxels, depth_data_size, cudaMemcpyDeviceToHost);
+        if ( err != cudaSuccess ) {
             success = false;
             std::cout << "Failed to copy voxel data from device memory [" << err << "] " << std::endl;
         }
@@ -601,11 +612,12 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
 
 
     // Copy distance data from device to host
-    if( success ) {
-       host_weights = new float[ num_voxels ];
+    size_t weight_data_size = num_voxels * sizeof( float);
+    if ( success ) {
+        host_weights = new float[ num_voxels ];
         if ( host_weights) {
-            err = cudaMemcpy( host_weights, m_weights, num_voxels * sizeof( float), cudaMemcpyDeviceToHost);
-            if( err != cudaSuccess ) {
+            err = cudaMemcpy( host_weights, m_weights, weight_data_size, cudaMemcpyDeviceToHost);
+            if ( err != cudaSuccess ) {
                 success = false;
                 std::cout << "Failed to copy weight data from device memory [" << err << "] " << std::endl;
             }
@@ -617,11 +629,12 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
 
 
     // Copy distance data from device to host
-    if( success ) {
+    size_t deformation_data_size = num_voxels * sizeof( float3);
+    if ( success ) {
         host_deformation = new float3[ num_voxels ];
-        if( host_deformation ) {
-            err = cudaMemcpy( host_deformation, m_voxel_translations, num_voxels * sizeof( float3 ), cudaMemcpyDeviceToHost);
-            if( err != cudaSuccess ) {
+        if ( host_deformation ) {
+            err = cudaMemcpy( host_deformation, m_voxel_translations, deformation_data_size, cudaMemcpyDeviceToHost);
+            if ( err != cudaSuccess ) {
                 success = false;
                 std::cout << "Failed to copy deformation data from device memory [" << err << "] " << std::endl;
             }
@@ -631,20 +644,32 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
         }
     }
 
-    ofstream ofs { file_name, ios::out | ios::binary };
+    if( success ) {
+        ofstream ofs { file_name, ios::out | ios::binary };
 
-    // Write dimesnions
-    ofs.write( (char *) &m_size, sizeof( m_size ) );
-    ofs.write( (char *)&m_physical_size, sizeof( m_physical_size));
-    ofs.write( (char *)host_voxels, num_voxels * sizeof( float ) );
-    ofs.write( (char *)host_weights, num_voxels * sizeof( float ) );
-    ofs.write( (char *)host_deformation, num_voxels * sizeof( Float3 ) );
-    ofs.close();
+        // Write dimesnions
+        std::cout << "  writing "<< sizeof( m_size ) + sizeof( m_physical_size ) <<" bytes of header data" << std::endl;
+        ofs.write( (char *) &m_size, sizeof( m_size ) );
+        ofs.write( (char *)&m_physical_size, sizeof( m_physical_size));
+
+        std::cout << "  writing "<< depth_data_size <<" bytes of depth data" << std::endl;
+        ofs.write( (char *)host_voxels, depth_data_size );
+
+        std::cout << "  writing "<< weight_data_size <<" bytes of weight data" << std::endl;
+        ofs.write( (char *)host_weights, weight_data_size );
+
+        std::cout << "  writing "<< deformation_data_size <<" bytes of deformation data" << std::endl;
+        ofs.write( (char *)host_deformation, deformation_data_size );
+
+        ofs.close();
+    } else {
+        std::cout << "Not saving file due to previous errors" << std::endl;
+    }
 
     // Free up memory
-    if( host_voxels != nullptr ) { delete[] host_voxels; }
-    if( host_weights != nullptr ) { delete[] host_weights; }
-    if( host_deformation != nullptr ) { delete[] host_deformation; }
+    if ( host_voxels != nullptr ) { delete[] host_voxels; }
+    if ( host_weights != nullptr ) { delete[] host_weights; }
+    if ( host_deformation != nullptr ) { delete[] host_deformation; }
 
     return success;
 }

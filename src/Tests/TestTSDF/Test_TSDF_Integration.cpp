@@ -28,44 +28,50 @@ TEST(  , givenManyImages ) {
 
     /*** SET PARAMETERS HERE ***/
 
-    uint16_t voxels = 40;
+    uint16_t voxels = 256;
     uint16_t num_images = 1;
-    bool     save = true;
+    bool     save = false;
     bool     raycast = true;
     bool     filter = false;
-	bool	mesh = true;
+    bool    mesh = true;
 
     // Make volume
     TSDFVolume * volume = new TSDFVolume( voxels, voxels, voxels, 3000, 3000, 3000);
+    volume->offset( -1500, -1500, -1500 );
 
     // And camera
     Camera camera = make_kinect();
 
     BilateralFilter bf{ 2, 2};
 
-    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
+//    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
+    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/home_made_sphere" };
     DepthImage *di = nullptr;
     Eigen::Matrix4f pose;
     int i = 0;
-	
-    while( ( di = data_loader.next(pose ) ) != nullptr && ( i<num_images)) {
-    
+
+    while ( ( di = data_loader.next(pose ) ) != nullptr && ( i < num_images)) {
+
         std::cout << "Integrating " << i << std::endl;
 
-        // Set location
-        camera.set_pose( pose );
+        // Set location manually
+        camera.move_to(0,0, -3000);
+        camera.look_at( 0,0,0);
 
-	if( i == 0 ) g_cam_pose = pose;
-        
-	volume->integrate(di->data(), di->width(), di->height(), camera);
+        // Set locatin from file
+//        camera.set_pose( pose );
+
+        if ( i == 0 ) g_cam_pose = camera.pose();
+
+        volume->integrate(di->data(), di->width(), di->height(), camera);
         delete di;
 
-	i++;
+        i++;
     }
 
 
     // Now save ...
-    if( save ) {
+    if ( save ) {
         std::cout << "Saving" << std::endl;
         std::ostringstream file_name;
         file_name << "/home/dave/Desktop/TSDF_" << voxels << ".txt";
@@ -74,10 +80,10 @@ TEST(  , givenManyImages ) {
 
 
     // ... and render ...
-int width{640}, height{480};
-    if( raycast ) {
-        if( (width > 0) && (height > 0 ) ){
-            Vector3f light_source{ 10000, 6600, -10000 };
+    int width{640}, height{480};
+    if ( raycast ) {
+        if ( (width > 0) && (height > 0 ) ) {
+            Vector3f light_source{ 0, 0, -3000 };
             Eigen::Matrix<float, 3, Eigen::Dynamic> vertices;
             Eigen::Matrix<float, 3, Eigen::Dynamic> normals;
 
@@ -102,18 +108,18 @@ int width{640}, height{480};
         }
     }
 
-	// ... and extract mesh ...
-	if( mesh ) {
-		std::cout << "Extracting mesh" << std::endl;
+    // ... and extract mesh ...
+    if ( mesh ) {
+        std::cout << "Extracting mesh" << std::endl;
 
-		std::vector<int3> triangles;
-		std::vector<float3> vertices;
-		extract_surface( volume, vertices, triangles);
-		std::cout << "Vertices: " << vertices.size() << ", Triangles: " << triangles.size() << std::endl;
+        std::vector<int3> triangles;
+        std::vector<float3> vertices;
+        extract_surface( volume, vertices, triangles);
+        std::cout << "Vertices: " << vertices.size() << ", Triangles: " << triangles.size() << std::endl;
 
-		// Save to PLY file
-		write_to_ply( "/home/dave/Desktop/sphere.ply", vertices, triangles);
-	}
+        // Save to PLY file
+        write_to_ply( "/home/dave/Desktop/sphere.ply", vertices, triangles);
+    }
 
 }
 
