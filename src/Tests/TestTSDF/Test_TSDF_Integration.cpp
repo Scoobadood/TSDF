@@ -43,8 +43,8 @@ TEST(  , givenManyImages ) {
 
     BilateralFilter bf{ 2, 2};
 
-//    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
-    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/home_made_sphere" };
+    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
+//    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/home_made_sphere" };
     DepthImage *di = nullptr;
     Eigen::Matrix4f pose;
     int i = 0;
@@ -54,8 +54,8 @@ TEST(  , givenManyImages ) {
         std::cout << "Integrating " << i << std::endl;
 
         // Set location manually
-        camera.move_to(0,0, -3000);
-        camera.look_at( 0,0,0);
+        camera.move_to(1500,1500, 6000);
+        camera.look_at( 1500,1500,0);
 
         // Set locatin from file
 //        camera.set_pose( pose );

@@ -239,28 +239,6 @@ void mc_kernel( const float * tsdf_values_layer_1,
 }
 
 
-/**
- * Transfer variables into a device usable form prior to invoking the kernel
- */
-__host__
-void prep_for_kernel( const TSDFVolume		 	*volume,
-                      dim3& 					voxel_grid_size,
-                      float3& 					voxel_space_size,
-                      float3& 					voxel_size,
-                      float3& 					offset) {
-
-	using namespace Eigen;
-
-	voxel_grid_size = volume->size();
-	voxel_space_size = volume->physical_size();
-	offset =  volume->offset();
-	voxel_size = float3 {
-		voxel_space_size.x / voxel_grid_size.x,
-		voxel_space_size.y / voxel_grid_size.y,
-		voxel_space_size.z / voxel_grid_size.z,
-	};
-}
-
 
 /**
  * Process kernel output into vector of vertices and triagles
@@ -343,13 +321,6 @@ __host__
 void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, std::vector<int3>& triangles) {
 	using namespace Eigen;
 
-	// Convert input parms into kernel parameters
-	dim3		voxel_grid_size;
-	float3		voxel_space_size;
-	float3		offset;
-	float3		voxel_size;
-	prep_for_kernel( volume, voxel_grid_size, voxel_space_size, voxel_size, offset );
-
 
 	// Allocate storage on device and locally
 	//	Fail if not possible
@@ -393,6 +364,8 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 		throw std::bad_alloc( );
 	}
 
+	float3 voxel_size = f3_div_elem( volume->physical_size(), volume->size() ); 
+
 	// Now iterate over each slice
 	const float * volume_distance_data = volume->distance_data( );
 	const float3 * volume_translation_data = reinterpret_cast<const float3 *> (volume->translation_data( ) );
@@ -410,9 +383,9 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 		dim3 block( 16, 16, 1 );
 		dim3 grid ( divUp( voxel_grid_size.x, block.x ), divUp( voxel_grid_size.y, block.y ), 1 );
 		mc_kernel <<< grid, block >>>( layer1_data, layer2_data,
-									   layer1_vertices, layer2_vertices,
-		                               voxel_grid_size, voxel_space_size,
-		                               voxel_size, offset,
+					   layer1_vertices, layer2_vertices,
+		                               volume->size(), volume->physical_size(),
+		                               voxel_size, ivolume->offset(),
 		                               vz, d_vertices, d_triangles );
 
 		err = cudaDeviceSynchronize( );
