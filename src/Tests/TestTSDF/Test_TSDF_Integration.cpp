@@ -28,8 +28,8 @@ TEST(  , givenManyImages ) {
 
     /*** SET PARAMETERS HERE ***/
 
-    uint16_t voxels = 400;
-    uint16_t num_images = 25;
+    uint16_t voxels = 40;
+    uint16_t num_images = 1;
     bool     save = true;
     bool     raycast = true;
     bool     filter = false;
@@ -48,7 +48,7 @@ TEST(  , givenManyImages ) {
     Eigen::Matrix4f pose;
     int i = 0;
 	
-    while( ( di = data_loader.next(pose ) ) != nullptr && ( i<1)) {
+    while( ( di = data_loader.next(pose ) ) != nullptr && ( i<num_images)) {
     
         std::cout << "Integrating " << i << std::endl;
 

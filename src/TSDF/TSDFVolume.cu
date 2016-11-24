@@ -187,6 +187,7 @@ float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) 
  * @param m_physical_size The physical size of the space
  * @param m_offset The offset of the front, bottom, left corner
  * @param m_truncation_distance A distance, greater than the voxel diagonal, at which we truncate distance measures in the TSDF
+ * @param pose The camera pose matrix (maps cam to world, 4x4 )
  * @param inv_pose Inverse of the camera pose matrix (maps world to camera coords) (4x4)
  * @param k The caera's intrinsic parameters (3x3)
  * @param kinv Invers eof k (3x3)
@@ -199,7 +200,8 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                         dim3 voxel_grid_size, float3 voxel_space_size,
                         float3 * voxel_centres,
                         float3 offset, const float trunc_distance,
-                        Mat44 inv_pose, Mat33 k, Mat33 kinv,
+                        Mat44 pose, Mat44 inv_pose, 
+ 			Mat33 k, Mat33 kinv,
                         uint32_t width, uint32_t height, const uint16_t * depth_map) {
 
     // Extract the voxel Y and Z coordinates we then iterate over X
@@ -240,16 +242,16 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                 if ( surface_depth > 0 ) {
 
                     // Project depth entry to a vertex ( in camera space)
-                    float3 surface_vertex = depth_to_vertex_in_world( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv);
+                    float3 surface_vertex = depth_to_vertex_in_world( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv, pose);
 
                     // Compute Global Space distance of the voxel centre from the camera
                     float voxel_distance = f3_norm(centre_of_voxel_in_cam);
 
                     // Compute the distance of the surface vertex as seen through the pixel u from the camera
                     float3 cam_surface_vector {
-                        surface_vertex.x - pose[12],
-                        surface_vertex.y - pose[13],
-                        surface_vertex.z - pose[14],
+                        surface_vertex.x - pose.m13,
+                        surface_vertex.y - pose.m23,
+                        surface_vertex.z - pose.m33
                     };
                     float surface_distance = f3_norm( cam_surface_vector );
 
@@ -263,6 +265,9 @@ void integrate_kernel(  float * m_voxels, float * m_weights,
                     } else {
                         tsdf = max( sdf, -trunc_distance);
                     }
+
+			// Convert further to be in the range -1 to 1 for raycaster
+tsdf = tsdf / trunc_distance;
 
                     // Extract prior weight
                     float prior_weight = m_weights[voxel_index];
@@ -522,6 +527,9 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     std::cout << "Integrating depth map size " << width << "x" << height << std::endl;
 
     // Convert the input parameters to device (CUDA) types
+	Mat44 pose;
+	memcpy( &pose, camera.pose().data(), 16 * sizeof( float ) );
+
     Mat44 inv_pose;
     memcpy( &inv_pose, camera.inverse_pose().data(), 16 * sizeof( float ) );
 
@@ -541,12 +549,12 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     check_cuda_error( "Failed to copy depth map to GPU", err);
 
     // Call the kernel
-    dim3 block( 1, 32, 32  );
+    dim3 block( 1, 20, 20  );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 
     std::cout << "Executing kernel with grid["<<grid.x<<", "<<grid.y<<", "<<grid.z<<"]" << std::endl;
     check_cuda_error( "Error before executing kernel", err);
-    integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, inv_pose, k, kinv, width, height, d_depth_map);
+    integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, pose, inv_pose, k, kinv, width, height, d_depth_map);
     err = cudaGetLastError();
     check_cuda_error( "Integrate kernel failed", err);
 
