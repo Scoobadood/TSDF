@@ -31,7 +31,13 @@ void Camera::init( ) {
  * @param centre_y The vertical centre of the image in pixels
  */
 Camera::Camera( const float focal_x, const float focal_y, const float centre_x, const float centre_y ) {
-    m_k << focal_x, 0.0f, centre_x, 0.0f, focal_y, centre_y, 0.0f, 0.0f, 1.0f;
+    m_k = Eigen::Matrix3f::Zero();
+    m_k(0,0) = focal_x;
+    m_k(0,2) = centre_x;
+    m_k(1,1) = focal_y;
+    m_k(1,2) = centre_y;
+    m_k(2,2) = 1.0f;
+
     init( );
 }
 
