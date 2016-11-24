@@ -388,8 +388,8 @@ void compute_normals( uint16_t width, uint16_t height, const float3 * vertices, 
             normals[idx].y = 0;
             normals[idx].z = 0;
         } else {
-            float3 v1 { vertices[idx+1].x - vertices[idx].x,vertices[idx+1].y - vertices[idx].y,vertices[idx+1].z - vertices[idx].z};
-            float3 v2 { vertices[idx+width].x - vertices[idx].x,vertices[idx+width].y - vertices[idx].y,vertices[idx+width].z - vertices[idx].z};
+            float3 v2 { vertices[idx+1].x - vertices[idx].x,vertices[idx+1].y - vertices[idx].y,vertices[idx+1].z - vertices[idx].z};
+            float3 v1 { vertices[idx+width].x - vertices[idx].x,vertices[idx+width].y - vertices[idx].y,vertices[idx+width].z - vertices[idx].z};
 
             float nx = v1.y*v2.z - v1.z*v2.y;
             float ny = v1.z*v2.x - v1.x*v2.z;
