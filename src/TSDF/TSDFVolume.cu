@@ -253,7 +253,7 @@ void integrate_kernel(  float         * distance_data,
                     float3 surface_vertex = depth_to_world_coordinate( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv, pose);
 
                     // Compute Global Space distance of the voxel centre from the camera
-                    float voxel_distance = f3_norm(centre_of_voxel_in_cam);
+                    float voxel_distance = centre_of_voxel_in_cam.z;
 
                     // Compute the distance of the surface vertex as seen through the pixel u from the camera
                     float3 cam_surface_vector {
@@ -261,7 +261,7 @@ void integrate_kernel(  float         * distance_data,
                         surface_vertex.y - pose.m24,
                         surface_vertex.z - pose.m34
                     };
-                    float surface_distance = f3_norm( cam_surface_vector );
+                    float surface_distance = cam_surface_vector.z;
 
                     // Compute the SDF as the difference of these two
                     float sdf = surface_distance - voxel_distance;
