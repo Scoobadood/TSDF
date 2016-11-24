@@ -89,8 +89,8 @@ void set_weight( const dim3& size, float * weights, int x, int y, int z, float w
 }
 
 /**
- * Convert a pixel coordinate in a depth map into a 3D vertex in world space
- * by back projecting using inv K then translating using pose
+ * Convert a pixel coordinate in a depth map into a 3D vertex in camera coordinates 
+ * by back projecting using inv K 
  * @param depth The depth in mm
  * @param x The x coorindate in the pixel image
  * @param y The y coordinate in the pixel image
@@ -98,7 +98,7 @@ void set_weight( const dim3& size, float * weights, int x, int y, int z, float w
  * @return a 3D camera space coordinate of the point
  */
 __device__
-float3 depth_to_world_coordinate( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv, const Mat44& pose ) {
+float3 depth_to_camera_coordinate( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv ) {
     // initialise to NANs
     float3 vertex{ CUDART_NAN_F , CUDART_NAN_F, CUDART_NAN_F };
 
@@ -112,17 +112,8 @@ float3 depth_to_world_coordinate( uint16_t depth, uint16_t x, uint16_t y, const 
             kinv.m31 * x + kinv.m32 * y + kinv.m33
         };
 
-        cam_point = f3_mul_scalar( depth, cam_point );
+        vertex = f3_mul_scalar( depth, cam_point );
 
-        float3 world_point {
-            pose.m11 * cam_point.x + pose.m12 * cam_point.y + pose.m13 * cam_point.z + pose.m14,
-            pose.m21 * cam_point.x + pose.m22 * cam_point.y + pose.m23 * cam_point.z + pose.m24,
-            pose.m31 * cam_point.x + pose.m32 * cam_point.y + pose.m33 * cam_point.z + pose.m34
-        };
-
-        // Nature of pose is that m4x = 0 0 0 1 so we don't need to de-homogenise this
-
-        vertex = world_point;
     }
 
     return vertex;
@@ -250,21 +241,10 @@ void integrate_kernel(  float         * distance_data,
                 if ( surface_depth > 0 ) {
 
                     // Project depth entry to a vertex ( in camera space)
-                    float3 surface_vertex = depth_to_world_coordinate( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv, pose);
-
-                    // Compute Global Space distance of the voxel centre from the camera
-                    float voxel_distance = centre_of_voxel_in_cam.z;
-
-                    // Compute the distance of the surface vertex as seen through the pixel u from the camera
-                    float3 cam_surface_vector {
-                        surface_vertex.x - pose.m14,
-                        surface_vertex.y - pose.m24,
-                        surface_vertex.z - pose.m34
-                    };
-                    float surface_distance = cam_surface_vector.z;
+                    float3 surface_vertex = depth_to_camera_coordinate( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv);
 
                     // Compute the SDF as the difference of these two
-                    float sdf = surface_distance - voxel_distance;
+                    float sdf = surface_vertex.z - centre_of_voxel_in_cam.z; 
 
                     // Truncate the sdf to the range -trunc_distance -> trunc_distance
                     float tsdf;
