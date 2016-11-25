@@ -324,7 +324,7 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 
 	// Allocate storage on device and locally
 	//	Fail if not possible
-	size_t num_cubes_per_layer = (voxel_grid_size.x - 1) * (voxel_grid_size.y - 1);
+	size_t num_cubes_per_layer = (volume->size().x - 1) * (volume->size().y - 1);
 
 	// Device vertices
 	float3 * d_vertices;
@@ -364,13 +364,16 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 		throw std::bad_alloc( );
 	}
 
-	float3 voxel_size = f3_div_elem( volume->physical_size(), volume->size() ); 
+	float3 voxel_size{
+            volume->physical_size().x / (float) volume->size().x,
+            volume->physical_size().y / (float) volume->size().y,
+            volume->physical_size().z / (float) volume->size().z };
 
 	// Now iterate over each slice
 	const float * volume_distance_data = volume->distance_data( );
 	const float3 * volume_translation_data = reinterpret_cast<const float3 *> (volume->translation_data( ) );
-	size_t layer_size = voxel_grid_size.x * voxel_grid_size.y;
-	for ( int vz = 0; vz < voxel_grid_size.z-1; vz++ ) {
+	size_t layer_size = volume->size().x * volume->size().y;
+	for ( int vz = 0; vz < volume->size().z-1; vz++ ) {
 
 		// Set up for layer
 		const float * layer1_data = &(volume_distance_data[vz * layer_size] );
@@ -381,11 +384,11 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 
 		// invoke the kernel
 		dim3 block( 16, 16, 1 );
-		dim3 grid ( divUp( voxel_grid_size.x, block.x ), divUp( voxel_grid_size.y, block.y ), 1 );
+		dim3 grid ( divUp( volume->size().x, block.x ), divUp( volume->size().y, block.y ), 1 );
 		mc_kernel <<< grid, block >>>( layer1_data, layer2_data,
 					   layer1_vertices, layer2_vertices,
 		                               volume->size(), volume->physical_size(),
-		                               voxel_size, ivolume->offset(),
+		                               voxel_size, volume->offset(),
 		                               vz, d_vertices, d_triangles );
 
 		err = cudaDeviceSynchronize( );
