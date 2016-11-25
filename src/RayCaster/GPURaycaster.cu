@@ -403,34 +403,6 @@ void compute_normals( uint16_t width, uint16_t height, const float3 * vertices, 
     }
 }
 
-
-
-__host__
-void dump_vector( const std::string& title, const float3& vec ) {
-    std::ios oldState(nullptr);
-    oldState.copyfmt(std::cout);
-
-    std::cout << title << " (" << std::fixed << std::setw(6) << std::setprecision(2) << vec.x << ", " << vec.y << ", " << vec.z << ")" << std::endl;
-
-    std::cout.copyfmt(oldState);
-}
-
-__host__
-void dump_matrix( const std::string& title, const Mat33& mat ) {
-    std::cout << title << std::endl;
-
-    std::ios oldState(nullptr);
-    oldState.copyfmt(std::cout);
-
-    std::cout << std::fixed << std::setw(7) << std::setprecision(4) << std::setfill(' ');
-    std::cout << "| " << mat.m11 << " " << mat.m12 << " " << mat.m13 << "|" << std::endl;
-    std::cout << "| " << mat.m21 << " " << mat.m22 << " " << mat.m23 << "|" << std::endl;
-    std::cout << "| " << mat.m31 << " " << mat.m32 << " " << mat.m33 << "|" << std::endl << std::endl;
-
-    std::cout.copyfmt(oldState);
-}
-
-
 /**
  * Compute the vertex map
  */
@@ -490,6 +462,14 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     return d_vertices;
 }
 
+
+/**
+ * Compute the normals given the vertices and dimensions
+ * @param width The width of the vertex data
+ * @param height The height of the vertex data
+ * @d_vertices Pointer to vertex data (on device)
+ * @return An array of normals
+ */
 float3 * compute_normals( uint16_t width, uint16_t height, float3 * d_vertices ) {
     float3 * d_normals;
 
