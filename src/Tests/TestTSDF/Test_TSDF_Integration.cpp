@@ -28,8 +28,8 @@ TEST(  , givenManyImages ) {
 
     /*** SET PARAMETERS HERE ***/
 
-    uint16_t voxels = 256;
-    uint16_t num_images = 4;
+    uint16_t voxels = 400;
+    uint16_t num_images = 20;
     bool     save = true;
     bool     raycast = true;
     bool     filter = false;
@@ -54,11 +54,11 @@ TEST(  , givenManyImages ) {
         std::cout << "Integrating " << i << std::endl;
 
         // Set location manually
-        camera.move_to(1500,1500,-1300);
-        camera.look_at( 1500,1500,1500);
+        // camera.move_to(1500,1500,-1300);
+        // camera.look_at( 1500,1500,1500);
 
-        // Set locatin from file
-//        camera.set_pose( pose );
+        // Set location from file
+        camera.set_pose( pose );
 
         if ( i == 0 ) g_cam_pose = camera.pose();
 
@@ -82,7 +82,8 @@ TEST(  , givenManyImages ) {
     int width{640}, height{480};
     if ( raycast ) {
         if ( (width > 0) && (height > 0 ) ) {
-            Vector3f light_source{ 0, 0, -3000 };
+            // light source on camera
+            Vector3f light_source{ g_cam_pose(0,3), g_cam_pose(1,3), g_cam_pose(2,3) };
             Eigen::Matrix<float, 3, Eigen::Dynamic> vertices;
             Eigen::Matrix<float, 3, Eigen::Dynamic> normals;
 
