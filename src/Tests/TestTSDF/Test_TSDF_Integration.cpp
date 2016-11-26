@@ -28,9 +28,9 @@ TEST(  , givenManyImages ) {
 
     /*** SET PARAMETERS HERE ***/
 
-    uint16_t voxels = 256;
-    uint16_t num_images = 15;
-    bool     save = false;
+    uint16_t voxels = 128;
+    uint16_t num_images = 1;
+    bool     save = true;
     bool     raycast = true;
     bool     filter = false;
     bool    mesh = true;
@@ -43,8 +43,8 @@ TEST(  , givenManyImages ) {
 
     BilateralFilter bf{ 2, 2};
 
-    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
-//    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/home_made_sphere" };
+//    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
+    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/home_made_sphere" };
     DepthImage *di = nullptr;
     Eigen::Matrix4f pose;
     int i = 0;
@@ -55,7 +55,7 @@ TEST(  , givenManyImages ) {
 
         // Set location manually
         camera.move_to(1500,1500,-1000);
-        camera.look_at( 1500,1500,0);
+        camera.look_at( 1500,1500,1500);
 
         // Set locatin from file
 //        camera.set_pose( pose );
