@@ -190,29 +190,6 @@ void Camera::look_at( const Eigen::Vector3f & world_coordinate ) {
     m_pose_inverse = m_pose.inverse();
 }
 
-/**
- * Move the camera and set it's orientation based on
- * 7 float parameters (as provided by TUM groundtruth data)
- * @param vars 0, 1 and 2 are a translation
- * @param vars 3,4,5,6 are x,y,z, w components of a quaternion dewscribing the facing
- */
-void Camera::set_pose( float vars[7] ) {
-    Eigen::Vector3f tx { vars[0], vars[1], vars[2]};
-    tx = tx * 1000.0f;
-
-    Eigen::Quaternionf qq { vars[6], vars[3], vars[4], vars[5] };
-
-    Eigen::Matrix3f r = qq.toRotationMatrix();
-    Eigen::Matrix<float,1,3> c { 0.0, 0.0, -1.0 };
-
-    c = c * r;
-
-    Eigen::Vector3f lx = tx + ( 1000 * c.transpose() );
-
-    move_to( tx.x(), tx.y(), tx.z() );
-    look_at( lx.x(), lx.y(), lx.z() );
-}
-
 
 
 /**
