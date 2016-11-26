@@ -22,26 +22,23 @@
  */__device__
 float3 compute_ray_direction_at_pixel( const float3& origin, uint16_t pix_x, uint16_t pix_y, const Mat33& rot, const Mat33& kinv ) {
 
-    // Get point at depth 1 
-    float3 im_plane_1 {
+    // Get point at depth 1mm. This is the direction vector in cam coords
+    float3 ray_in_cam_space {
         pix_x * kinv.m11 + pix_y * kinv.m12 + kinv.m13,
         pix_x * kinv.m21 + pix_y * kinv.m22 + kinv.m23,
         pix_x * kinv.m31 + pix_y * kinv.m32 + kinv.m33
     };
 
-   // Get forward vector
-    float3 direction_cam = f3_sub( im_plane_1, origin );
-
     // Convert this vector to world coordinate frame
     // We'd normally add in the camera origin but since we
     // want the direction, we'd deduct the camera origin
     // at the very next step so we'll just do the rotation instead.
-    float3 world_vector = m3_f3_mul( rot, direction_cam );
+    float3 ray_in_world_space = m3_f3_mul( rot, ray_in_cam_space );
 
     // Convert to unit vector
-    f3_normalise( world_vector);
+    f3_normalise( ray_in_world_space);
 
-    return world_vector;
+    return ray_in_world_space;
 }
 
 /**
@@ -377,6 +374,12 @@ void process_ray_2( float3 camera_position,
     float3 intersection_point { CUDART_NAN_F, CUDART_NAN_F, CUDART_NAN_F};
 
 /*
+
+THIS CODE IS AN ALTERNATIVE RAY WALKER BASED ON AMANTIDES.
+IT'S NOT COMPLETE AND HAS NOT BEEN MADE TO WORK
+
+
+
     uint16_t pixel_x = threadIdx.x + blockIdx.x * blockDim.x;
     uint16_t pixel_y = threadIdx.y + blockIdx.y * blockDim.y;
 
