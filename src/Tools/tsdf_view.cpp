@@ -66,8 +66,8 @@ bool load_distance_data( const char * file_name, uint32_t& volume_width, uint32_
 		distance_data_size = dimensions[0] * dimensions[1] * dimensions[2];
 		distance_data = new float[distance_data_size];
 
-		if ( !distance_data) {
-std: cerr << "Couldn't allocate memory for distance data" << std::endl;
+		if ( !distance_data ) {
+			std::cerr << "Couldn't allocate memory for distance data" << std::endl;
 			ifs.close( );
 			loaded_ok = false;
 		}
@@ -75,7 +75,7 @@ std: cerr << "Couldn't allocate memory for distance data" << std::endl;
 
 	// Read volume data
 	if ( loaded_ok ) {
-		if ( ! ifs.read( (char *)distance_data, distance_data_size ) ) {
+		if ( ! ifs.read( (char *)distance_data, distance_data_size * sizeof( float ) ) ) {
 			std::cerr << "Problem loading TSDF file " << file_name << ", too short reading data" << std::endl;
 			loaded_ok = false;
 		}
@@ -169,14 +169,15 @@ bool save_png( const char *file_name,
 	// Plot the PNG
 
 	// First gray out the PNG
-	memset( image_data, image_size_bytes, 127 );
+	memset( image_data, 240, image_size_bytes );
 
 	// Iterate over each plane. Dimensions are stored X,Y,Z
-	for ( int x = 0; x < volume_width; x++ ) {
+	int data_index = 0;
+	for ( int z = 0; z < volume_depth; z++ ) {
 		for ( int y = 0; y < volume_height; y++ ) {
-			for ( int z = 0; z < volume_depth; z++ ) {
+			for ( int x = 0; x < volume_width; x++ ) {
 
-				// COmpute the pixel location for this voxel
+				// Compute the pixel location for this voxel
 				int tile_row;
 				int tile_col;
 				switch ( image_type) {
@@ -197,8 +198,8 @@ bool save_png( const char *file_name,
 
 				}
 
-				int tile_base_x = tile_col * ( tile_width + image_spacing );
-				int tile_base_y = tile_row * ( tile_height + image_spacing );
+				int tile_base_x = tile_col * ( tile_width + image_spacing ) + image_spacing;
+				int tile_base_y = tile_row * ( tile_height + image_spacing ) + image_spacing;
 
 				int pixel_x;
 				int pixel_y;
@@ -222,23 +223,23 @@ bool save_png( const char *file_name,
 				int pixel_index = (pixel_y * image_width) + pixel_x;
 				int byte_index = pixel_index * 3;
 
-				int data_index = x + ( y * volume_width) + ( z * volume_height * volume_width);
-
 				float value = volume_data[data_index];
 
-				// red : 
+				uint8_t blue, green, red;
 
-				uint8_t blue  = ((value - min) * scale_factor) * 255;
-				uint8_t green = 0;
-				uint8_t red   = 255 - blue;
-
-				if( value == 0 ) {
-					red = green = blue = 200;
+				if ( value == 0 ) {
+					red = green = blue = 160;
+				} else {
+					blue  = ((value - min) * scale_factor) * 255;
+					green = 0;
+					red   = 255 - blue;
 				}
 
 				image_data[byte_index] = red;
 				image_data[byte_index + 1] = green;
 				image_data[byte_index + 2] = blue;
+
+				data_index++;
 			}
 		}
 	}
@@ -266,7 +267,7 @@ int main( int argc, char * argv[] ) {
 
 
 	// Make top image
-	if( ok ) {
+	if ( ok ) {
 		save_png( "top.png", TOP, v_width, v_depth, v_height, volume_data);
 		save_png( "right.png", RIGHT, v_width, v_depth, v_height, volume_data);
 		save_png( "front.png", FRONT, v_width, v_depth, v_height, volume_data);
