@@ -477,6 +477,14 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
 }
 
 
+__global__
+void set_memory_to_value( float * pointer, int size, float value ) {
+    int idx = threadIdx.x + (blockIdx.x * blockDim.x );
+    if( idx < size ) {
+        pointer[idx] = value;
+    }
+}
+
 
 
 /**
@@ -484,15 +492,32 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
  */
 __host__
 void TSDFVolume::clear( ) {
-    size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float );
+    int data_size = m_size.x * m_size.y * m_size.z;
 
-    cudaMemset( m_weights, 0, data_size );
-    cudaMemset( m_voxels, 0, data_size );
+
+    dim3 block( 1024, 1, 1 );
+    dim3 grid ( divUp( data_size, block.x ), 1, 1 );
+
+    cudaError_t err;
+
+    set_memory_to_value<<< grid, block >>>( m_weights, data_size, 0.0f );
+    cudaDeviceSynchronize( );
+    err = cudaGetLastError();
+    check_cuda_error( "couldn't clear weights memory", err );
+
+
+    set_memory_to_value<<< grid, block >>>( m_voxels, data_size, 1.0f );
+    cudaDeviceSynchronize( );
+    err = cudaGetLastError();
+    check_cuda_error( "couldn't clear depth memory", err );
 
     // Now initialise the translations
-    dim3 block( 1, 32, 32 );
-    dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
-    initialise_translations <<< grid, block>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
+    dim3 block2( 1, 32, 32 );
+    dim3 grid2 ( 1, divUp( m_size.y, block2.y ), divUp( m_size.z, block2.z ) );
+    initialise_translations <<<grid2, block2>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
+    cudaDeviceSynchronize( );
+    err = cudaGetLastError();
+    check_cuda_error( "couldn't initialise deformation memory", err );
 }
 
 
