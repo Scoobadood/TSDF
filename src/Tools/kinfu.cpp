@@ -14,6 +14,10 @@
 
 Eigen::Matrix4f g_campose;
 
+Camera make_camera( ) {
+    return Camera{ 591.1f, 590.1f, 331.0f, 234.6f };
+}
+
 /**
  * Make the TSDF from input files
  */
@@ -21,14 +25,13 @@ TSDFVolume * make_tsdf(int num_images ) {
     using namespace Eigen;
 
     // Make volume
-    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 256, 256, 256}, TSDFVolume::UInt3{4000, 4000, 4000});
-    volume->offset( -2000, -2000, -2000);
+    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 450, 450, 450}, TSDFVolume::UInt3{4000, 4000, 4000});
 
     // And camera (from FREI 1 IR calibration data at TUM)
-    Camera camera{ 591.1f, 590.1f, 331.0f, 234.6f };
+    Camera camera = make_camera();
 
     // Create TUMDataLoader
-    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
+    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
 
     // Construct TSDF Volume
     for ( int i = 0; i < num_images; i++ ) {
@@ -128,7 +131,7 @@ int main( int argc, const char * argv[] ) {
 
     // Save norm and verts
     if ( volume ) {
-        Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
+        Camera camera = make_camera();
 
         Eigen::Matrix< float, 3, Eigen::Dynamic> vertices;
         Eigen::Matrix< float, 3, Eigen::Dynamic> normals;
