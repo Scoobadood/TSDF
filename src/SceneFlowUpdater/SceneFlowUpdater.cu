@@ -255,7 +255,7 @@ void update_voxel_grid_from_mesh_scene_flow(
     const float3 * mesh_vertices,		// Assumed to be on device
     int num_vertices) {
 
-	std::cout << "-- update_voxel_grid_from_mesh_scene_flow began for "<<num_vertices<<" vertices" << std::endl;
+	std::cout << "-- update_voxel_grid_from_mesh_scene_flow began for " << num_vertices << " vertices" << std::endl;
 
 	dim3 block( 1, 32, 32 );
 	dim3 grid ( 1, divUp( volume->size().y, block.y ), divUp( volume->size().z, block.z ));
@@ -359,7 +359,85 @@ void update_tsdf(	const TSDFVolume 								* volume,
 			std::cout << "Couldn't allocate memory for scene flow" << std::endl;
 		}
 	} else {
-		std:: cout << "No mesh in voxel grid" << std::endl;
+		std::cout << "No mesh in voxel grid" << std::endl;
 	}
+}
+
+
+/**
+ * Extract mesh into device memory
+ */
+void get_mesh( const TSDFVolume * volume , int&  num_vertices, float3 * d_mesh_vertices, int& num_triangles, int3 * d_mesh_triangles) {
+
+	std::cout << "-- get_mesh" << std::endl;
+
+
+	// First extract the mesh corresponding to the ISO surface in the TSDF in frame t-1
+	std::vector<float3> vertices;
+	std::vector<int3> triangles;
+	extract_surface( volume, vertices, triangles);
+
+	// If the mesh doesn't exist, we're done
+	if ( vertices.size() == 0 ) {
+		std::cout << "get_mesh(): No mesh in voxel grid" << std::endl;
+		return;
+	}
+
+	// Map vertices and triangles into device memory
+	cudaError_t err = cudaMalloc( &d_mesh_vertices, vertices.size() * sizeof( float3 ) );
+	if ( err != cudaSuccess ) {
+		std::cout << "get_mesh(): Couldn't allocate device memory for mesh vertices" << std::endl;
+		throw std::bad_alloc( );
+	}
+
+	err = cudaMalloc( &d_mesh_triangles, triangles.size() * sizeof( int3) );
+	if ( err != cudaSuccess ) {
+		cudaFree( d_mesh_vertices);
+		std::cout << "get_mesh(): Couldn't allocate device memory for mesh triangles" << std::endl;
+		throw std::bad_alloc( );
+	}
+	err = cudaMemcpy( d_mesh_vertices, & (vertices[0]), vertices.size() * sizeof( float3), cudaMemcpyHostToDevice);
+	check_cuda_error( "get_mesh(): Failed to copy mesh vertex data to device", err );
+
+	err = cudaMemcpy( d_mesh_triangles, & (triangles[0]), triangles.size() * sizeof( int3), cudaMemcpyHostToDevice);
+	check_cuda_error( "get_mesh(): Failed to copy mesh triangle data to device", err );
+}
+
+
+/**
+ * Update the Given TSDF volume's per voxel translation using the input Scene Flow
+ * @param volume The TSDF Volume to update
+ * @param translation The global translation
+ * @param rotation The Global rotation
+ * @param residuals Per voxel ransation after globals are appliedd
+ */
+void update_tsdf_2(	const TSDFVolume 								* volume,
+                    const Camera 									* camera,
+                    uint16_t 										width,
+                    uint16_t 										height,
+                    const Eigen::Vector3f 							translation,
+                    const Eigen::Vector3f 							rotation,
+                    const Eigen::Matrix<float, 3, Eigen::Dynamic> 	residuals ) {
+
+	std::cout << "- update_tsdf_2" << std::endl;
+
+	// Extract the mesh from the TSDF
+	int num_vertices, num_triangles;
+	float3 * d_vertices = nullptr;
+	int3   * d_triangles= nullptr;
+	get_mesh( volume, num_vertices, d_vertices, num_triangles, d_triangles );
+
+
+	// Now for each vertex of the mesh, get the scene flow (if it's 'at the front' )
+//	scene_flow_for_mesh( num_vertices, vertices, num_triangles, triangles, camera, num_vertices_out, vertc)
+
+
+	// Allocate memory for each vertex in the mesh to store voxel updates
+
+	// Call kernel to compute voxel updates for neighbours of each mesh vertex
+
+	// Coalesce these into a single set of voxel updates
+
+
 }
 
