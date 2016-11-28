@@ -32,10 +32,6 @@ Eigen::Matrix4f make_y_axis_rotation( float theta, Eigen::Vector3f pos );
 Eigen::Matrix4f make_x_axis_rotation( float theta, Eigen::Vector3f pos );
 Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos );
 
-Camera make_kinect( );
-
-
-
 void helper_move_look( float vars[7], Eigen::Vector3f & move_to, Eigen::Vector3f & look_at );
 
 

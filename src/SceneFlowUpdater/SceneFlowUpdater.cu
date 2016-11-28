@@ -85,7 +85,6 @@ void apply_scene_flow_to_tsdf_kernel(
 					num_impacting_mesh_nodes++;
 				}
 			}
-			printf( "done voxel %d %d %d\n" , vx, vy, vz );
 			if ( num_impacting_mesh_nodes > 0 ) {
 				deformation = f3_mul_scalar( 1.0f / num_impacting_mesh_nodes, deformation );
 				voxel_translations[voxel_index]  = f3_add( voxel_translations[voxel_index],  deformation );

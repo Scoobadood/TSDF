@@ -426,19 +426,20 @@ TEST( TSDF_Raycasting, at_450_150_150__facing_150_150_150 ) {
     Vector3f light_source{ 150, 300, 150 };
 
 
-    Camera cam = make_kinect();
-    cam.move_to( 450, 150, 150 );
-    cam.look_at( 150,150,150);
+    Camera *cam = Camera::default_depth_camera();
+    cam->move_to( 450, 150, 150 );
+    cam->look_at( 150,150,150);
 
     GPURaycaster raycaster{640, 480};
 
-    raycaster.raycast(volume, cam, vertices, normals);
+    raycaster.raycast(volume, *cam, vertices, normals);
     PngWrapper * p = normals_as_png(width, height, normals );
     p->save_to("/home/dave/Desktop/normals_right.png");
     delete p;
-    p = scene_as_png(width, height, vertices, normals, cam, light_source);
+    p = scene_as_png(width, height, vertices, normals, *cam, light_source);
     p->save_to("/home/dave/Desktop/render_right.png");
     delete p;
+    delete cam;
 }
 
 // // Right rear on positive X, negative Z axis
@@ -575,19 +576,21 @@ TEST( TSDF_Raycasting, at_m150_150_450__facing_150_150_150 ) {
 
     Vector3f light_source{ 150, 300, 150 };
 
-    Camera cam = make_kinect();
-    cam.move_to( -150, 150, 450 );
-    cam.look_at( 150,150,150);
+    Camera *cam = Camera::default_depth_camera();
+    cam->move_to( -150, 150, 450 );
+    cam->look_at( 150,150,150);
 
     GPURaycaster raycaster{640, 480};
 
-    raycaster.raycast(volume, cam, vertices, normals);
+    raycaster.raycast(volume, *cam, vertices, normals);
     PngWrapper * p = normals_as_png(width, height, normals );
     p->save_to("/home/dave/Desktop/normals_rear_left.png");
     delete p;
-    p = scene_as_png(width, height, vertices, normals, cam, light_source);
+    p = scene_as_png(width, height, vertices, normals, *cam, light_source);
     p->save_to("/home/dave/Desktop/render_rear_left.png");
     delete p;
+
+    delete cam;
 }
 
 int main( int argc, char *argv[] ) {

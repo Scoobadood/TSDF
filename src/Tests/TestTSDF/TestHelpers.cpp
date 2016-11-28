@@ -142,10 +142,6 @@ Eigen::Matrix4f make_z_axis_rotation( float theta, Eigen::Vector3f pos ) {
     return rot;
 }
 
-Camera make_kinect( ) {
-    return Camera{ 585.6f, 585.6f, 316.0f, 247.6f };
-}
-
 uint16_t * make_sphere_depth_map( uint16_t width, uint16_t height, uint16_t radius, uint16_t min_depth, uint16_t max_depth ) {
     uint16_t * depths = new uint16_t[width * height];
 

@@ -39,7 +39,7 @@ TEST(  , givenManyImages ) {
     TSDFVolume * volume = new TSDFVolume( voxels, voxels, voxels, 3000, 3000, 3000);
 
     // And camera
-    Camera camera = make_kinect();
+    Camera *camera = Camera::default_depth_camera();
 
     BilateralFilter bf{ 2, 2};
 
@@ -54,15 +54,15 @@ TEST(  , givenManyImages ) {
         std::cout << "Integrating " << i << std::endl;
 
         // Set location manually
-        // camera.move_to(1500,1500,-1300);
-        // camera.look_at( 1500,1500,1500);
+        // camera->move_to(1500,1500,-1300);
+        // camera->look_at( 1500,1500,1500);
 
         // Set location from file
-        camera.set_pose( pose );
+        camera->set_pose( pose );
 
-        if ( i == 0 ) g_cam_pose = camera.pose();
+        if ( i == 0 ) g_cam_pose = camera->pose();
 
-        volume->integrate(di->data(), di->width(), di->height(), camera);
+        volume->integrate(di->data(), di->width(), di->height(), *camera);
         delete di;
 
         i++;
@@ -90,16 +90,16 @@ TEST(  , givenManyImages ) {
             std::cout << "Rendering" << std::endl;
 
             // Set location
-            camera.set_pose( g_cam_pose );
+            camera->set_pose( g_cam_pose );
             // Raycast volume
-            volume->raycast( width, height, camera, vertices, normals);
+            volume->raycast( width, height, *camera, vertices, normals);
 
 
             PngWrapper * p = normals_as_png(width, height, normals);
             p->save_to( "/home/dave/Desktop/normals.png");
             delete p;
 
-            p = scene_as_png(width, height, vertices, normals, camera, light_source);
+            p = scene_as_png(width, height, vertices, normals, *camera, light_source);
             p->save_to("/home/dave/Desktop/vertices.png");
             delete p;
 

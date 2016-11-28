@@ -18,7 +18,7 @@
 SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
-	m_volume = new TSDFVolume(256, 256, 256, 2000, 2000, 2000);
+	m_volume = new TSDFVolume(128, 128, 128, 2000, 2000, 2000);
 //	m_volume->offset( -1500, -1500, -1500);
 
     // And camera (from FREI 1 IR calibration data at TUM)
