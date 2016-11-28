@@ -34,6 +34,16 @@ private:
     void init( );
 
 public:
+
+    /**
+     * @return the default Kinect IR camera parmaeters
+     */
+    static Camera * default_depth_camera( ) {
+        // Default kinect settings
+        return new Camera{ 591.1f, 590.1f, 331.0f, 234.6f };
+    }
+
+
     /**
      * Construct a camera with the given intrinsic parameters
      * @param focal_x The focal length in the x direction in pixels
