@@ -15,7 +15,8 @@ vpath %.cu  $(SRC_DIR)/GPU:\
 			$(SRC_DIR)/MarchingCubes:\
 			$(SRC_DIR)/RayCaster:\
 			$(SRC_DIR)/TSDF:\
-			$(SRC_DIR)/SceneFlowUpdater
+			$(SRC_DIR)/SceneFlowUpdater\
+			$(SRC_DIR)/Utilities
 
 NVCC=/usr/local/cuda/bin/nvcc
 
