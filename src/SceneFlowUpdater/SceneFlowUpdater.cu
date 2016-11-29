@@ -423,6 +423,11 @@ void get_mesh( const TSDFVolume * volume , int&  num_vertices, float3 * d_mesh_v
  */
 
 
+typedef struct {
+	int vertex_index;
+	float3	scene_flow;
+} MeshSceneFlowItem;
+
 /**
  * Compute the scene flow for the given mesh by:
  * Porjecting each vertex of the mesh into pixel coordinates
@@ -445,7 +450,9 @@ void scene_flow_for_mesh_kernel(const float3 	*mesh_vertices,
 								const Mat33		kinv,
 								const Mat44		pose,
 								const Mat44 	inv_pose,
-								const float 	threshold
+								const float 	threshold,
+								int	*num_mapped_nodes,
+								MeshSceneFlowItem	*mapped_nodes
 								) {
 	int mesh_vertex_index = threadIdx.x + ( blockIdx.x * blockDim.x );
 	if( mesh_vertex_index >= num_mesh_vertices ) return;
@@ -485,10 +492,11 @@ void scene_flow_for_mesh_kernel(const float3 	*mesh_vertices,
 		if( distance < threshold) {
 			// Look up scne flow for this point and add it to the outbound list
 			// outbound list can essentially be a list of mesh indices and scene flow indices.
-
+			int idx = atomicAdd( num_mapped_nodes, 1 );
+			mapped_nodes[idx].vertex_index  = mesh_vertex_index;
+			mapped_nodes[idx].scene_flow = scene_flow[pixel_index];
 		}
 	} // else not in view frustrum
-
 }
 /**
  * Update the Given TSDF volume's per voxel translation using the input Scene Flow
@@ -499,6 +507,8 @@ void scene_flow_for_mesh_kernel(const float3 	*mesh_vertices,
  */
 void update_tsdf_2(	const TSDFVolume 								* volume,
                     const Camera 									* camera,
+			float										* depth_map,
+			float3										* scene_flow,
                     uint16_t 										width,
                     uint16_t 										height,
                     const Eigen::Vector3f 							translation,
@@ -512,10 +522,27 @@ void update_tsdf_2(	const TSDFVolume 								* volume,
 	float3 * d_vertices = nullptr;
 	int3   * d_triangles= nullptr;
 	get_mesh( volume, num_vertices, d_vertices, num_triangles, d_triangles );
-
+	cudaFree( d_triangles );
 
 	// Now for each vertex of the mesh, get the scene flow (if it's 'at the front' )
-//	scene_flow_for_mesh( num_vertices, vertices, num_triangles, triangles, camera, num_vertices_out, vertc)
+	Mat33 k;
+	memcpy( &k, camera->k().data(), sizeof( float ) * 9 );
+	Mat33 kinv;
+	memcpy( &kinv, camera->kinv().data(), sizeof( float ) * 9 );
+	Mat44 pose;
+	memcpy( &pose, camera->pose().data(), sizeof( float ) * 16 );
+	Mat44 inv_pose;
+	memcpy( &inv_pose, camera->inverse_pose().data(), sizeof( float ) * 16 );
+	float threshold = 10;
+	int num_mapped_nodes = 0;
+	MeshSceneFlowItem *mapped_nodes;
+	cudaError_t err = cudaMalloc( &mapped_nodes, sizeof( MeshSceneFlowItem ) * num_vertices );
+ 	check_cuda_error( "Couldn't allocate memory for mesh scene flow items", err );	
+
+	dim3 block;
+	dim3 grid;
+	scene_flow_for_mesh_kernel<<<block, grid>>>( d_vertices, num_vertices, width, height, depth_map, scene_flow, k, kinv, pose, inv_pose, threshold, &num_mapped_nodes , mapped_nodes );
+
 
 
 	// Allocate memory for each vertex in the mesh to store voxel updates
