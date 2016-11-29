@@ -103,4 +103,48 @@ float3 m3_f3_mul( const Mat33& mat, const float3& vec ) {
     return result;
 }
 
+/**
+ * Perform a matrix multiplication
+ * @param mat33 The matrix
+ * @param vec3 The vector
+ * @return an output vector
+ */
+__device__ __forceinline__
+float3 m3_i3_mul( const Mat33& mat, const int3& vec ) {
+    float3 result;
+    result.x = mat.m11 * vec.x + mat.m12 * vec.y + mat.m13 * vec.z;
+    result.y = mat.m21 * vec.x + mat.m22 * vec.y + mat.m23 * vec.z;
+    result.z = mat.m31 * vec.x + mat.m32 * vec.y + mat.m33 * vec.z;
+    return result;
+}
+
+/**
+ * Project down into pixel coordinates
+ * given the inv_pose and K matrices
+ * plus a point in world coords
+ */
+__device__ __forceinline__
+int3 world_to_pixel( const Mat44& inv_pose, const Mat33& k, const float3& point ) {
+    float3 cam_point;
+    cam_point.x = inv_pose.m11 * point.x + inv_pose.m12 * point.y + inv_pose.m13 * point.z + inv_pose.m14;
+    cam_point.y = inv_pose.m21 * point.x + inv_pose.m22 * point.y + inv_pose.m23 * point.z + inv_pose.m24;
+    cam_point.z = inv_pose.m31 * point.x + inv_pose.m32 * point.y + inv_pose.m33 * point.z + inv_pose.m34;
+    float w = inv_pose.m41 * point.x + inv_pose.m42 * point.y + inv_pose.m43 * point.z + inv_pose.m44;
+    cam_point.x /= w;
+    cam_point.y /= w;
+    cam_point.z /= w;
+
+    float3 image_point {
+        cam_point.x / cam_point.z,
+        cam_point.y / cam_point.z,
+        1.0f
+    };
+    int3 pixel;
+    pixel.x = static_cast<uint>( round( k.m11 * image_point.y + k.m12 * image_point.z + k.m13 ) );
+    pixel.y = static_cast<uint>( round( k.m21 * image_point.y + k.m22 * image_point.z + k.m23 ) );
+    pixel.z = static_cast<uint>( round( k.m31 * image_point.y + k.m32 * image_point.z + k.m33 ) ); // Should be 1
+
+    return pixel;
+}
+
 #endif

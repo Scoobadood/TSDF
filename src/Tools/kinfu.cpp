@@ -25,13 +25,14 @@ TSDFVolume * make_tsdf(int num_images ) {
     using namespace Eigen;
 
     // Make volume
-    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 450, 450, 450}, TSDFVolume::UInt3{4000, 4000, 4000});
-
+    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 450, 450, 450}, TSDFVolume::UInt3{8000, 8000, 8000});
+    volume->offset(-4000,-4000,-4000);
+    
     // And camera (from FREI 1 IR calibration data at TUM)
     Camera camera = make_camera();
 
     // Create TUMDataLoader
-    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
+    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg2_xyz" };
 
     // Construct TSDF Volume
     for ( int i = 0; i < num_images; i++ ) {

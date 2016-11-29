@@ -424,22 +424,72 @@ void get_mesh( const TSDFVolume * volume , int&  num_vertices, float3 * d_mesh_v
 
 
 /**
- * Retrn the scene flow for the mesh by
- * mesh_idx_map <- init 640x480 with -1
- * dist_map <- init 640x480 with INF
- * For each vertex in the mesh, project a ray to the cam centre
- * work out intersection with scene flow image (pixel coord)
- * work out distance to cam
- * if dist to cam is less than dist_map(px,py)
- *    dist_map(px,py) = distance
- *    mesh_idx_map(px,py) = idx
+ * Compute the scene flow for the given mesh by:
+ * Porjecting each vertex of the mesh into pixel coordinates
+ * reprojecting the corresponding pixek into 3D space
+ * If te mesh vertex and pixel projections are 'close' then they correspond
+ * Look up the corresponding scene flow and assign to that mesh vertex
  *
- * Post process map to 
- * -- for each pixel in 640x480 map
- *   
+ * The output number of mesh vertices will be greatly reduced from the input number
+ * and we can actually dispose of the input mesh once we've completed this stage
+ * of the pipeline.
  */
+__global__
+void scene_flow_for_mesh_kernel(const float3 	*mesh_vertices, 
+								int 			num_mesh_vertices,
+								uint16_t 		width, 
+								uint16_t 		height,
+								const float 	*depth_map, 
+								const float3 	*scene_flow,
+								const Mat33 	k,
+								const Mat33		kinv,
+								const Mat44		pose,
+								const Mat44 	inv_pose,
+								const float 	threshold
+								) {
+	int mesh_vertex_index = threadIdx.x + ( blockIdx.x * blockDim.x );
+	if( mesh_vertex_index >= num_mesh_vertices ) return;
 
-void scene_flow_for_mesh
+	float3 mesh_vertex = mesh_vertices[ mesh_vertex_index ];
+
+	int3 pixel = world_to_pixel( inv_pose, k, mesh_vertex );
+
+	if( pixel.x < width && pixel.x >= 0 && pixel.y < height && pixel.y > 0 ) {
+
+		// Project this pixel point back into space
+		int pixel_index = width * pixel.y + pixel.x;
+		float depth = depth_map[ pixel_index];
+
+		float3 pixel_cam_coordinate = m3_i3_mul( kinv, pixel );
+		pixel_cam_coordinate = f3_mul_scalar( depth, pixel_cam_coordinate);
+
+		float3 pixel_world_coordinate {
+			pose.m11 * pixel_cam_coordinate.x + pose.m12 * pixel_cam_coordinate.y + pose.m13 * pixel_cam_coordinate.z + pose.m14,
+			pose.m21 * pixel_cam_coordinate.x + pose.m22 * pixel_cam_coordinate.y + pose.m23 * pixel_cam_coordinate.z + pose.m24,
+			pose.m31 * pixel_cam_coordinate.x + pose.m32 * pixel_cam_coordinate.y + pose.m33 * pixel_cam_coordinate.z + pose.m34
+		};
+		float w = pose.m41 * pixel_cam_coordinate.x + pose.m42 * pixel_cam_coordinate.y + pose.m43 * pixel_cam_coordinate.z + pose.m44;
+		pixel_world_coordinate.x /= w;
+		pixel_world_coordinate.y /= w;
+		pixel_world_coordinate.z /= w;
+
+
+		// get the distance between this reprojected point and the oruginal mesh point
+		float3 delta = f3_sub( mesh_vertex, pixel_world_coordinate);
+
+		// And distance
+		float distance = f3_norm( delta );
+
+
+		// If this is essentially the same point, handle it
+		if( distance < threshold) {
+			// Look up scne flow for this point and add it to the outbound list
+			// outbound list can essentially be a list of mesh indices and scene flow indices.
+
+		}
+	} // else not in view frustrum
+
+}
 /**
  * Update the Given TSDF volume's per voxel translation using the input Scene Flow
  * @param volume The TSDF Volume to update
