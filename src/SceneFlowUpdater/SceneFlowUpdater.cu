@@ -1,6 +1,6 @@
 #include "../include/GPUMarchingCubes.hpp"
 #include "../include/SceneFlowUpdater.hpp"
-#include "../include/cu_common.hpp"
+#include "../include/cuda_utilities.hpp"
 
 const float THRESHOLD = 2.0f;
 
@@ -404,6 +404,42 @@ void get_mesh( const TSDFVolume * volume , int&  num_vertices, float3 * d_mesh_v
 }
 
 
+
+
+
+/*
+	Process is s follows
+	1. Extract the mesh from the TSDF
+		a. Use marching cubes on the undeformed TSDF
+		b. Apply warp field to the vertices of the mesh
+	2. For each vertex in the mesh, if the vertex is visible, compute scene flow
+		a. Compute the scene flow from frame n to frame n+1
+		b. Project each mesh vertex m into the depth image from frame n giving D(x,y)
+		c. Extract depth and reproject point into 3D space. If this points is within some threshold of original mesh vertex then its a match
+		d. Store scene flow for the matched vertex
+	3. For each vertex in the mesh fo which we have scene flow values, update deformation of surrounding voxels
+		a.	
+
+ */
+
+
+/**
+ * Retrn the scene flow for the mesh by
+ * mesh_idx_map <- init 640x480 with -1
+ * dist_map <- init 640x480 with INF
+ * For each vertex in the mesh, project a ray to the cam centre
+ * work out intersection with scene flow image (pixel coord)
+ * work out distance to cam
+ * if dist to cam is less than dist_map(px,py)
+ *    dist_map(px,py) = distance
+ *    mesh_idx_map(px,py) = idx
+ *
+ * Post process map to 
+ * -- for each pixel in 640x480 map
+ *   
+ */
+
+void scene_flow_for_mesh
 /**
  * Update the Given TSDF volume's per voxel translation using the input Scene Flow
  * @param volume The TSDF Volume to update

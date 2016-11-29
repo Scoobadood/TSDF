@@ -5,7 +5,7 @@
 //  Created by Dave on 11/03/2016.
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
-#include "../include/cu_common.hpp"
+#include "../include/cuda_utilities.hpp"
 
 #include "../include/TSDFVolume.hpp"
 #include "../include/GPURaycaster.hpp"

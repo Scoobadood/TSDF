@@ -1,4 +1,4 @@
-#include "../include/cu_common.hpp"
+#include "../include/cuda_utilities.hpp"
 #include <iostream>
 
 __host__

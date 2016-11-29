@@ -1,5 +1,5 @@
 #include "../include/TSDFVolume.hpp"
-#include "../include/cu_common.hpp"
+#include "../include/cuda_utilities.hpp"
 #include "../include/TSDF_utilities.hpp"
 
 #include "math_constants.h"

@@ -3,7 +3,7 @@
 
 #include "../include/TSDFVolume.hpp"
 #include "../include/GPURaycaster.hpp"
-#include "../include/cu_common.hpp"
+#include "../include/cuda_utilities.hpp"
 #include "../include/TSDF_utilities.hpp"
 
 #include <Eigen/Core>

@@ -42,7 +42,7 @@ SOURCES =	FileUtilities.cpp Definitions.cpp\
 #          test_MC_main.cpp
 
 
-CUDA_SOURCES = TSDFVolume.cu GPUMarchingCubes.cu TSDF_utilities.cu cu_common.cu GPURaycaster.cu
+CUDA_SOURCES = TSDFVolume.cu GPUMarchingCubes.cu TSDF_utilities.cu cuda_utilities.cu GPURaycaster.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)

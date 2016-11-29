@@ -23,7 +23,7 @@ SOURCES = BilateralFilter.cpp TSDFVolume.cpp Camera.cpp \
           sf_deform.cpp
 
 
-CUDA_SOURCES = GPUTSDFVolume.cu GPUMarchingCubes.cu TSDF_utilities.cu Raycaster_kernel.cu cu_common.cu
+CUDA_SOURCES = GPUTSDFVolume.cu GPUMarchingCubes.cu TSDF_utilities.cu Raycaster_kernel.cu cuda_utilities.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)

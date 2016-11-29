@@ -42,7 +42,7 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 
 
 CUDA_SOURCES = 	GPUMarchingCubes.cu\
-				cu_common.cu\
+				cuda_utilities.cu\
 				TSDFVolume.cu\
 				TSDF_utilities.cu\
 				GPURaycaster.cu\
