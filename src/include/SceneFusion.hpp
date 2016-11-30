@@ -7,6 +7,7 @@
 #include "Camera.hpp"
 #include "PngWrapper.hpp"
 #include "DepthImage.hpp"
+
 /**
  * The main class for SceneFusion
  * Responsible for pulling frames from the Device class and merging them into the TSDFVolume

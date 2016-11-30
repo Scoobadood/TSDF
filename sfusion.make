@@ -8,7 +8,6 @@ NV_ARCH=-gencode arch=compute_52,code=compute_52
 vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:\
 	$(SRC_DIR)/DataLoader:\
 	$(SRC_DIR)/SceneFlowAlgorithm:\
-	$(SRC_DIR)/SceneFusion:\
 	$(SRC_DIR)/RGBDDevice:\
 	third_party/TinyXml:\
 	$(SRC_DIR)/Tools:\
@@ -18,6 +17,7 @@ vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:\
 vpath %.cu  $(SRC_DIR)/GPU:\
 			$(SRC_DIR)/MarchingCubes:\
 			$(SRC_DIR)/RayCaster:\
+			$(SRC_DIR)/SceneFusion:\
 			$(SRC_DIR)/TSDF:\
 			$(SRC_DIR)/SceneFlowUpdater\
 			$(SRC_DIR)/Utilities
@@ -37,7 +37,7 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 		  PDSFMockSceneFlowAlgorithm.cpp \
 		  MockKinect.cpp \
 		  Camera.cpp \
-		  DepthImage.cpp SceneFusion.cpp \
+		  DepthImage.cpp \
           PngUtilities.cpp PngWrapper.cpp \
           sfusion.cpp ply.cpp 
 
@@ -47,7 +47,7 @@ CUDA_SOURCES = 	GPUMarchingCubes.cu\
 				TSDFVolume.cu\
 				TSDF_utilities.cu\
 				GPURaycaster.cu\
-				SceneFlowUpdater.cu
+				 SceneFusion.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)
