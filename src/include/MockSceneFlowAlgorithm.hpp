@@ -38,6 +38,12 @@ protected :
 	bool read_floats_from_string( const char * string, uint num_floats, float * read_values);
 
 	/**
+	 * Call to initialise the thing
+	 * Override if you like but always call super
+	 */
+	virtual bool init( ) ;
+
+	/**
 	 * Read the scene flow data from the given file
 	 * @param fileName The name of XML file
 	 * @param translation The global translation. Set by this method

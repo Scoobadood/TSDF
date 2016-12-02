@@ -18,6 +18,14 @@ public:
 						   			Eigen::Vector3f&   						 translation, 
 						   			Eigen::Vector3f&   						 rotation,
 						   			Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals ) = 0;
+
+
+	/**
+	 * Call to initialise the thing
+	 * Override if you like but always call super
+	 */
+	virtual bool init( ) = 0;
+
 protected:
 	SceneFlowAlgorithm( ){};
 

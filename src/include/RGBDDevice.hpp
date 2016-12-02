@@ -34,22 +34,22 @@ public:
 	 * Register an observer which will be notified of new images as they arrive.
 	 */
 	void addObserver( RGBDDeviceCallback observer) {
-		mObserver = observer;
+		m_observer = observer;
 	}
 
 protected:
 	RGBDDevice( ){};
 
 	void notify( const DepthImage * depthImage, const PngWrapper * colourImage ) {
-		if( mObserver ) {
-			mObserver( depthImage, colourImage );
+		if( m_observer ) {
+			m_observer( depthImage, colourImage );
 		}
 	}
 
 
 private:
 	// The obserer. Notified when images arrive
-	RGBDDeviceCallback 		mObserver;
+	RGBDDeviceCallback 		m_observer;
 };
 
 #endif

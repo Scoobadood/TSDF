@@ -8,6 +8,7 @@ int main( int argc, const char * argv[] ) {
 	if ( argc == 3 ) {
 		RGBDDevice * device     = new MockKinect( argv[1] );
 		SceneFlowAlgorithm *sfa = new PDSFMockSceneFlowAlgorithm( argv[2] );
+		sfa->init();
 
 		SceneFusion * sf = new SceneFusion( sfa, device );
 		device->initialise( );
