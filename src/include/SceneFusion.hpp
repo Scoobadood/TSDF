@@ -8,6 +8,14 @@
 #include "PngWrapper.hpp"
 #include "DepthImage.hpp"
 
+
+
+typedef struct {
+	int vertex_index;
+	float3	scene_flow;
+} MeshSceneFlowItem;
+
+
 /**
  * The main class for SceneFusion
  * Responsible for pulling frames from the Device class and merging them into the TSDFVolume
@@ -19,6 +27,9 @@ public:
 	 * Construct a new SceneFusion object
 	 */
 	SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device );
+
+	~SceneFusion();
+
 
 	/**
 	 * Run SceneFusion
@@ -39,6 +50,8 @@ private:
 	RGBDDevice				* m_rgbd_device;
 
 	Camera					* m_camera;
+
+	const uint16_t	 		* m_last_depth_image;
 };
 
 #endif

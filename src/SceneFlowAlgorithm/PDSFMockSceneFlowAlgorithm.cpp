@@ -13,10 +13,10 @@
  */
 bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name, Eigen::Vector3f& translation, Eigen::Vector3f& rotation, Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals) {
 	struct float3 {
-			float x;
-			float y;
-			float z;
-		};
+		float x;
+		float y;
+		float z;
+	};
 
 
 	// Structure to handle processing line
@@ -34,7 +34,7 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 		int image_width = 0;
 		int image_height = 0;
 
-		// Construct one, stash the parent 
+		// Construct one, stash the parent
 		// Also read the last line fo the file to obtain the X,Y pixel dimensions
 		SceneFlowData( PDSFMockSceneFlowAlgorithm* container, const std::string& file_name ) {
 			this->file_name = file_name;
@@ -42,14 +42,14 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 
 			// Read last line of file
 			std::string last_line;
-			if( read_last_line( file_name, last_line )) {
+			if ( read_last_line( file_name, last_line )) {
 				// Parse dimensions from first two elements
 				float dims[2];
 				if ( ! parent->read_floats_from_string( last_line.c_str(), 2, dims ) ) {
 					std::cerr << "Error: Problem reading dimensions from PD scene flow file " << std::endl;
 				} else {
 					image_width = (int)dims[1] + 1;
-					image_height = (int)dims[0]+ 1;
+					image_height = (int)dims[0] + 1;
 				}
 			}
 		}
@@ -65,13 +65,13 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 			} else {
 				int px = (int)values[0];
 				int py = (int)values[1];
-				v.push_back( float3{values[2] * 1000.0f, values[3]*1000.0f, values[4]*1000.0f});
+				v.push_back( float3{values[2] * 1000.0f, values[3] * 1000.0f, values[4] * 1000.0f});
 			}
 		}
 	};
 
 	SceneFlowData sfd{ this, file_name };
-	
+
 	std::function<void( const std::string & )> f = std::bind(&SceneFlowData::process_line, &sfd, std::placeholders::_1 );
 
 	bool read_ok = process_file_by_lines( file_name, f );

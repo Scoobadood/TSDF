@@ -20,7 +20,6 @@ protected :
 
 	MockSceneFlowAlgorithm( const std::string & sceneFlowDirectoryName );
 
-
 	/**
 	 * Here to satisfy the interface but the depth and colour images are not used.
 	 */

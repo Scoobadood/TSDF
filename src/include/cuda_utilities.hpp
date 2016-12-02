@@ -2,6 +2,8 @@
 #define CU_COMMON_H
 
 #include <string>
+#include "vector_types.h"
+#include "vector_functions.h"
 
 static inline int divUp(int total, int grain) {
     return (total + grain - 1) / grain;

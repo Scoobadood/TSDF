@@ -24,6 +24,9 @@ private:
 	virtual bool read_scene_flow( const std::string & file_name, Eigen::Vector3f& translation, Eigen::Vector3f& rotation, Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals);
 
 	virtual bool is_matched( const std::string& name );
+
+	
+
 };
 
 #endif

@@ -18,6 +18,19 @@ MockSceneFlowAlgorithm::MockSceneFlowAlgorithm( const std::string & scene_flow_d
 	}
 }
 
+bool MockSceneFlowAlgorithm::init( ) {
+		// And read and sort file names
+		// Count the mnumber of scene flow files of the form sflow_nnnn.xml
+		files_in_directory( m_directory, m_scene_flow_file_names, [&]( std::string name ) {
+			return is_matched( name );
+		});
+
+		// Sort them
+		std::sort( m_scene_flow_file_names.begin(), m_scene_flow_file_names.end() );
+
+		return true;
+}
+
 /**
  * Given a string, parse it into the specified number of floats
  * @param string The source string
@@ -82,14 +95,6 @@ void MockSceneFlowAlgorithm::compute_scene_flow(
         Eigen::Vector3f&   						translation,
         Eigen::Vector3f&   						rotation,
         Eigen::Matrix<float, 3, Eigen::Dynamic>& residuals ) {
-
-		// Count the mnumber of scene flow files of the form sflow_nnnn.xml
-		files_in_directory( m_directory, m_scene_flow_file_names, [&]( std::string name ) {
-			return is_matched( name );
-		});
-
-		// Sort them
-		std::sort( m_scene_flow_file_names.begin(), m_scene_flow_file_names.end() );
 
 	if ( m_current_file_index < m_scene_flow_file_names.size() ) {
 		std::string path_to_file = m_directory + "/" + m_scene_flow_file_names[m_current_file_index];
