@@ -1,7 +1,7 @@
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
-NV_ARCH=-gencode arch=compute_50,code=compute_50
+NV_ARCH=-gencode arch=compute_52,code=compute_52
 
 vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Tests:\
 	$(SRC_DIR)/GPU:\
