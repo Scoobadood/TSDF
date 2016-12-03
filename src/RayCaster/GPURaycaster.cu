@@ -69,11 +69,24 @@ float trilinearly_interpolate( const float3 point,
                                const dim3 voxel_grid_size,
                                const float3 voxel_size,
                                const float *tsdf_values ) {
+
+	// Manage boundary points
+	float3 max_values {
+		voxel_grid_size.x * voxel_size.x,
+		voxel_grid_size.y * voxel_size.y,
+		voxel_grid_size.z * voxel_size.z
+	};
+	float3 adjusted_point = point;
+	if( point.x >= max_values.x ) adjusted_point.x = max_values.x - (voxel_size.x / 10.0f);
+	if( point.y >= max_values.x ) adjusted_point.y = max_values.y - (voxel_size.y / 10.0f);
+	if( point.z >= max_values.z ) adjusted_point.z = max_values.z - (voxel_size.z / 10.0f);
+		
     // Get the voxel containing this point
-    int3 voxel = voxel_for_point( point, voxel_size );
+    int3 voxel = voxel_for_point( adjusted_point, voxel_size );
 
     // Handle voxel out of bounds
     if ( voxel.x < 0 || voxel.y < 0 || voxel.z < 0  || voxel.x >= voxel_grid_size.x || voxel.y >= voxel_grid_size.y || voxel.z >= voxel_grid_size.z) {
+		printf( "Point outside of voxel space %f, %f, %f\n", point.x, point.y, point.z );
         return CUDART_NAN_F;
     }
 
@@ -607,7 +620,7 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     // Execute the kernel
     dim3 block( 32, 32 );
     dim3 grid ( divUp( width, block.x ), divUp( height, block.y ) );
-    process_ray<<<grid, block>>>( origin, rot, kinv, width, height, space_min, space_max, voxel_grid_size, voxel_size, d_tsdf_values, d_vertices );
+    process_ray<<<grid, block>>>( origin, rot, kinv, width, height, volume.truncation_distance(), space_min, space_max, voxel_grid_size, voxel_size, d_tsdf_values, d_vertices );
     err = cudaDeviceSynchronize( );
     check_cuda_error( "process_ray failed " , err);
 
