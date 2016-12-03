@@ -6,7 +6,6 @@
 
 
 
-const float THRESHOLD = 2.0f;
 
 
 /*
