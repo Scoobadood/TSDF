@@ -80,13 +80,16 @@ float trilinearly_interpolate( const float3 point,
 	if( point.x >= max_values.x ) adjusted_point.x = max_values.x - (voxel_size.x / 10.0f);
 	if( point.y >= max_values.x ) adjusted_point.y = max_values.y - (voxel_size.y / 10.0f);
 	if( point.z >= max_values.z ) adjusted_point.z = max_values.z - (voxel_size.z / 10.0f);
-		
+	if( point.x < 0.0f ) adjusted_point.x = 0.0f;
+	if( point.y < 0.0f ) adjusted_point.y = 0.0f;
+	if( point.z < 0.0f ) adjusted_point.z = 0.0f;
+
     // Get the voxel containing this point
     int3 voxel = voxel_for_point( adjusted_point, voxel_size );
 
     // Handle voxel out of bounds
     if ( voxel.x < 0 || voxel.y < 0 || voxel.z < 0  || voxel.x >= voxel_grid_size.x || voxel.y >= voxel_grid_size.y || voxel.z >= voxel_grid_size.z) {
-		printf( "Point outside of voxel space %f, %f, %f\n", point.x, point.y, point.z );
+		printf( "Point outside of voxel space %f, %f, %f\n", adjusted_point.x, adjusted_point.y, adjusted_point.z );
         return CUDART_NAN_F;
     }
 
