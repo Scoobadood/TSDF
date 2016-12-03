@@ -288,6 +288,10 @@ void process_ray(   const float3        origin,
     float3 direction      = compute_ray_direction_at_pixel( origin, imx, imy, rot, kinv );
 
     // Compute near and far intersections of the TSDF volume by this ray
+    // near and far T are valules of the parameter origin + t*(direction.unit) at which the
+    // ray from the camera through the point intersects the voxel space.
+    // near_t may be zero if origin is inside the voxel space
+    // far_t must be > near_t
     float near_t, far_t;
     bool intersects = compute_near_and_far_t( origin, direction, space_min, space_max, near_t, far_t );
 
@@ -314,17 +318,21 @@ void process_ray(   const float3        origin,
         while ( !done ) {
             float3 current_point = f3_add( start_point, f3_mul_scalar( t, direction ) );
 
+            // Save last TSDF (to check against crossing surface)
             previous_tsdf = tsdf;
-
-            // Compute voxel for current_point
-            int3 voxel = voxel_for_point( current_point, voxel_size );
 
             // Extract the tsdf
             float tsdf = trilinearly_interpolate( current_point, voxel_grid_size, voxel_size, tsdf_values );
 
             // If tsdf is negative then we're behind the surface
-            if ( tsdf < 0 ) {
-                t = t - 1 + ( previous_tsdf / (previous_tsdf - tsdf));
+            if ( tsdf <= 0 ) {
+                // We just advanced by previous_tsdf so step back
+                t = t - previous_tsdf;
+
+                // Linearly interpolate the crossing point
+                t = t + (previous_tsdf / (previous_tsdf - tsdf )) * previous_tsdf;
+
+                // Cmpute the point of intersection
                 current_point = {
                     start_point.x + t * direction.x,
                     start_point.y + t * direction.y,
@@ -338,7 +346,7 @@ void process_ray(   const float3        origin,
                 // Hit backface
                 done = true;
             } else {
-                t = t + 1;
+                t = t + tsdf;
                 if( t >= max_t ) {
                     done = true;
                 }
@@ -553,8 +561,8 @@ void compute_normals( uint16_t width, uint16_t height, const float3 * vertices, 
 __host__
 float3 * get_vertices(  const TSDFVolume&  volume,
                         const Camera&      camera,
-                        uint16_t                width,
-                        uint16_t                height ) {
+                        uint16_t           width,
+                        uint16_t           height ) {
 
 
     // Setup camera origin

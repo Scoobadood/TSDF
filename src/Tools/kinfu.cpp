@@ -14,10 +14,6 @@
 
 Eigen::Matrix4f g_campose;
 
-Camera make_camera( ) {
-    return Camera{ 591.1f, 590.1f, 331.0f, 234.6f };
-}
-
 /**
  * Make the TSDF from input files
  */
@@ -25,11 +21,11 @@ TSDFVolume * make_tsdf(int num_images ) {
     using namespace Eigen;
 
     // Make volume
-    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 450, 450, 450}, TSDFVolume::UInt3{8000, 8000, 8000});
-    volume->offset(-4000,-4000,-4000);
+    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 450, 450, 450}, TSDFVolume::UInt3{3000, 3000, 3000});
+    volume->offset(-1500,-1500,-1500);
     
     // And camera (from FREI 1 IR calibration data at TUM)
-    Camera camera = make_camera();
+    Camera * camera = Camera::default_depth_camera();
 
     // Create TUMDataLoader
     TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
@@ -48,12 +44,14 @@ TSDFVolume * make_tsdf(int num_images ) {
 
         if ( depthmap ) {
             // Set location
-            camera.set_pose( pose );
-            volume->integrate(depthmap->data() , depthmap->width(), depthmap->height(), camera);
+            camera->set_pose( pose );
+            volume->integrate(depthmap->data() , depthmap->width(), depthmap->height(), *camera);
 
             delete depthmap;
         }
     }
+
+    delete camera;
 
     return volume;
 }
@@ -132,21 +130,21 @@ int main( int argc, const char * argv[] ) {
 
     // Save norm and verts
     if ( volume ) {
-        Camera camera = make_camera();
+        Camera * camera = Camera::default_depth_camera();
 
         Eigen::Matrix< float, 3, Eigen::Dynamic> vertices;
         Eigen::Matrix< float, 3, Eigen::Dynamic> normals;
 
         std::cout << "Raycasting" << std::endl;
 
-        camera.set_pose( g_campose);
+        camera->set_pose( g_campose);
 
-        volume->raycast( 640, 480, camera, vertices, normals );
+        volume->raycast( 640, 480, *camera, vertices, normals );
 
         std::cout << "Rendering to image " << std::endl;
         Eigen::Vector3f light_source { g_campose(0,3), g_campose(1,3), g_campose(2,3) };
 
-        PngWrapper *p = scene_as_png( 640, 480, vertices, normals, camera, light_source );
+        PngWrapper *p = scene_as_png( 640, 480, vertices, normals, *camera, light_source );
 
         std::cout << "Saving PNG" << std::endl;
         p->save_to("/home/dave/Desktop/scene.png");
@@ -157,6 +155,8 @@ int main( int argc, const char * argv[] ) {
         std::cout << "Saving PNG" << std::endl;
         p->save_to("/home/dave/Desktop/normals.png");
         delete p;
+
+        delete camera;
 
     } else {
         std::cout << "Couldn't make or load volume" << std::endl;
