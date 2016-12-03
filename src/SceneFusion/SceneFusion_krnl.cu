@@ -10,8 +10,8 @@
 #include <vector>
 
 
-
-const float THRESHOLD = 2.0f;
+// Based on voxel size of 50
+const float THRESHOLD = 500.0f;
 
 
 /*
