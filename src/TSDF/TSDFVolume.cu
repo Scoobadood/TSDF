@@ -246,29 +246,30 @@ void integrate_kernel(  float         * distance_data,
                     // Compute the SDF as the difference of these two
                     float sdf = surface_vertex.z - centre_of_voxel_in_cam.z; 
 
-                    // Truncate the sdf to the range -trunc_distance -> trunc_distance
-                    float tsdf;
-                    if ( sdf > 0 ) {
-                        tsdf = min( sdf, trunc_distance);
-                    } else {
-                        tsdf = max( sdf, -trunc_distance);
-                    }
+					if( sdf >= -trunc_distance ) {
+                    	// Truncate the sdf to the range -trunc_distance -> trunc_distance
+                	    float tsdf;
+            	        if ( sdf > 0 ) {
+        	                tsdf = min( sdf, trunc_distance);
+    	                } else {
+							tsdf = sdf;
+						}
 
-                    // Convert further to be in the range -1 to 1 for raycaster
-                    tsdf = tsdf / trunc_distance;
+                	    // Convert further to be in the range -1 to 1 for raycaster
+//            	        tsdf = tsdf / trunc_distance;
 
-                    // Extract prior weight
-                    float prior_weight = weight_data[voxel_index];
-                    float current_weight = 1.0f;
-                    float new_weight = prior_weight + current_weight;
-                    //  float new_weight = min( prior_weight + current_weight, m_max_weight );
+        	            // Extract prior weight
+    	                float prior_weight = weight_data[voxel_index];
+	                    float current_weight = 1.0f;
+                    	float new_weight = prior_weight + current_weight;
+                	    //  float new_weight = min( prior_weight + current_weight, m_max_weight );
 
-                    float prior_distance = distance_data[voxel_index];
-                    float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
+            	        float prior_distance = distance_data[voxel_index];
+        	            float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
 
-                    weight_data[voxel_index] = new_weight;
-                    distance_data[voxel_index] = new_distance;
-
+    	                weight_data[voxel_index] = new_weight;
+	                    distance_data[voxel_index] = new_distance;
+					} // End of sdf > -trunc
                 } // End of depth > 0
             } // End of point in frustrum
 
@@ -506,7 +507,7 @@ void TSDFVolume::clear( ) {
     check_cuda_error( "couldn't clear weights memory", err );
 
 
-    set_memory_to_value<<< grid, block >>>( m_voxels, data_size, 1.0f );
+    set_memory_to_value<<< grid, block >>>( m_voxels, data_size, m_truncation_distance );
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     check_cuda_error( "couldn't clear depth memory", err );

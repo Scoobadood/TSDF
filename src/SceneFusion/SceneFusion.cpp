@@ -34,15 +34,15 @@ const float THRESHOLD = 2.0f;
 SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
-	m_volume = new TSDFVolume(400, 400, 400, 4000, 4000, 4000);
+	m_volume = new TSDFVolume(400, 400, 400, 2000, 2000, 2000);
 //	m_volume->offset( -1500, -1500, -1500);
 
 	// And camera (from FREI 1 IR calibration data at TUM)
 	m_camera = new Camera{ 591.1f, 590.1f, 331.0f, 234.6f };
 
 	// Pose the camera
-	m_camera->move_to( 2000, 2000, 0 );
-	m_camera->look_at( 2000, 2000, 2000 );
+	m_camera->move_to( 1000, 1000, 0 );
+	m_camera->look_at( 1000, 1000, 1000 );
 
 
 	m_last_depth_image = nullptr;
