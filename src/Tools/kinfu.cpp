@@ -17,18 +17,18 @@ Eigen::Matrix4f g_campose;
 /**
  * Make the TSDF from input files
  */
-TSDFVolume * make_tsdf(int num_images ) {
+TSDFVolume * make_tsdf(int num_images, const char * directory ) {
     using namespace Eigen;
 
     // Make volume
     TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 450, 450, 450}, TSDFVolume::UInt3{3000, 3000, 3000});
-    volume->offset(-1500,-1500,-1500);
+    volume->offset(-1000,-1000,-1000);
     
     // And camera (from FREI 1 IR calibration data at TUM)
     Camera * camera = Camera::default_depth_camera();
 
     // Create TUMDataLoader
-    TUMDataLoader tdl{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_rpy" };
+    TUMDataLoader tdl{ directory };
 
     // Construct TSDF Volume
     for ( int i = 0; i < num_images; i++ ) {
@@ -81,9 +81,71 @@ TSDFVolume * load_tsdf( const std::string& file_name) {
 }
 
 
+typedef struct {
+   	int count;
+	const char * directory;
+    const char * filename;
+} Args;
 
 
 
+bool parse_args( int argc, const char * argv[], Args& args ) {
+	args.count = 0;
+	args.directory = 0;
+	args.filename = 0;
+
+	if( argc != 3 && argc != 5 ) {
+		std::cerr << "Usage: " << argv[0] << "-f filename (to load from file) | -m N -d directory (to create from images )" << std::endl;
+		return false;
+	}
+
+	int arg_idx = 1;
+	while( arg_idx < argc ) {
+		if( argv[arg_idx][0] == '-' && strlen( argv[arg_idx] ) == 2 ) {
+			switch( argv[arg_idx][1] ) {
+				case 'm':
+					args.count = atoi( argv[arg_idx + 1] );
+					arg_idx += 2;
+					break;
+
+				case 'd':
+					args.directory = argv[arg_idx + 1];
+					arg_idx += 2;
+					break;
+
+
+				case 'f':
+					args.filename = argv[arg_idx + 1];
+					arg_idx += 2;
+					break;
+
+				default:
+					std::cerr << "Unexpected argument " << argv[arg_idx] << std::endl;
+					return false;
+			}
+		} else {
+			std::cerr << " Expected '-arg'" << std::endl;
+			return false;
+		}
+	}
+
+	if( args.directory != 0 && args.filename != 0 ) {
+		std::cerr << "Must specify file OR directory" << std::endl;
+		return false;
+	}
+
+	if( args.directory != 0 && args.count == 0 ) {
+		std::cerr << "Count must be > 0 if directory is specified" << std::endl;
+		return false;
+	}
+
+	if( args.filename != 0 && args.count > 0 ) {
+		std::cerr << "Count does not apply when loading TSDF from file" << std::endl;
+		return false;
+	}
+
+	return true;
+} 
 
 int main( int argc, const char * argv[] ) {
     int retval = 0;
@@ -93,39 +155,16 @@ int main( int argc, const char * argv[] ) {
     // go -m=nn : make with nn frames or
     // go filename
 
+	Args args;
+	if( !parse_args( argc, argv, args ) ) {
+		exit( -1 );
+	}
 
-    if ( argc == 2 ) {
-        if( argv[1][0] != '-' ) {
-            std::cout << "Loading TSDF" << std::endl;
-            volume = load_tsdf( argv[1]);
-        } else {
-            int arglen = strlen( argv[1] );
-            if( ( arglen >=4 ) && (argv[1][1] == 'm') && (argv[1][2] == '=' ) ) {
-                int n=0;
-                int idx = 3;
-                while( idx < arglen ) {
-                    n = n * 10;
-                    n = n + argv[1][idx] - '0';
-                    std::cout << n << std::endl;
-                    idx++;
-                }
-
-                if( n > 0 ) {
-                    std::cout << "Make TSDF" << std::endl;
-                    volume = make_tsdf( n);
-                    volume->save_to_file( "/home/dave/Desktop/volume.bin");
-
-                } else {
-                    std::cout << "Invalid frame count " << n << std::endl;
-                }
-            } else {
-                std::cout << "Usage : " << argv[0] << " -m=<nn> | file" << std::endl;
-            }
-        }
-
-    } else {
-        std::cout << "Usage : " << argv[0] << " -m=<nn> | file" << std::endl;
-    }
+	if( args.filename != 0 ) {
+		volume = load_tsdf( args.filename );
+	} else {
+		volume = make_tsdf( args.count, args.directory );
+	}
 
 
     // Save norm and verts

@@ -318,7 +318,9 @@ void process_ray(   const float3        origin,
 
         bool done = false;
 
-        float tsdf = 0, previous_tsdf = 0;
+        // Initialise TSDF to trun distance
+		float tsdf = trunc_distance;
+		float previous_tsdf = 0;
 
 
         // Set up current point to iterate
@@ -329,7 +331,9 @@ void process_ray(   const float3        origin,
         //   We leave the voxel space (fail)
         //   We transit from +ve to -ve tsdf (intersect)
         //   We transit from -ve to +ve (fail)
-        while ( !done ) {
+		int count = 0;
+		float step_size = trunc_distance * 0.9;
+        while ( !done  ) {
             float3 current_point = f3_add( start_point, f3_mul_scalar( t, direction ) );
 
             // Save last TSDF (to check against crossing surface)
@@ -337,14 +341,16 @@ void process_ray(   const float3        origin,
 
             // Extract the tsdf
             float tsdf = trilinearly_interpolate( current_point, voxel_grid_size, voxel_size, tsdf_values );
-
-            // If tsdf is negative then we're behind the surface
+            // If tsdf is negative then we're behind the surface else we're on it
             if ( tsdf <= 0 ) {
-                // We just advanced by previous_tsdf so step back
-                t = t - previous_tsdf;
+				// If we stepped past the iso surface, work out when
+                if ( tsdf < 0 ) {
+                    // We just advanced by previous_tsdf so step back
+                    t = t - step_size;
 
-                // Linearly interpolate the crossing point
-                t = t + (previous_tsdf / (previous_tsdf - tsdf )) * previous_tsdf;
+                    // Linearly interpolate the crossing point
+                    t = t + (previous_tsdf / (previous_tsdf - tsdf )) * step_size;
+                }
 
                 // Cmpute the point of intersection
                 current_point = {
@@ -356,15 +362,23 @@ void process_ray(   const float3        origin,
                 // Put into world coordinates
                 intersection_point = f3_add( space_min, current_point );
                 done = true;
-            } else if( previous_tsdf < 0 && tsdf > 0 ) {
-                // Hit backface
+            } else if( previous_tsdf < 0 ) {
+                // Hit backface; prev tsdf was -ve but this is +ve
                 done = true;
             } else {
-                t = t + tsdf;
+                // Not crossed ISO surface nor reached backface so step
+                t = t + step_size;
                 if( t >= max_t ) {
                     done = true;
                 }
             }
+
+			// Catch failures - this code shouldn;t be invoked.
+			if( count++ > 4400 ) {
+				printf( "Timed out @(%d,%d) with t:%f tsdf:%f\n",imx, imy, t, tsdf  );
+ 
+				done = true;
+			}
         }
     }
     vertices[idx] = intersection_point;

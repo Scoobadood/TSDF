@@ -36,11 +36,11 @@ bool load_distance_data( const char * file_name, uint32_t& volume_width, uint32_
 				loaded_ok = false;
 			}
 
-			if ( dimensions[0] > 256 ) {
-				std::cerr << "Maximum dimension is 256" << std::endl;
-				ifs.close();
-				loaded_ok = false;
-			}
+			// if ( dimensions[0] > 256 ) {
+			// 	std::cerr << "Maximum dimension is 256" << std::endl;
+			// 	ifs.close();
+			// 	loaded_ok = false;
+			// }
 
 		} else {
 			std::cerr << "Problem loading TSDF file " << file_name << ", too short reading dimensions" << std::endl;
