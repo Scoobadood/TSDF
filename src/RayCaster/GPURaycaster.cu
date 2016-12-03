@@ -276,9 +276,10 @@ bool  compute_near_and_far_t( const float3 & origin, const float3 & direction, c
 __global__
 void process_ray(   const float3        origin, 
                     const Mat33         rot, 
-                    const Mat33         kinv,
+                    const Mat33         kinv, 
                     uint16_t            max_x, 
                     uint16_t            max_y,
+					const float			trunc_distance,
                     const float3        space_min, 
                     const float3        space_max,
                     const dim3          voxel_grid_size, 
