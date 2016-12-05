@@ -77,6 +77,14 @@ void MockKinect::start( ) {
 			PngWrapper * colour_image = new PngWrapper( m_directory + "/" + colour_file_name, PngWrapper::COLOUR );
 			DepthImage * depth_image = new DepthImage( m_directory + "/" + depth_file_name );
 
+std::cout<< "Loaded depth image : " << depth_file_name << std::endl;
+uint16_t min, max;
+depth_image->min_max( min, max );
+std::cout << "Min : " << min << " , Max : " << max << std::endl;
+
+depth_image->truncate_depth_to( 4000 );
+
+
 			// Call callback
 			std::cerr << "Process pair (" << depth_file_name << ", " << colour_file_name << ")" << std::endl;
 			notify( depth_image, colour_image );

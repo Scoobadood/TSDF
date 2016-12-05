@@ -33,7 +33,18 @@ public:
 	 */
 	uint16_t height( ) const;
 
-	/**
+/**
+ * Truncate depths to some particular value in mm
+ * @param max_depth
+ */
+void truncate_depth_to( const int mm );
+
+/**
+ * Extract the min and max values of the depth data in mm
+ */
+void min_max( uint16_t& min, uint16_t& max );
+
+/**
 	 * @return a pointer to the data of the image
 	 */
 	const uint16_t * data( ) const;

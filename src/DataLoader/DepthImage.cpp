@@ -49,6 +49,36 @@ void DepthImage::scale_depth( const float factor ) {
 	}
 }
 
+/**
+ * Truncate depths to some particular value in mm
+ * @param max_depth
+ */
+void DepthImage::truncate_depth_to( const int mm ) {
+	size_t num_entries = m_width * m_height;
+	if( m_data ) {
+		for( int i=0; i<num_entries; i++ ) {
+			if( m_data[i] > mm ) {
+				m_data[i] = 0;
+			}
+		}
+	}
+}
+
+/**
+ * Extract the min and max values of the depth data in mm
+ */
+void DepthImage::min_max( uint16_t& min, uint16_t& max ) {
+	min = 0xFFFF;
+	max = 0;	
+	size_t num_entries = m_width * m_height;
+	if( m_data ) {
+		for( int i=0; i<num_entries; i++ ) {
+			uint16_t v = m_data[i];
+			if( v > max ) max = v;
+			if( v < min ) min = v;
+		}
+	}
+}
 
 /**
  * @return the width of the depth image
