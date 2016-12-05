@@ -146,7 +146,7 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
         m_volume->raycast( 640, 480, *m_camera, vertices, normals );
 
         std::cout << "Rendering to image " << std::endl;
-        Eigen::Vector3f light_source { 1000, 100, 1000};
+        Eigen::Vector3f light_source { 1000, 1000, 0};
 
         PngWrapper *p = scene_as_png( 640, 480, vertices, normals, *m_camera, light_source );
 

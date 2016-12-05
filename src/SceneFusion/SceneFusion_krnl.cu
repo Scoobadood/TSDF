@@ -140,15 +140,14 @@ void update_deformation_field(  float3		 	* deformation_field,
 
 					// if( |d_candidate - VZ| < threshold ) we can apply scene flow (dx,dy) to
 					// 	(VX, VY, VZ) but weighted by distance from d_candidate
-					float3 delta_vector = f3_sub(surface_vertex, voxel_centre);
-					float dist = f3_norm(delta_vector);
+					float dist = fabs( voxel_centre.z - surface_vertex.z ); 
 					if ( dist < threshold ) {
 						// Lookup the scene flow
 						float3 scene_flow = d_scene_flow[pixel_index];
 
 						// Scale the effect by distance
-						float scale_factor = 1.0f - (dist / threshold);
-						scene_flow = f3_mul_scalar( scale_factor, scene_flow );
+						//float scale_factor = 1.0f - (dist / threshold);
+						//scene_flow = f3_mul_scalar( scale_factor, scene_flow );
 
 						float3 current_deformation = deformation_field[ voxel_index];
 						float3 new_deformation = f3_add( current_deformation, scene_flow);
