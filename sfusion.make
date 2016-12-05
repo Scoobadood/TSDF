@@ -39,7 +39,7 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 		  MockKinect.cpp \
 		  Camera.cpp \
 		  DepthImage.cpp \
-          PngUtilities.cpp PngWrapper.cpp \
+          PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp \
 			SceneFusion.cpp\
           sfusion.cpp ply.cpp 
 

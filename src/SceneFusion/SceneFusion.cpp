@@ -3,8 +3,9 @@
 #include "../include/GPUMarchingCubes.hpp"
 #include "../include/TSDFVolume.hpp"
 #include "../include/Camera.hpp"
-
-
+#include "../include/ply.hpp"
+#include "../include/PngUtilities.hpp"
+#include "../include/RenderUtilities.hpp"
 
 
 
@@ -120,6 +121,46 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	// Now update the depth map into the TSDF
 	std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
 	m_volume->integrate(  depth_image->data(), width, height, *m_camera );
+
+
+	static int frames = 0;
+    frames++;
+	if( frames % 10 == 0 ) {
+	    char out_file_name[1000];
+
+		 // Save to PLY file
+        std::vector<int3> triangles;
+        std::vector<float3> verts;
+        extract_surface( verts, triangles );
+	    std::cout << "Writing to PLY" << std::endl;
+	    sprintf( out_file_name, "/home/dave/Desktop/mesh_%03d.ply", frames);
+   	    write_to_ply( out_file_name, verts, triangles);
+
+   	    // And render 
+
+        Eigen::Matrix< float, 3, Eigen::Dynamic> vertices;
+        Eigen::Matrix< float, 3, Eigen::Dynamic> normals;
+
+        std::cout << "Raycasting" << std::endl;
+
+        m_volume->raycast( 640, 480, *m_camera, vertices, normals );
+
+        std::cout << "Rendering to image " << std::endl;
+        Eigen::Vector3f light_source { 1000, 100, 1000};
+
+        PngWrapper *p = scene_as_png( 640, 480, vertices, normals, *m_camera, light_source );
+
+        std::cout << "Saving PNG" << std::endl;
+
+        sprintf( out_file_name, "/home/dave/Desktop/scene_%03d.png", frames );
+        p->save_to( out_file_name);
+        delete p;
+	}
+
+
+
+
+
 	std::cout << "------------------------------------------------------------" << std::endl;
 }
 
