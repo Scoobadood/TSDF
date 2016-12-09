@@ -34,15 +34,15 @@
 SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
-	m_volume = new TSDFVolume(450, 450, 450, 2000, 2000, 2000);
+	m_volume = new TSDFVolume(450, 450, 450, 3000, 3000, 3000);
 //	m_volume->offset( -1500, -1500, -1500);
 
 	// And camera (from FREI 1 IR calibration data at TUM)
 	m_camera = Camera::default_depth_camera();
 
 	// Pose the camera
-	m_camera->move_to( 1000, 1000, 0 );
-	m_camera->look_at( 1000, 1000, 1000 );
+	m_camera->move_to( 1500, 1500, 0 );
+	m_camera->look_at( 1500, 1500, 1000 );
 
 
 	m_last_depth_image = nullptr;
@@ -85,6 +85,7 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 
 	assert( width > 0 );
 	assert( height > 0 );
+
 
 	if ( m_last_depth_image != nullptr ) {
 		std::cout << "Called for second or subsequent time" << std::endl;
