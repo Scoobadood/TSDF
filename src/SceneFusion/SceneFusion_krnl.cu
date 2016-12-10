@@ -11,7 +11,7 @@
 
 
 // Based on voxel size of 50
-const float THRESHOLD = 500.0f;
+const float THRESHOLD = 1000.0f;
 
 
 /*

@@ -34,7 +34,7 @@
 SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
-	m_volume = new TSDFVolume(450, 450, 450, 3000, 3000, 3000);
+	m_volume = new TSDFVolume(256, 256, 256, 3000, 3000, 3000);
 //	m_volume->offset( -1500, -1500, -1500);
 
 	// And camera (from FREI 1 IR calibration data at TUM)
@@ -127,22 +127,18 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	// DEBUG: Only interate the first frame, thereafter, deform the grid
 	if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
-    frames++;
-	if( frames % 10 == 0 ) {
-	    char out_file_name[1000];
+	frames++;
+	if ( frames % 10 == 0 ) {
+		char out_file_name[1000];
 
-		 // Save to PLY file
-        std::vector<int3> triangles;
-        std::vector<float3> verts;
-        extract_surface( verts, triangles );
-	    std::cout << "Writing to PLY" << std::endl;
-	    sprintf( out_file_name, "/home/dave/Desktop/mesh_%03d.ply", frames);
-   	    write_to_ply( out_file_name, verts, triangles);
-   	  }
-
-
-
-
+		// Save to PLY file
+		std::vector<int3> triangles;
+		std::vector<float3> verts;
+		extract_surface( verts, triangles );
+		std::cout << "Writing to PLY" << std::endl;
+		sprintf( out_file_name, "/home/dave/Desktop/mesh_%03d.ply", frames);
+		write_to_ply( out_file_name, verts, triangles);
+	}
 
 	std::cout << "------------------------------------------------------------" << std::endl;
 }
