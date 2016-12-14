@@ -44,7 +44,7 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
           sfusion.cpp ply.cpp 
 
 
-CUDA_SOURCES = 	GPUMarchingCubes.cu\
+CUDA_SOURCES = 	MarkAndSweepMC.cu\
 				cuda_utilities.cu\
 				TSDFVolume.cu\
 				TSDF_utilities.cu\

@@ -1,11 +1,11 @@
 #include "../include/SceneFusion.hpp"
 #include "../include/SceneFusion_krnl.hpp"
-#include "../include/GPUMarchingCubes.hpp"
+#include "../include/MarkAndSweepMC.hpp"
 #include "../include/TSDFVolume.hpp"
 #include "../include/Camera.hpp"
 #include "../include/ply.hpp"
-#include "../include/PngUtilities.hpp"
-#include "../include/RenderUtilities.hpp"
+
+
 
 
 
@@ -34,15 +34,15 @@
 SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
-	m_volume = new TSDFVolume(256, 256, 256, 3000, 3000, 3000);
+	m_volume = new TSDFVolume(200, 200, 200, 2000, 2000, 2000);
 //	m_volume->offset( -1500, -1500, -1500);
 
 	// And camera (from FREI 1 IR calibration data at TUM)
-	m_camera = Camera::default_depth_camera();
+	m_camera = Camera::default_depth_camera( );
 
 	// Pose the camera
-	m_camera->move_to( 1500, 1500, 0 );
-	m_camera->look_at( 1500, 1500, 1000 );
+	m_camera->move_to( 1000, 1000, 0 );
+	m_camera->look_at( 1000, 1000, 1000 );
 
 
 	m_last_depth_image = nullptr;
@@ -70,6 +70,8 @@ SceneFusion::~SceneFusion() {
  */
 __host__
 void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapper * colour_image ) {
+	static int frames = 0;
+
 	std::cout << "------------------------------------------------------------" << std::endl;
 	std::cout << "processFrames Called" << std::endl;
 	std::cout << "-- Depth image :  " << depth_image << std::endl;
@@ -85,7 +87,6 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 
 	assert( width > 0 );
 	assert( height > 0 );
-
 
 	if ( m_last_depth_image != nullptr ) {
 		std::cout << "Called for second or subsequent time" << std::endl;
@@ -113,32 +114,30 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 
 	std::cout << "-- Saving a ref to the new depth and colour images" << std::endl;
 
-
 	// Save the current image to the last
 	if ( m_last_depth_image ) {
 		memcpy( (void *)m_last_depth_image, (void *)depth_image->data(), sizeof( uint16_t) * width * height );
 	}
 
 	// Now update the depth map into the TSDF
-//	std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
-//	m_volume->integrate(  depth_image->data(), width, height, *m_camera );
-
-	static int frames = 0;
-	// DEBUG: Only interate the first frame, thereafter, deform the grid
+	// std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
+	// m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 	if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
 	frames++;
-	if ( frames % 10 == 0 ) {
-		char out_file_name[1000];
+	if( frames % 1 == 0 ) {
+	    char out_file_name[1000];
 
-		// Save to PLY file
-		std::vector<int3> triangles;
-		std::vector<float3> verts;
-		extract_surface( verts, triangles );
-		std::cout << "Writing to PLY" << std::endl;
-		sprintf( out_file_name, "/home/dave/Desktop/mesh_%03d.ply", frames);
-		write_to_ply( out_file_name, verts, triangles);
+		 // Save to PLY file
+        std::vector<int3> triangles;
+        std::vector<float3> verts;
+        extract_surface( verts, triangles );
+	    std::cout << "Writing to PLY" << std::endl;
+	    sprintf( out_file_name, "/home/dave/Desktop/mesh_%03d.ply", frames);
+   	    write_to_ply( out_file_name, verts, triangles);
 	}
+
+
 
 	std::cout << "------------------------------------------------------------" << std::endl;
 }
