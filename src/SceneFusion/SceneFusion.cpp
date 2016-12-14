@@ -125,7 +125,7 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
 	frames++;
-	if( frames % 1 == 0 ) {
+	if( frames % 10 == 0 ) {
 	    char out_file_name[1000];
 
 		 // Save to PLY file
