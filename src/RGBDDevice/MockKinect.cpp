@@ -74,7 +74,9 @@ void MockKinect::start( ) {
 
 		if ( colour_file_index == depth_file_index ) {
 			// Construct the PngWrapper
+			std::cout << "Capturing color image" << std::endl;
 			PngWrapper * colour_image = new PngWrapper( m_directory + "/" + colour_file_name, PngWrapper::COLOUR );
+			std::cout << "Capturing depth image" << std::endl;
 			DepthImage * depth_image = new DepthImage( m_directory + "/" + depth_file_name );
 
 std::cout<< "Loaded depth image : " << depth_file_name << std::endl;
