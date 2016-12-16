@@ -63,8 +63,8 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 			if ( ! parent->read_floats_from_string( line.c_str(), 5, values ) ) {
 				std::cerr << "Error: Problem entries from PD scene flow file " << std::endl;
 			} else {
-				int px = (int)values[0];
-				int py = (int)values[1];
+				int py = (int)values[0];
+				int px = (int)values[1];
 				v.push_back( float3{values[2] * 1000.0f, values[3] * 1000.0f, values[4] * 1000.0f});
 			}
 		}
