@@ -125,8 +125,6 @@ int main( int argc, const char * argv[] ) {
 
 			delete [] data;
 
-			Camera camera { 585.6f, 585.6f, 316.0f, 247.6f  };
-
 			std::vector<int3> triangles;
 			std::vector<float3> vertices;
 			extract_surface( volume, vertices, triangles);
