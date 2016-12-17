@@ -14,7 +14,12 @@ vpath %.cpp $(SRC_DIR):\
 	    $(SRC_DIR)/MarchingCubes:\
 	    $(SRC_DIR)/RayCaster:\
 	    $(SRC_DIR)/Tests
-vpath %.cu $(SRC_DIR)/GPU:$(SRC_DIR)/MarchingCubes:$(SRC_DIR)/RayCaster:$(SRC_DIR)/TSDF:$(SRC_DIR)/SceneFlowUpdater
+
+vpath %.cu  $(SRC_DIR)/Utilities:\
+			$(SRC_DIR)/MarchingCubes:\
+			$(SRC_DIR)/RayCaster:\
+			$(SRC_DIR)/TSDF:\
+			$(SRC_DIR)/SceneFlowUpdater
 
 
 
@@ -23,7 +28,7 @@ NVCC=/usr/local/cuda/bin/nvcc
 
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
-CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src -I=src/GPU -I=src/Utilities -c -ccbin=/usr/bin/gcc -std=c++11 -g
+CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src -I=src/include -c -ccbin=/usr/bin/gcc -std=c++11 -g
 LDFLAGS=$(NV_ARCH) -lpng
 SOURCES =	FileUtilities.cpp Definitions.cpp\
 			Camera.cpp \
@@ -42,7 +47,7 @@ SOURCES =	FileUtilities.cpp Definitions.cpp\
 #          test_MC_main.cpp
 
 
-CUDA_SOURCES = TSDFVolume.cu GPUMarchingCubes.cu TSDF_utilities.cu cuda_utilities.cu GPURaycaster.cu
+CUDA_SOURCES = TSDFVolume.cu MarkAndSweepMC.cu TSDF_utilities.cu cuda_utilities.cu GPURaycaster.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)
