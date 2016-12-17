@@ -59,15 +59,14 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 
 
 		void process_line( const std::string& line ) {
-			// Line is int x, int y, float sfx, sfy, sfz
+			// Line is int y, int x, float sfx, sfy, sfz
+			// Corrected based on empirical data; order of cords is Z, X, Y
 			float values[5];
 
 			if ( ! parent->read_floats_from_string( line.c_str(), 5, values ) ) {
 				std::cerr << "Error: Problem entries from PD scene flow file " << std::endl;
 			} else {
-				int py = (int)values[0];
-				int px = (int)values[1];
-				v.push_back( float3{values[2] * 1000.0f, values[3] * 1000.0f, values[4] * 1000.0f});
+				v.push_back( float3{values[3] * 1000.0f, values[4] * -1000.0f, values[3] * 1000.0f});
 			}
 		}
 	};
