@@ -142,8 +142,8 @@ int3 camera_to_pixel( const float3& camera_coordinate, const Mat33& k ) {
 
     // Adjust by cam intrinsics
     int3 pixel_coordinate {
-        static_cast<int>(floor( image_x ) ),
-        static_cast<int>(floor( image_y ) ),
+        static_cast<int>(round( image_x ) ),
+        static_cast<int>(round( image_y ) ),
         1
     };
 
