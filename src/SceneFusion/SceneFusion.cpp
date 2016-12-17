@@ -119,11 +119,11 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	memcpy( (void *)m_last_depth_image, (void *)depth_image->data(), sizeof( uint16_t) * width * height );
 
 	// Now update the depth map into the TSDF
-	// std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
-	// m_volume->integrate(  depth_image->data(), width, height, *m_camera );
+	std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
+	m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
 	// This line for DEBUG reasons while testing deformtaion code
-	if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );
+	// if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
 
 
