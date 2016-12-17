@@ -83,7 +83,7 @@ float3 pixel_to_world( const int3 pixel, const Mat44 & pose, const Mat33 & inv_k
 	float3 cam_coords = f3_mul_scalar( depth, image_plane_coords);
 
 
-	// Back to worl dcoords
+	// Back to world coords
 	float3 world_coords;
 	world_coords.x = pose.m11 * cam_coords.x + pose.m12 * cam_coords.y + pose.m13 * cam_coords.z + pose.m14;
 	world_coords.y = pose.m21 * cam_coords.x + pose.m22 * cam_coords.y + pose.m23 * cam_coords.z + pose.m24;
@@ -179,7 +179,8 @@ void process_frames(
 
 
 	// Push scene flow data to device
-	std::cout << "-- Stashing scene flow to dvice" << std::endl;
+	// Note: SF data is row major, ie Y,X
+	std::cout << "-- Stashing scene flow to device" << std::endl;
 	float3 * d_scene_flow;
 	err = cudaMalloc( &d_scene_flow, num_pixels * sizeof( float3 ) );
 	check_cuda_error( "Couldn't allocate memory for scene flow data", err );
@@ -187,7 +188,7 @@ void process_frames(
 	check_cuda_error( "Failed to copy scene flow data to device" , err );
 
 
-	// .. and last depth data
+	// .. and last depth data - which is also row major
 	uint16_t * d_depth_data;
 	err = cudaMalloc( &d_depth_data, num_pixels * sizeof( uint16_t ) );
 	check_cuda_error( "Couldn't allocate memory for depth image", err );
@@ -205,9 +206,9 @@ void process_frames(
 	memcpy( &inv_pose, camera->inverse_pose().data(), sizeof( float ) * 16 );
 
 
-	// Invoke kernel to update defomrmation field
+	// Invoke kernel to update deformation field
 	std::cout << "-- Invoking kernel" << std::endl;
-	dim3 block( 1, 16, 16 );
+	dim3 block( 1, 20, 20 );
 	dim3 grid( 1, divUp( volume->size().y, block.y ), divUp( volume->size().z, block.z) );
 	update_deformation_field <<< grid, block >>>(
 	    reinterpret_cast<float3*>( volume->translation_data()),
@@ -220,7 +221,6 @@ void process_frames(
 	    THRESHOLD);
 
 	cudaDeviceSynchronize( );
-
 	err = cudaGetLastError( );
 	check_cuda_error( "update_deformation_field kernel failed" , err );
 

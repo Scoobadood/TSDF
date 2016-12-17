@@ -5,10 +5,6 @@
 #include "../include/Camera.hpp"
 #include "../include/ply.hpp"
 
-
-
-
-
 /*
 	This is the Plan B variant
 
@@ -81,13 +77,13 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	assert( depth_image );
 	assert( colour_image );
 
-	// Update the scene flow into TSDF
 	uint16_t width = depth_image->width();
 	uint16_t height = depth_image->height();
-
 	assert( width > 0 );
 	assert( height > 0 );
 
+
+	// If this has been called before, we have a prior depth and can compute the next scene flow so do so.
 	if ( m_last_depth_image != nullptr ) {
 		std::cout << "Called for second or subsequent time" << std::endl;
 
@@ -98,34 +94,42 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 		Eigen::Matrix<float, 3, Eigen::Dynamic> residuals;
 		m_scene_flow_algorithm->compute_scene_flow( depth_image, colour_image, translation, rotation, residuals );
 
-		// translation and rotation are ignored here.
-		// Residuals is in host memory and is the actual scene flow
 
+		// Global translation and rotation are ignored here.
+		// Residuals is in host memory and is the actual scene flow
 		std::cout << "-- got it" << std::endl;
 
+		// Process the update with the last depth image data and this scene flow.
 		::process_frames( m_volume, m_camera, width, height, m_last_depth_image, residuals.data() );
 
-	} else {
+	} 
+
+	// Otherwise, this is the first call and we should allocate storage for the depth image for the next one
+	else {
+		std::cout << "Called for first time" << std::endl;
 		m_last_depth_image = (uint16_t *)malloc( sizeof( uint16_t) * width * height );
 		if ( !m_last_depth_image) {
 			std::cout << "-- Couldn't create storage for host depth data" << std::endl;
 		}
 	}
 
-	std::cout << "-- Saving a ref to the new depth and colour images" << std::endl;
-
-	// Save the current image to the last
-	if ( m_last_depth_image ) {
-		memcpy( (void *)m_last_depth_image, (void *)depth_image->data(), sizeof( uint16_t) * width * height );
-	}
+	std::cout << "-- Storing depth and colour data" << std::endl;
+	// Save the current image to the last. 
+	// Ultimately store RGB too
+	memcpy( (void *)m_last_depth_image, (void *)depth_image->data(), sizeof( uint16_t) * width * height );
 
 	// Now update the depth map into the TSDF
 	// std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
 	// m_volume->integrate(  depth_image->data(), width, height, *m_camera );
+
+	// This line for DEBUG reasons while testing deformtaion code
 	if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
+
+
+	// Dump output periodically
 	frames++;
-	if( frames % 10 == 0 ) {
+	if( (frames <20) || (frames%10 == 0 ) ) {
 	    char out_file_name[1000];
 
 		 // Save to PLY file

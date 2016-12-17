@@ -18,6 +18,8 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 		float z;
 	};
 
+	std::cout << "  scene flow file : " << file_name << std::endl;
+
 
 	// Structure to handle processing line
 	struct SceneFlowData {
@@ -79,12 +81,31 @@ bool PDSFMockSceneFlowAlgorithm::read_scene_flow( const std::string & file_name,
 	// Work out how many elements we got and transfer them to the Eigen shape we got passed in residuals
 	int num_values = sfd.image_width * sfd.image_height;
 
+	// Compute mean scene flow
+	float3 mean_flow{0,0,0};
+
 	residuals.resize( 3, num_values);
 	for ( size_t i = 0; i < num_values; i++ ) {
 		residuals(0, i) = sfd.v[i].x;
 		residuals(1, i) = sfd.v[i].y;
 		residuals(2, i) = sfd.v[i].z;
+
+		mean_flow.x +=sfd.v[i].x;
+		mean_flow.y +=sfd.v[i].y;
+		mean_flow.z +=sfd.v[i].z;
 	}
+	mean_flow.x /= ( num_values);
+	mean_flow.y /= ( num_values);
+	mean_flow.z /= ( num_values);
+
+	float scale = mean_flow.x*mean_flow.x + mean_flow.y * mean_flow.y + mean_flow.z * mean_flow.z;
+	scale = sqrt( scale );
+	mean_flow.x /= ( scale);
+	mean_flow.y /= ( scale);
+	mean_flow.z /= ( scale);
+
+
+	std::cout << "Mean scene flow : " << mean_flow.x << ", " << mean_flow.y << ", " << mean_flow.z << std::endl;
 
 	// Set default global rotation and translation
 	translation[0] = 0.0f;
