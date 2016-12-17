@@ -112,33 +112,36 @@ void update_deformation_field(  float3		 	* deformation_field,
                                 const Mat44		inv_pose,
                                 const float     threshold ) {
 
+
 	uint voxel_y = (blockDim.y * blockIdx.y) + threadIdx.y;
 	uint voxel_z = (blockDim.z * blockIdx.z) + threadIdx.z;
 
-
+	// Ensure that the voxel YZ index is in the TSDF
 	if ( voxel_y < volume_size.y && voxel_z < volume_size.z ) {
 
+		// Set up the base offset into the TSDF data
 		uint voxel_index = voxel_z * ( volume_size.x * volume_size.y) + (voxel_y * volume_size.x );
 
+		// Iterate over every x coordinate in this space
 		for ( uint voxel_x = 0 ; voxel_x < volume_size.x; voxel_x ++ ) {
 
-			// project voxel (VX, VY, VZ) into depth image giving dx, dy
+			// project voxel (VX, VY, VZ) into depth image giving pixel coordinates
 			float3 voxel_centre = deformation_field[ voxel_index ];
-
 			int3 pixel = world_to_pixel( voxel_centre, inv_pose, k );
-
 
 			// let d_candidate = D(dx,dy) * Kinv * [dx;dy;1]
 			if ( pixel.x < width && pixel.x >= 0 && pixel.y < height && pixel.y >= 0 ) {
-				uint pixel_index = pixel.y * width + pixel.x;
 
+				// Look up the depth corresponding to this pixel
+				uint pixel_index = pixel.y * width + pixel.x;
 				float depth = d_depth_data[ pixel_index ];
 
+				// If it's valid, reproject the point back int space
 				if ( depth > 0 ) {
 
 					float3 surface_vertex = pixel_to_world( pixel, pose, kinv, depth );
 
-					// if( |d_candidate - VZ| < threshold ) we can apply scene flow (dx,dy) to
+					// if( |surface_vertex.z - voxel_centre.z| < threshold ) we can apply scene flow (dx,dy) to
 					// 	(VX, VY, VZ) but weighted by distance from d_candidate
 					float dist = fabs( voxel_centre.z - surface_vertex.z ); 
 					if ( dist < threshold ) {
@@ -146,25 +149,26 @@ void update_deformation_field(  float3		 	* deformation_field,
 						float3 scene_flow = d_scene_flow[pixel_index];
 
 						// Scale the effect by distance
-						//float scale_factor = 1.0f - (dist / threshold);
-						//scene_flow = f3_mul_scalar( scale_factor, scene_flow );
+						float scale_factor = 1.0f - (dist / threshold);
+						scene_flow = f3_mul_scalar( scale_factor, scene_flow );
 
+						// Apply to the deformation field
 						float3 current_deformation = deformation_field[ voxel_index];
 						float3 new_deformation = f3_add( current_deformation, scene_flow);
 						deformation_field[voxel_index] = new_deformation;
-					} // voxel centre is too far from surface
+					} // voxel centre is too far from surface, do nothing
 				} // Depth is 0, do nothing
-			}
+			} // Pixel outside frustum
 			voxel_index++;
-		}
-
-	}
+		} // next voxel x
+	} // Voxel YZ index out of TSDF
 }
 
 
 __host__
-
-
+/**
+ * 
+ */
 void process_frames(
     TSDFVolume 		* volume,
     const Camera 	* camera,
