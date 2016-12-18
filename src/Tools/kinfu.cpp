@@ -38,6 +38,11 @@ TSDFVolume * make_tsdf(int num_images, const char * directory ) {
         Matrix4f pose;
         DepthImage * depthmap = tdl.next( pose );
 
+        uint16_t dmin = 0;
+        uint16_t dmax = 0;
+        depthmap->min_max( dmin, dmax );
+        std::cout << " -- depth " << dmin << "mm to " << dmax <<"mm" << std::endl;
+
         if( i == 0 ) {
             g_campose = pose ;
         }
