@@ -413,7 +413,7 @@
 TEST( TSDF_Raycasting, at_450_150_150__facing_150_150_150 ) {
     using namespace Eigen;
 
-    TSDFVolume volume{450, 450, 450, 256, 256, 256};
+    TSDFVolume volume{300, 300, 300, 256, 256, 256};
     create_sphere_in_TSDF(volume, 80);
 
     uint16_t width = 640;
@@ -565,7 +565,7 @@ TEST( TSDF_Raycasting, at_450_150_150__facing_150_150_150 ) {
 TEST( TSDF_Raycasting, at_m150_150_450__facing_150_150_150 ) {
     using namespace Eigen;
 
-    TSDFVolume volume{450, 450, 450, 256, 256, 256};
+    TSDFVolume volume{300,300, 300, 256, 256, 256};
     create_sphere_in_TSDF(volume, 100);
 
     uint16_t width = 640;
