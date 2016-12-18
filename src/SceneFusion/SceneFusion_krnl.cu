@@ -3,6 +3,7 @@
 #include "../include/TSDFVolume.hpp"
 #include "../include/Camera.hpp"
 #include "../include/cuda_utilities.hpp"
+#include "../include/cuda_coordinate_transforms.hpp"
 
 #include "vector_types.h"
 
@@ -29,74 +30,6 @@ const float THRESHOLD = 500.0f;
 		end
 
 */
-
-
-
-
-__device__
-/**
- * Convert global coordinates into pixel coordinates
- * Multiply by pose.inverse(), then K
- * @param world_coordinate The 3D point in world space
- * @return pixel_coordinate The 2D point in pixel space
- */
-int3 world_to_pixel( const float3 & world_coordinate, const Mat44 & inv_pose, const Mat33 & k ) {
-	float3 cam_coordinate;
-	cam_coordinate.x = inv_pose.m11 * world_coordinate.x + inv_pose.m12 * world_coordinate.y + inv_pose.m13 * world_coordinate.z + inv_pose.m14;
-	cam_coordinate.y = inv_pose.m21 * world_coordinate.x + inv_pose.m22 * world_coordinate.y + inv_pose.m23 * world_coordinate.z + inv_pose.m24;
-	cam_coordinate.z = inv_pose.m31 * world_coordinate.x + inv_pose.m32 * world_coordinate.y + inv_pose.m33 * world_coordinate.z + inv_pose.m34;
-
-
-	// Push into camera image
-	float3 image_coordinate;
-	image_coordinate.x = k.m11 * cam_coordinate.x + k.m12 * cam_coordinate.y + k.m13 * cam_coordinate.z;
-	image_coordinate.y = k.m21 * cam_coordinate.x + k.m22 * cam_coordinate.y + k.m23 * cam_coordinate.z;
-	image_coordinate.z = k.m31 * cam_coordinate.x + k.m32 * cam_coordinate.y + k.m33 * cam_coordinate.z;
-
-	// Round and store
-	int3 pixel_coordinate;
-	pixel_coordinate.x = round( image_coordinate.x / image_coordinate.z);
-	pixel_coordinate.y = round( image_coordinate.y / image_coordinate.z);
-
-	return pixel_coordinate;
-}
-
-/**
- * Convert pixel coordinates into world coordinates via a depth
- * Multiply by k.inverse(), project by depth, then pose
- * @param pixel The 2d pixel coordinate
- * @param depth The depth value of
- * @return world coordinate in 3D space
- */
-__device__
-float3 pixel_to_world( const int3 pixel, const Mat44 & pose, const Mat33 & inv_k, float depth ) {
-	// From image to camera plane
-	float3 image_plane_coords {
-		inv_k.m11 * pixel.x + inv_k.m12 * pixel.y + inv_k.m13,
-		inv_k.m21 * pixel.x + inv_k.m22 * pixel.y + inv_k.m23,
-		inv_k.m31 * pixel.x + inv_k.m32 * pixel.y + inv_k.m33
-	};
-
-	// TODO
-	// The actual calc here should be to scale the cam coords so tat Z == depth
-	// There's an implicit assumption here that the Z coord is 1 which may not be true
-	float3 cam_coords = f3_mul_scalar( depth, image_plane_coords);
-
-
-	// Back to world coords
-	float3 world_coords;
-	world_coords.x = pose.m11 * cam_coords.x + pose.m12 * cam_coords.y + pose.m13 * cam_coords.z + pose.m14;
-	world_coords.y = pose.m21 * cam_coords.x + pose.m22 * cam_coords.y + pose.m23 * cam_coords.z + pose.m24;
-	world_coords.z = pose.m31 * cam_coords.x + pose.m32 * cam_coords.y + pose.m33 * cam_coords.z + pose.m34;
-
-	float w = pose.m41 * cam_coords.x + pose.m42 * cam_coords.y + pose.m43 * cam_coords.z + pose.m44;
-
-	world_coords.x /= w;
-	world_coords.y /= w;
-	world_coords.z /= w;
-
-	return world_coords;
-}
 
 
 __global__

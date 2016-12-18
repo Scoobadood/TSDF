@@ -6,6 +6,7 @@
 //  Copyright © 2016 Sindesso. All rights reserved.
 //
 #include "../include/cuda_utilities.hpp"
+#include "../include/cuda_coordinate_transforms.hpp"
 
 #include "../include/TSDFVolume.hpp"
 #include "../include/GPURaycaster.hpp"
@@ -88,90 +89,6 @@ void set_weight( const dim3& size, float * weights, int x, int y, int z, float w
     weights[ index(size, x, y, z) ] = weight;
 }
 
-/**
- * Convert a pixel coordinate in a depth map into a 3D vertex in camera coordinates 
- * by back projecting using inv K 
- * @param depth The depth in mm
- * @param x The x coorindate in the pixel image
- * @param y The y coordinate in the pixel image
- * @param kinf invers K (intrinsic matrix)
- * @return a 3D camera space coordinate of the point
- */
-__device__
-float3 depth_to_camera_coordinate( uint16_t depth, uint16_t x, uint16_t y, const Mat33& kinv ) {
-    // initialise to NANs
-    float3 vertex{ CUDART_NAN_F , CUDART_NAN_F, CUDART_NAN_F };
-
-    // Depth should be > 0 for us to have got to this point
-    if ( depth != 0 ) {
-
-        // Back project the point into camera 3D space using D(x,y) * Kinv * (x,y,1)T
-        float3 cam_point{
-            kinv.m11 * x + kinv.m12 * y + kinv.m13,
-            kinv.m21 * x + kinv.m22 * y + kinv.m23,
-            kinv.m31 * x + kinv.m32 * y + kinv.m33
-        };
-
-        vertex = f3_mul_scalar( depth, cam_point );
-
-    }
-
-    return vertex;
-
-}
-/**
- * Convert a camera coordinate into pixel space in the camera image
- * by multiplying by K - the intrinsice matrix - then dividing through by
- * z coordinate to project down.
- *
- * @param camera_coordinate The camera coordinate to convert
- * @param K The camera intrinsic matrix
- * @return a 2D integral pixel value (u,v) z value is 1
- */
-__device__
-int3 camera_to_pixel( const float3& camera_coordinate, const Mat33& k ) {
-    // Project down to image plane
-    float image_x = camera_coordinate.x / camera_coordinate.z;
-    float image_y = camera_coordinate.y / camera_coordinate.z;
-
-    // And into pixel plane
-    image_x = (k.m11 * image_x) + ( k.m12 * image_y) + (k.m13);
-    image_y = (k.m21 * image_x) + ( k.m22 * image_y) + (k.m23);
-
-    // Nature of k is that last row is 0 0 1 so no need to de-homogenise
-
-    // Adjust by cam intrinsics
-    int3 pixel_coordinate {
-        static_cast<int>(round( image_x ) ),
-        static_cast<int>(round( image_y ) ),
-        1
-    };
-
-    return pixel_coordinate;
-}
-
-/**
- * Convert a world coordinate into camera space by
- * by multiplying by pose matrix inverse
- * @param world_coordinate The world coordinate to convert
- * @param inv_pose The 4x4 inverse pose matrix
- * @return a 3D coordinate in camera space
- */
-__device__
-float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) {
-    float3 cam_coordinate {
-        (inv_pose.m11 * world_coordinate.x ) + (inv_pose.m12 * world_coordinate.y) + (inv_pose.m13 * world_coordinate.z) + inv_pose.m14,
-        (inv_pose.m21 * world_coordinate.x ) + (inv_pose.m22 * world_coordinate.y) + (inv_pose.m23 * world_coordinate.z) + inv_pose.m24,
-        (inv_pose.m31 * world_coordinate.x ) + (inv_pose.m32 * world_coordinate.y) + (inv_pose.m33 * world_coordinate.z) + inv_pose.m34
-    };
-    float w = (inv_pose.m41 * world_coordinate.x ) + (inv_pose.m42 * world_coordinate.y) + (inv_pose.m43 * world_coordinate.z) + inv_pose.m44;
-
-    cam_coordinate.x /= w;
-    cam_coordinate.y /= w;
-    cam_coordinate.z /= w;
-
-    return cam_coordinate;
-}
 
 /**
  * @param distance_data The voxel values (in devcie memory)
@@ -182,7 +99,7 @@ float3 world_to_camera( const float3& world_coordinate, const Mat44& inv_pose ) 
  * @param trunc_distance A distance, greater than the voxel diagonal, at which we truncate distance measures in the TSDF
  * @param pose The camera pose matrix (maps cam to world, 4x4 )
  * @param inv_pose Inverse of the camera pose matrix (maps world to camera coords) (4x4)
- * @param k The caera's intrinsic parameters (3x3)
+ * @param k The camera's intrinsic parameters (3x3)
  * @param kinv Invers eof k (3x3)
  * @param width Width of the depth image
  * @param height Height of the depth image
@@ -196,6 +113,7 @@ void integrate_kernel(  float         * distance_data,
                         float3        * voxel_centres,
                         float3          offset, 
                         const float     trunc_distance,
+                        const float     max_weight,
                         Mat44           pose, 
                         Mat44           inv_pose,
                         Mat33           k, 
@@ -213,7 +131,7 @@ void integrate_kernel(  float         * distance_data,
 
 
         // The next (x_size) elements from here are the x coords
-        size_t voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
+        int voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
 
         // For each voxel in this column
         for ( int vx = 0; vx < voxel_grid_size.x; vx++ ) {
@@ -224,11 +142,8 @@ void integrate_kernel(  float         * distance_data,
             // Convert voxel to world coords of centre
             float3 centre_of_voxel        = voxel_centres[ voxel_index ];
 
-            // Convert world to camera coords
-            float3 centre_of_voxel_in_cam = world_to_camera( centre_of_voxel, inv_pose );
-
-            // Project into depth map pixel (u)
-            int3   centre_of_voxel_in_pix = camera_to_pixel( centre_of_voxel_in_cam, k );
+            // Convert world to pixel coords
+            int3   centre_of_voxel_in_pix = world_to_pixel( centre_of_voxel, inv_pose, k );
 
             // if this point is in the camera view frustum...
             if ( ( centre_of_voxel_in_pix.x >= 0 ) && ( centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 ) && ( centre_of_voxel_in_pix.y < height) ) {
@@ -241,10 +156,11 @@ void integrate_kernel(  float         * distance_data,
                 if ( surface_depth > 0 ) {
 
                     // Project depth entry to a vertex ( in camera space)
-                    float3 surface_vertex = depth_to_camera_coordinate( surface_depth, centre_of_voxel_in_pix.x, centre_of_voxel_in_pix.y, kinv);
+                    float3 surface_vertex = pixel_to_camera( centre_of_voxel_in_pix, kinv, surface_depth );
 
-                    // Compute the SDF as the difference of these two
-                    float sdf = surface_vertex.z - centre_of_voxel_in_cam.z; 
+                    // Compute the SDF is the distance between the camera origin and surface_vertex in world coordinates
+					float3 voxel_cam = world_to_camera( centre_of_voxel, inv_pose );
+                    float sdf = surface_vertex.z - voxel_cam.z;
 
 					if( sdf >= -trunc_distance ) {
                     	// Truncate the sdf to the range -trunc_distance -> trunc_distance
@@ -255,14 +171,11 @@ void integrate_kernel(  float         * distance_data,
 							tsdf = sdf;
 						}
 
-                	    // Convert further to be in the range -1 to 1 for raycaster
-//            	        tsdf = tsdf / trunc_distance;
-
         	            // Extract prior weight
     	                float prior_weight = weight_data[voxel_index];
 	                    float current_weight = 1.0f;
                     	float new_weight = prior_weight + current_weight;
-                	    //  float new_weight = min( prior_weight + current_weight, m_max_weight );
+                	    new_weight = min(new_weight, max_weight );
 
             	        float prior_distance = distance_data[voxel_index];
         	            float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
@@ -568,9 +481,8 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     dim3 block( 1, 20, 20  );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 
-    std::cout << "Executing kernel with grid[" << grid.x << ", " << grid.y << ", " << grid.z << "]" << std::endl;
-    check_cuda_error( "Error before executing kernel", err);
-    integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, pose, inv_pose, k, kinv, width, height, d_depth_map);
+    integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, m_max_weight, pose, inv_pose, k, kinv, width, height, d_depth_map);
+    cudaDeviceSynchronize( );
     err = cudaGetLastError();
     check_cuda_error( "Integrate kernel failed", err);
 

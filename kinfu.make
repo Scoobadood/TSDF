@@ -37,7 +37,8 @@ CUDA_SOURCES =	TSDFVolume.cu\
 				MarkAndSweepMC.cu\
 				GPURaycaster.cu\
 				TSDF_utilities.cu\
-				cuda_utilities.cu
+				cuda_utilities.cu\
+				cuda_coordinate_transforms.cu
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)
