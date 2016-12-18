@@ -2,7 +2,6 @@
 #define MOCK_SCENE_FLOW_ALGORITHM_HPP
 
 #include "SceneFlowAlgorithm.hpp"
-#include "tinyxml.h"
 #include <vector>
 
 class MockSceneFlowAlgorithm : public SceneFlowAlgorithm {

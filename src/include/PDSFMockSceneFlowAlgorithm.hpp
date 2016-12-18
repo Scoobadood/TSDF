@@ -3,8 +3,6 @@
 
 #include "MockSceneFlowAlgorithm.hpp"
 
-#include "tinyxml.h"
-
 #include <vector>
 
 

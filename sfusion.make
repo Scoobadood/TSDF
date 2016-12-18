@@ -28,13 +28,11 @@ NVCC=/usr/local/cuda/bin/nvcc
 
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
-CFLAGS=-isystem=/usr/include/eigen3 -I=src/include -I=third_party/TinyXml -ccbin=/usr/bin/gcc -std=c++11 -g
+CFLAGS=-isystem=/usr/include/eigen3 -I=src/include -ccbin=/usr/bin/gcc -std=c++11 -g
 LDFLAGS=$(NV_ARCH) -lpng
 
-SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
-		  FileUtilities.cpp Definitions.cpp\
+SOURCES = FileUtilities.cpp Definitions.cpp\
 		  MockSceneFlowAlgorithm.cpp \
-		  SRSFMockSceneFlowAlgorithm.cpp \
 		  PDSFMockSceneFlowAlgorithm.cpp \
 		  MockKinect.cpp \
 		  Camera.cpp \
@@ -46,6 +44,7 @@ SOURCES = tinyxml.cpp tinyxmlparser.cpp tinystr.cpp tinyxmlerror.cpp \
 
 CUDA_SOURCES = 	MarkAndSweepMC.cu\
 				cuda_utilities.cu\
+				cuda_coordinate_transforms.cu\
 				TSDFVolume.cu\
 				TSDF_utilities.cu\
 				GPURaycaster.cu\
