@@ -37,7 +37,6 @@
 
 __device__
 float3 interpolate( float3 v0, float3 v1, float w0, float w1 ) {
-
 	if( ( w0 > 0 ) && ( w1 < 0 ) ) {
 		float tw = w0;  w0 = w1; w1 = tw;
 		float3 tv = v0; v0 = v1; v1 = tv;
@@ -82,19 +81,20 @@ int voxel_index_for_cube_index( const int cube_index, const int grid_size_x, con
  * @return The cube index, 0-255
  */
 __device__
-uint8_t calculate_cube_type(	const int 				voxel_index_0, 
+uint8_t calculate_cube_type(	const int 				voxel_index_3, 
 								const int 				dy, 
 								const int 				dz, 
 								const float 	* const distance_data ) {
 
 	// Compute vertex indices for the remaining corners of the cube
-	int voxel_index_1 = voxel_index_0 - dz;
-	int voxel_index_2 = voxel_index_1 + dy;
-	int voxel_index_3 = voxel_index_0 + dy;
-	int voxel_index_4 = voxel_index_0 + 1;
-	int voxel_index_5 = voxel_index_1 + 1;
-	int voxel_index_6 = voxel_index_2 + 1;
-	int voxel_index_7 = voxel_index_3 + 1;
+	int dx = 1;
+	int voxel_index_0 = voxel_index_3      + dz;
+	int voxel_index_1 = voxel_index_3 + dx + dz;
+	int voxel_index_2 = voxel_index_3 + dx;
+	int voxel_index_4 = voxel_index_0 + dy;
+	int voxel_index_5 = voxel_index_1 + dy;
+	int voxel_index_6 = voxel_index_2 + dy;
+	int voxel_index_7 = voxel_index_3 + dy;
 
 	// Compute the cube_type
 	uint8_t cube_type = 0;
@@ -225,31 +225,40 @@ void generate_vertices( const dim3 				grid_size, 			// in
 		int cube_index = cube_indices[ data_index ];
 
 		// Now get a voxel index for the base corner of the cube
-		int voxel_index = voxel_index_for_cube_index( cube_index, grid_size.x, grid_size.y );
+		int voxel_index_3 = voxel_index_for_cube_index( cube_index, grid_size.x, grid_size.y );
 
 		int dx = 1;
 		int dy = grid_size.x;
 		int dz = dy * grid_size.y;
 
+		// Compute voxel indices for other voxels
+		int voxel_index_0 = voxel_index_3      + dz;
+		int voxel_index_1 = voxel_index_3 + dx + dz;
+		int voxel_index_2 = voxel_index_3 + dx;
+		int voxel_index_4 = voxel_index_0 + dy;
+		int voxel_index_5 = voxel_index_1 + dy;
+		int voxel_index_6 = voxel_index_2 + dy;
+		int voxel_index_7 = voxel_index_3 + dy;
+
 		// Get weights of each adjacent vertex
-		float w0 = distance_data[ voxel_index ];
-		float w1 = distance_data[ voxel_index - dz ];
-		float w2 = distance_data[ voxel_index - dz + dy ];
-		float w3 = distance_data[ voxel_index      + dy ];
-		float w4 = distance_data[ voxel_index           + dx ];
-		float w5 = distance_data[ voxel_index - dz      + dx ];
-		float w6 = distance_data[ voxel_index - dz + dy + dx ];
-		float w7 = distance_data[ voxel_index      + dy + dx ];
+		float w0 = distance_data[ voxel_index_0 ];
+		float w1 = distance_data[ voxel_index_1 ];
+		float w2 = distance_data[ voxel_index_2 ];
+		float w3 = distance_data[ voxel_index_3 ];
+		float w4 = distance_data[ voxel_index_4 ];
+		float w5 = distance_data[ voxel_index_5 ];
+		float w6 = distance_data[ voxel_index_6 ];
+		float w7 = distance_data[ voxel_index_7 ];
 
 		// Get the vertex coordinates
-		float3 v0 = voxel_centres[ voxel_index ];
-		float3 v1 = voxel_centres[ voxel_index - dz ];
-		float3 v2 = voxel_centres[ voxel_index - dz + dy ];
-		float3 v3 = voxel_centres[ voxel_index      + dy ];
-		float3 v4 = voxel_centres[ voxel_index           + dx ];
-		float3 v5 = voxel_centres[ voxel_index - dz      + dx ];
-		float3 v6 = voxel_centres[ voxel_index - dz + dy + dx ];
-		float3 v7 = voxel_centres[ voxel_index      + dy + dx ];
+		float3 v0 = voxel_centres[ voxel_index_0 ];
+		float3 v1 = voxel_centres[ voxel_index_1 ];
+		float3 v2 = voxel_centres[ voxel_index_2 ];
+		float3 v3 = voxel_centres[ voxel_index_3 ];
+		float3 v4 = voxel_centres[ voxel_index_4 ];
+		float3 v5 = voxel_centres[ voxel_index_5 ];
+		float3 v6 = voxel_centres[ voxel_index_6 ];
+		float3 v7 = voxel_centres[ voxel_index_7 ];
 
 		// Build cube index (we need to extract w)
 		int cube_type = 0;
@@ -264,20 +273,20 @@ void generate_vertices( const dim3 				grid_size, 			// in
 
 		// Compute the edge intersections (some may not be valid)
 		float3 vertex[12];
-		vertex[0] = interpolate(  v1, v0, w1, w0 );
-		vertex[1] = interpolate(  v1, v2, w1, w2 );
-		vertex[2] = interpolate(  v2, v3, w2, w3 );
-		vertex[3] = interpolate(  v0, v3, w0, w3 );
+		vertex[0] = interpolate(  v0, v1, w0, w1 );
+		vertex[1] = interpolate(  v2, v1, w2, w1 );
+		vertex[2] = interpolate(  v3, v2, w3, w2 );
+		vertex[3] = interpolate(  v3, v0, w3, w0 );
 
-		vertex[4] = interpolate(  v0, v4, w0, w4 );
-		vertex[5] = interpolate(  v1, v5, w1, w5 );
-		vertex[6] = interpolate(  v2, v6, w2, w6 );
-		vertex[7] = interpolate(  v3, v7, w3, w7 );
+		vertex[4] = interpolate(  v4, v5, w4, w5 );
+		vertex[5] = interpolate(  v6, v5, w6, w5 );
+		vertex[6] = interpolate(  v7, v6, w7, w6 );
+		vertex[7] = interpolate(  v7, v4, w7, w4 );
 
-		vertex[8] = interpolate(  v5, v4, w5, w4 );
-		vertex[9] = interpolate(  v5, v6, w5, w6 );
-		vertex[10] = interpolate( v6, v7, w6, w7 );
-		vertex[11] = interpolate( v4, v7, w4, w7 );
+		vertex[8] = interpolate(  v0, v4, w0, w4 );
+		vertex[9] = interpolate(  v1, v5, w1, w5 );
+		vertex[10] = interpolate( v2, v6, w2, w6 );
+		vertex[11] = interpolate( v3, v7, w3, w7 );
 
 		// Extract the vertex offset; 
 		int vertex_offset = vertex_offsets[ data_index ];

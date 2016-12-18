@@ -66,8 +66,6 @@ Eigen::Matrix4f TUMDataLoader::to_pose( float vars[7] ) const {
     pose(2,1) = 2 * ( y*z + w*x );
     pose(2,2) = 1 - 2 * ( x*x + y*y );
 
-
-
     // Location
     pose( 0, 3) = vars[0] * 1000.0f;
     pose( 1, 3) = vars[1] * 1000.0f;
