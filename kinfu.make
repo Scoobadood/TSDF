@@ -34,7 +34,7 @@ SOURCES = kinfu.cpp BilateralFilter.cpp Camera.cpp \
 
 
 CUDA_SOURCES =	TSDFVolume.cu\
-				MarkAndSweepMC.cu\
+				GPUMarchingCubes.cu\
 				GPURaycaster.cu\
 				TSDF_utilities.cu\
 				cuda_utilities.cu\

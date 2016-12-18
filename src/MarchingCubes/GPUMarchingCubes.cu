@@ -112,14 +112,14 @@ int compute_edge_intersects( uint8_t cube_index,
 __device__
 void compute_cube_vertices( int vx, int vy, int grid_width, const float3 * tsdf_layer1_centres, const float3 * tsdf_layer2_centres, float3 cube_vertices[8]) {
 	int base_index = vy * grid_width + vx;
-	cube_vertices[0] = tsdf_layer1_centres[ base_index ];
-	cube_vertices[1] = tsdf_layer2_centres[ base_index ];
-	cube_vertices[2] = tsdf_layer2_centres[ base_index + grid_width ];
-	cube_vertices[3] = tsdf_layer1_centres[ base_index + grid_width ];
-	cube_vertices[4] = tsdf_layer1_centres[ base_index              + 1];
-	cube_vertices[5] = tsdf_layer2_centres[ base_index              + 1];
+	cube_vertices[0] = tsdf_layer1_centres[ base_index              + 0];
+	cube_vertices[1] = tsdf_layer1_centres[ base_index              + 1];
+	cube_vertices[2] = tsdf_layer2_centres[ base_index              + 1];
+	cube_vertices[3] = tsdf_layer2_centres[ base_index 				+ 0];
+	cube_vertices[4] = tsdf_layer1_centres[ base_index + grid_width + 0];
+	cube_vertices[5] = tsdf_layer1_centres[ base_index + grid_width + 1];
 	cube_vertices[6] = tsdf_layer2_centres[ base_index + grid_width + 1];
-	cube_vertices[7] = tsdf_layer1_centres[ base_index + grid_width + 1];
+	cube_vertices[7] = tsdf_layer2_centres[ base_index + grid_width + 0];
 }
 
 
@@ -190,13 +190,13 @@ void mc_kernel( const float * tsdf_values_layer_1,
 		// Load voxel values for the cube
 		float voxel_values[8] = {
 			tsdf_values_layer_1[voxel_index],							//	vx,   vy,   vz
-			tsdf_values_layer_2[voxel_index],							//	vx,   vy,   vz+1
-			tsdf_values_layer_2[voxel_index + voxel_grid_size.x],		//	vx,   vy+1, vz+1
-			tsdf_values_layer_1[voxel_index + voxel_grid_size.x],		//	vx,   vy+1, vz
-			tsdf_values_layer_1[voxel_index + 1],						//	vx+1, vy,	vz
-			tsdf_values_layer_2[voxel_index + 1],						//	vx+1, vy, 	vz+1
-			tsdf_values_layer_2[voxel_index + voxel_grid_size.x + 1],	//	vx+1, vy+1, vz+1
-			tsdf_values_layer_1[voxel_index + voxel_grid_size.x + 1],	//	vx+1, vy+1, vz
+			tsdf_values_layer_1[voxel_index + 1],						//	vx,   vy,   vz+1
+			tsdf_values_layer_2[voxel_index + 1],		//	vx,   vy+1, vz+1
+			tsdf_values_layer_2[voxel_index],		//	vx,   vy+1, vz
+			tsdf_values_layer_1[voxel_index + voxel_grid_size.x],						//	vx+1, vy,	vz
+			tsdf_values_layer_1[voxel_index + voxel_grid_size.x+ 1],						//	vx+1, vy, 	vz+1
+			tsdf_values_layer_2[voxel_index + voxel_grid_size.x+ 1],	//	vx+1, vy+1, vz+1
+			tsdf_values_layer_2[voxel_index + voxel_grid_size.x],	//	vx+1, vy+1, vz
 		};
 
 		// Compute the cube type

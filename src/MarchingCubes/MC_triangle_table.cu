@@ -6,41 +6,41 @@
  * We model cubes with 8 vertices labelled as below
  *
  *
- *            3--------(7)---------7
+ *
+ *            4--------(4)---------5
  *           /|                   /|
  *          / |                  / |
  *         /  |                 /  |
- *       (2)  |               (A)  |
+ *       (7)  |               (5)  |
  *       /    |               /    |
- *      /    (3)             /    (B)
+ *      /    (8)             /    (9)
  *     /      |             /      |
- *    2------+--(6)--------6       |
+ *    7---------(6)--------6       |
       |       |            |       |
- *    |       0------(4)---|-------4
+ *    |       0------(0)---|-------1
  *    |      /             |      /
- *   (1)    /             (9)    /
+ *   (11)   /             (10)   /
  *    |    /               |    /
- *    |  (0)               |  (8)
+ *    |  (3)               |  (1)
  *    |  /                 |  /
  *    | /                  | /
  *    |/                   |/
- *    1---------(5)--------5
+ *    3---------(2)--------2
  *
  * where X axis is horizontal, +ve to right
  *       Y axis is vertical, +ve upwards
- *       Z axis is into page, +ve towards front
+ *       Z axis is into page, +ve towards back
  *
- * 0: ( x, y,   z   )  4: ( x+1, y,   z   )
- * 1: ( x, y,   z+1 )  5: ( x+1, y,   z+1 )
- * 2: ( x, y+1, z+1 )  6: ( x+1, y+1, z   )
- * 3: ( x, y+1, z   )  7: ( x+1, y+1, z+1 )
+ * 0: ( x,   y,   z+1 )  4: ( x,   y+1,   z+1 )
+ * 1: ( x+1, y,   z+1 )  5: ( x+1, y+1,   z+1 )
+ * 2: ( x+1, y,   z   )  6: ( x+1, y+1,   z   )
+ * 3: ( x,   y,   z   )  7: ( x,   y+1,   z   )
  *
  * There are 12 edges, 0 - 11 where each edge connectes two vertices as follows:
  *
- *
  * 0: 0, 1       1: 1, 2       2: 2, 3       3:  3, 0
- * 4: 0, 4       5: 1, 5       6: 2, 6       7:  3, 7
- * 8: 4, 5       9: 5, 6       A: 6, 7       B:  7, 4
+ * 4: 4, 5       5: 5, 6       6: 6, 7       7:  7, 4
+ * 8: 0, 4       9: 1, 5      10: 2, 6      11:  3, 7
  */
 __constant__
 uint8_t VERTICES_FOR_CUBE_TYPE[256] = {
