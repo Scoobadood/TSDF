@@ -1,5 +1,5 @@
 #include "../include/SceneFusion.hpp"
-#include "../include/GPUMarchingCubes.hpp"
+#include "../include/MarkAndSweepMC.hpp"
 #include "../include/TSDFVolume.hpp"
 #include "../include/Camera.hpp"
 #include "../include/cuda_utilities.hpp"
@@ -82,8 +82,8 @@ void update_deformation_field(  float3		 	* deformation_field,
 						float3 scene_flow = d_scene_flow[pixel_index];
 
 						// Scale the effect by distance
-						float scale_factor = 1.0f - (dist / threshold);
-						scene_flow = f3_mul_scalar( scale_factor, scene_flow );
+//						float scale_factor = 1.0f - (dist / threshold);
+//						scene_flow = f3_mul_scalar( scale_factor, scene_flow );
 
 						// Apply to the deformation field
 						float3 current_deformation = deformation_field[ voxel_index];
@@ -114,6 +114,25 @@ void process_frames(
 	cudaError_t err;
 	int num_pixels = width * height;
 
+
+	// Extract the mesh - but only t get hold of the impacted voxels
+	int num_cubes;
+	int num_vertices;
+	int	*cube_indices;
+	float3	*vertices;
+	extract_surface_ms( volume, vertices, num_vertices, cube_indices, num_cubes );
+
+	// Discard the vertices
+	delete [] vertices;
+	
+
+	// Push cube indices back to device
+	std::cout << "Copying " << num_cubes << " cube indices to device" << std::endl;
+	int * d_cube_indices;
+	err = cudaMalloc( &d_cube_indices, num_cubes*sizeof(int) );
+	check_cuda_error( "Couldn't allocate storage for cube indices on device", err );
+	err = cudaMemcpy( d_cube_indices, cube_indices, num_cubes * sizeof( int ), cudaMemcpyHostToDevice );
+	check_cuda_error( "Failed to copy cube indices to device memory" , err );
 
 	// Push scene flow data to device
 	// Note: SF data is row major, ie Y,X
@@ -164,9 +183,14 @@ void process_frames(
 
 	// Clear up after kernel
 	std::cout << "-- Cleaning up" << std::endl;
-	cudaFree( d_scene_flow );
+	err = cudaFree( d_scene_flow );
 	check_cuda_error( "Failed to free scene flow data" , err );
 
-	cudaFree( d_depth_data );
+	err = cudaFree( d_cube_indices );
+	check_cuda_error( "Failed to free cube indices memory", err );
+
+	err = cudaFree( d_depth_data );
 	check_cuda_error( "Failed to free depth data" , err );
+
+	delete []  cube_indices;
 }

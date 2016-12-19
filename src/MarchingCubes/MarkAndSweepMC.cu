@@ -343,7 +343,8 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
                          float3 *& 					vertices,
                          int& 						num_vertices,
-                         int*& 						cube_indices ) {
+                         int*& 						cube_indices,
+						 int&						num_cubes ) {
 	std::cout << "Extracting surface" << std::endl;
 
 	// Each cube is a block of 8 adjacent voxels.
@@ -432,6 +433,7 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
 	delete [] vertices_per_cube;
 
 	// Caller must delete vertices when done with it
+	num_cubes = num_occupied_cubes;
 }
 
 
@@ -445,7 +447,8 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 	float3 	* f3_vertices;
 	int 	* cube_indices;
 	int 	num_vertices;
-	extract_surface_ms( volume, f3_vertices, num_vertices, cube_indices );
+	int		num_cubes;
+	extract_surface_ms( volume, f3_vertices, num_vertices, cube_indices, num_cubes );
 
 	for ( int i = 0; i < num_vertices; i++ ) {
 		vertices.push_back( f3_vertices[i] );
@@ -453,4 +456,8 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 			triangles.push_back( int3{ i, i + 2, i + 1});
 		}
 	}
+
+	// Delete f3 vertices
+	delete[] f3_vertices;
+	delete[] cube_indices;
 }
