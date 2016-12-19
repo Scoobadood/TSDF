@@ -1,0 +1,17 @@
+This is the plan A algorithm.
+
+The approach is as follows:
+
+1. Extract the deformed mesh from the voxel grid
+	MC Pass 1: Mark all voxels which have intersection
+
+	MC Pass 2: For each marked voxel
+	Extract triangles and deform
+
+
+2. For each eligible voxel in the grid
+	Project the voxel centre into the rasterized depth image
+	If there's both a valid depth and a valid scene flow for this pixel
+		Reproject the depth image point into free space
+		If the reprojected point and the original point are within a threshold distance then 
+			Apply the scene flow to the voxel (weighted by distance from the reprojected point)
