@@ -92,6 +92,56 @@ void set_weight( const dim3& size, float * weights, int x, int y, int z, float w
 }
 
 
+/* **************************************************************************************************************
+ * *
+ * *
+ * *    Integrate 
+ * *
+ * *
+ * **************************************************************************************************************/
+__device__
+/**
+ * Predicate:
+ * Tag indices of voxels that project into frustum with true
+ */
+void voxel_in_frustrum( const dim3              voxel_grid_size, 
+                        const float3 * const    voxel_centres,
+                        const uint32_t          width,
+                        const uint32_t          height,
+                        const Mat33             kinv,
+                        const Mat44             inv_pose,
+                        bool                    * in_frustum ) {
+
+    int voxel_index = blockDim.x * blockIdx.x + threadIdx.x;
+    int num_voxels = voxel_grid_size.x * voxel_grid_size.y * voxel_grid_size.z;
+
+    if( voxel_index < num_voxels ) {
+        float3 voxel_centre = voxel_centres[ voxel_index ];
+
+        int3   centre_of_voxel_in_pix = world_to_pixel( voxel_centre, inv_pose, k );
+
+        if( centre_of_voxel_in_pix.x >= 0 && centre_of_voxel_in_pix.x <  width && centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height ) {
+            in_frustum = true;
+        } else {
+            in frustum = false;
+        }
+    }
+}
+
+/**
+ * Exlusive sum scan on in_frustum
+ * Input the list of predicate outputs
+ * Output an array of offsets into a storage array for affected indices
+ * 
+ */
+void scan_storage_for_voxel_indices( const bool * in_frustum,
+                                     int        * index ) {
+
+}
+
+
+
+
 /**
  * @param distance_data The voxel values (in devcie memory)
  * @param weight_data The weight values (in device memory)
