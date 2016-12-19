@@ -314,7 +314,7 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
         clear();
 
         // Max weight for integrating depth images
-        m_max_weight = 120.0f;
+        m_max_weight = 60.0f;
 
     } else {
         throw std::invalid_argument( "Attempt to set TSDF size to zero" );
