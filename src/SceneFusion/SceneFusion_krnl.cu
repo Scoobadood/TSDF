@@ -33,7 +33,9 @@ const float THRESHOLD = 500.0f;
 
 
 __global__
-void update_deformation_field(  float3		 	* deformation_field,
+void update_deformation_field(  int    			num_cubes,
+								int				* cube_indices,
+								float3		 	* deformation_field,
                                 const dim3		volume_size,
                                 const uint16_t 	* d_depth_data,
                                 const float3 	* d_scene_flow,
@@ -45,18 +47,18 @@ void update_deformation_field(  float3		 	* deformation_field,
                                 const Mat44		inv_pose,
                                 const float     threshold ) {
 
+	int data_index = blockDim.x * blockIdx.x + threadIdx.x;
+	if( data_index < num_cubes ) {
+		int cube_index = cube_indices[ data_index];
 
-	uint voxel_y = (blockDim.y * blockIdx.y) + threadIdx.y;
-	uint voxel_z = (blockDim.z * blockIdx.z) + threadIdx.z;
+		// Obtain the 8 voxels for this cube
+		int voxel_indices[8];
+		voxel_indices_for_cube_index( cube_index, volume_size.x, volume_size.y, voxel_indices );
 
-	// Ensure that the voxel YZ index is in the TSDF
-	if ( voxel_y < volume_size.y && voxel_z < volume_size.z ) {
 
-		// Set up the base offset into the TSDF data
-		uint voxel_index = voxel_z * ( volume_size.x * volume_size.y) + (voxel_y * volume_size.x );
-
-		// Iterate over every x coordinate in this space
-		for ( uint voxel_x = 0 ; voxel_x < volume_size.x; voxel_x ++ ) {
+		// For each one of these voxels
+		for( int i=0; i<8; i++ ) {
+			int voxel_index = voxel_indices[i];
 
 			// project voxel (VX, VY, VZ) into depth image giving pixel coordinates
 			float3 voxel_centre = deformation_field[ voxel_index ];
@@ -92,9 +94,8 @@ void update_deformation_field(  float3		 	* deformation_field,
 					} // voxel centre is too far from surface, do nothing
 				} // Depth is 0, do nothing
 			} // Pixel outside frustum
-			voxel_index++;
-		} // next voxel x
-	} // Voxel YZ index out of TSDF
+		} // next voxel in cube
+	} // data index outside legitimate range
 }
 
 
@@ -164,9 +165,11 @@ void process_frames(
 
 	// Invoke kernel to update deformation field
 	std::cout << "-- Invoking kernel" << std::endl;
-	dim3 block( 1, 20, 20 );
-	dim3 grid( 1, divUp( volume->size().y, block.y ), divUp( volume->size().z, block.z) );
+	dim3 block( 512 ); 
+	dim3 grid( divUp( num_cubes, block.x ) );
 	update_deformation_field <<< grid, block >>>(
+		num_cubes,
+		d_cube_indices,
 	    reinterpret_cast<float3*>( volume->translation_data()),
 	    volume->size(),
 	    d_depth_data,
