@@ -95,7 +95,7 @@ void set_weight( const dim3& size, float * weights, int x, int y, int z, float w
 /* **************************************************************************************************************
  * *
  * *
- * *    Integrate 
+ * *    Integrate
  * *
  * *
  * **************************************************************************************************************/
@@ -104,23 +104,22 @@ __device__
  * Predicate:
  * Tag indices of voxels that project into frustum with true
  */
-void voxel_in_frustrum( const dim3              voxel_grid_size, 
+void voxel_in_frustrum( const int               num_voxels,
                         const float3 * const    voxel_centres,
                         const uint32_t          width,
                         const uint32_t          height,
-                        const Mat33             kinv,
+                        const Mat33             k,
                         const Mat44             inv_pose,
                         bool                    * in_frustum ) {
 
     int voxel_index = blockDim.x * blockIdx.x + threadIdx.x;
-    int num_voxels = voxel_grid_size.x * voxel_grid_size.y * voxel_grid_size.z;
 
-    if( voxel_index < num_voxels ) {
+    if ( voxel_index < num_voxels ) {
         float3 voxel_centre = voxel_centres[ voxel_index ];
 
         int3   centre_of_voxel_in_pix = world_to_pixel( voxel_centre, inv_pose, k );
 
-        if( centre_of_voxel_in_pix.x >= 0 && centre_of_voxel_in_pix.x <  width && centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height ) {
+        if ( centre_of_voxel_in_pix.x >= 0 && centre_of_voxel_in_pix.x <  width && centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height ) {
             in_frustum = true;
         } else {
             in frustum = false;
@@ -132,22 +131,84 @@ void voxel_in_frustrum( const dim3              voxel_grid_size,
  * Exlusive sum scan on in_frustum
  * Input the list of predicate outputs
  * Output an array of offsets into a storage array for affected indices
- * 
+ *
  */
+__host__
 void scan_storage_for_voxel_indices( const bool * in_frustum,
-                                     int        * index ) {
+                                     const int  num_voxels,
+                                     int        * scatter_address,
+                                     int&       num_included ) {
+    num_included = 0;
 
+    for ( int i = 0; i < num_voxels; i++ ) {
+        scatter_address[i] = num_included;
+
+        if ( in_frustum[i]) {
+            num_included++;
+        }
+    }
+}
+
+/**
+ * Scatter
+ * Scatter the voxel index array
+ * For every 'in frustum' index, write the index to 'scatter_address' in outputs
+ * Compact index list is preallocated host memory
+ */
+__host__
+void scatter_voxel_indices( const bool      * in_frustum,
+                            const int       num_voxels,
+                            const int       * scatter_address,
+                            int             * compact_index_list ) {
+    for ( int i = 0; i < num_voxels; i++ ) {
+        if ( in_frustum[ i ] ) {
+            compact_index_list[ scatter_address[ i ] ] = i;
+        }
+    }
+}
+
+__global__
+void get_voxels_projecting_to_frustum(  const int               num_voxels,
+                                        const float3 * const    voxel_centres,
+                                        const uint32_t          width,
+                                        const uint32_t          height,
+                                        const Mat33             k,
+                                        const Mat44             inv_pose,
+                                        int&                    num_included,
+                                        int*&                   included_indices ) {
+    int * d_in_frustum;
+
+    cudaError_t err = cudaMalloc( &d_in_frustum, sizeof( bool ) * num_voxels );
+    check_cuda_error( "Failed to allocate storage for voxel indices", err );
+    bool * h_in_frustum = new bool[ num_voxels];
+    if ( !h_in_frustum) exit( -1 );
+    voxel_in_frustrum <<< >>> ( num_voxels, voxel_centres, width, height, k, inv_pose, d_in_frustum );
+    cudaMemcpy( h_in_frustum, d_in_frustum, num_voxels * sizeof( bool ), cudaMemcpyDeviceToHost);
+    cudaFree( d_in_frustum );
+
+
+    int * scatter_address = new int[num_voxels];
+    scan_storage_for_voxel_indices( h_in_frustum, num_voxels, scatter_address, num_included );
+
+    included_indices = new int[ num_included ];
+    scatter_voxel_indices( h_in_frustum, num_voxels, scatter_address, included_indices );
+
+    delete [] h_in_frustum;
+    delete [] scatter_address;
 }
 
 
-
+/* **************************************************************************************************************
+ * *
+ * *
+ * *    Old Integrate
+ * *
+ * *
+ * **************************************************************************************************************/
 
 /**
  * @param distance_data The voxel values (in devcie memory)
  * @param weight_data The weight values (in device memory)
- * @param voxel_grid_size The voxel size of the space
- * @param voxel_space_size The physical size of the space
- * @param offset The offset of the front, bottom, left corner
  * @param trunc_distance A distance, greater than the voxel diagonal, at which we truncate distance measures in the TSDF
  * @param pose The camera pose matrix (maps cam to world, 4x4 )
  * @param inv_pose Inverse of the camera pose matrix (maps world to camera coords) (4x4)
@@ -158,88 +219,71 @@ void scan_storage_for_voxel_indices( const bool * in_frustum,
  * @param depth_map Pointer to array of width*height uint16 types in devcie memory
  */
 __global__
-void integrate_kernel(  float         * distance_data, 
+void integrate_kernel(  float         * distance_data,
                         float         * weight_data,
-                        dim3            voxel_grid_size, 
-                        float3          voxel_space_size,
                         float3        * voxel_centres,
-                        float3          offset, 
                         const float     trunc_distance,
                         const float     max_weight,
-                        Mat44           pose, 
+                        Mat44           pose,
                         Mat44           inv_pose,
-                        Mat33           k, 
+                        Mat33           k,
                         Mat33           kinv,
-                        uint32_t        width, 
-                        uint32_t        height, 
+                        uint32_t        width,
+                        uint32_t        height,
                         const uint16_t  * depth_map) {
 
-    // Extract the voxel Y and Z coordinates we then iterate over X
-    int vy = threadIdx.y + blockIdx.y * blockDim.y;
-    int vz = threadIdx.z + blockIdx.z * blockDim.z;
 
-    // If this thread is in range
-    if ( vy < voxel_grid_size.y && vz < voxel_grid_size.z ) {
+    int data_index = blockDim.x * blockIdx.x + threadIdx.x;
 
+    if ( data_index < num_data_items ) {
+        voxel_index = data_items[ data_index ];
 
-        // The next (x_size) elements from here are the x coords
-        int voxel_index =  ((voxel_grid_size.x * voxel_grid_size.y) * vz ) + (voxel_grid_size.x * vy);
+        // Work out where in the image, the centre of this voxel projects
+        // This gives us a pixel in the depth map
 
-        // For each voxel in this column
-        for ( int vx = 0; vx < voxel_grid_size.x; vx++ ) {
+        // Convert voxel to world coords of centre
+        float3 centre_of_voxel        = voxel_centres[ voxel_index ];
 
-            // Work out where in the image, the centre of this voxel projects
-            // This gives us a pixel in the depth map
+        // Convert world to pixel coords
+        int3   centre_of_voxel_in_pix = world_to_pixel( centre_of_voxel, inv_pose, k );
 
-            // Convert voxel to world coords of centre
-            float3 centre_of_voxel        = voxel_centres[ voxel_index ];
+        // Extract the depth to the surface at this point
+        uint32_t voxel_pixel_index = centre_of_voxel_in_pix.y * width + centre_of_voxel_in_pix.x;
+        uint16_t surface_depth = depth_map[ voxel_pixel_index ];
 
-            // Convert world to pixel coords
-            int3   centre_of_voxel_in_pix = world_to_pixel( centre_of_voxel, inv_pose, k );
+        // If the depth is valid
+        if ( surface_depth > 0 ) {
 
-            // if this point is in the camera view frustum...
-            if ( ( centre_of_voxel_in_pix.x >= 0 ) && ( centre_of_voxel_in_pix.x < width ) && ( centre_of_voxel_in_pix.y >= 0 ) && ( centre_of_voxel_in_pix.y < height) ) {
+            // Project depth entry to a vertex ( in camera space)
+            float3 surface_vertex = pixel_to_camera( centre_of_voxel_in_pix, kinv, surface_depth );
 
-                // Extract the depth to the surface at this point
-                uint32_t voxel_pixel_index = centre_of_voxel_in_pix.y * width + centre_of_voxel_in_pix.x;
-                uint16_t surface_depth = depth_map[ voxel_pixel_index ];
+            // Compute the SDF is the distance between the camera origin and surface_vertex in world coordinates
+            float3 voxel_cam = world_to_camera( centre_of_voxel, inv_pose );
+            float sdf = surface_vertex.z - voxel_cam.z;
 
-                // If the depth is valid
-                if ( surface_depth > 0 ) {
+            if ( sdf >= -trunc_distance ) {
+                // Truncate the sdf to the range -trunc_distance -> trunc_distance
+                float tsdf;
+                if ( sdf > 0 ) {
+                    tsdf = min( sdf, trunc_distance);
+                } else {
+                    tsdf = sdf;
+                }
 
-                    // Project depth entry to a vertex ( in camera space)
-                    float3 surface_vertex = pixel_to_camera( centre_of_voxel_in_pix, kinv, surface_depth );
+                // Extract prior weight
+                float prior_weight = weight_data[voxel_index];
+                float current_weight = 1.0f;
+                float new_weight = prior_weight + current_weight;
+                new_weight = min(new_weight, max_weight );
 
-                    // Compute the SDF is the distance between the camera origin and surface_vertex in world coordinates
-					float3 voxel_cam = world_to_camera( centre_of_voxel, inv_pose );
-                    float sdf = surface_vertex.z - voxel_cam.z;
+                float prior_distance = distance_data[voxel_index];
+                float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
 
-					if( sdf >= -trunc_distance ) {
-                    	// Truncate the sdf to the range -trunc_distance -> trunc_distance
-                	    float tsdf;
-            	        if ( sdf > 0 ) {
-        	                tsdf = min( sdf, trunc_distance);
-    	                } else {
-							tsdf = sdf;
-						}
+                weight_data[voxel_index] = new_weight;
+                distance_data[voxel_index] = new_distance;
+            } // End of sdf > -trunc
+        } // End of depth > 0
 
-        	            // Extract prior weight
-    	                float prior_weight = weight_data[voxel_index];
-	                    float current_weight = 1.0f;
-                    	float new_weight = prior_weight + current_weight;
-                	    new_weight = min(new_weight, max_weight );
-
-            	        float prior_distance = distance_data[voxel_index];
-        	            float new_distance = ( (prior_distance * prior_weight) + (tsdf * current_weight) ) / new_weight;
-
-    	                weight_data[voxel_index] = new_weight;
-	                    distance_data[voxel_index] = new_distance;
-					} // End of sdf > -trunc
-                } // End of depth > 0
-            } // End of point in frustrum
-
-            voxel_index++;
-        } // End each voxel in this column
     }
 }
 
@@ -446,7 +490,7 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
 __global__
 void set_memory_to_value( float * pointer, int size, float value ) {
     int idx = threadIdx.x + (blockIdx.x * blockDim.x );
-    if( idx < size ) {
+    if ( idx < size ) {
         pointer[idx] = value;
     }
 }
@@ -466,13 +510,13 @@ void TSDFVolume::clear( ) {
 
     cudaError_t err;
 
-    set_memory_to_value<<< grid, block >>>( m_weights, data_size, 0.0f );
+    set_memory_to_value <<< grid, block >>>( m_weights, data_size, 0.0f );
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     check_cuda_error( "couldn't clear weights memory", err );
 
 
-    set_memory_to_value<<< grid, block >>>( m_voxels, data_size, m_truncation_distance );
+    set_memory_to_value <<< grid, block >>>( m_voxels, data_size, m_truncation_distance );
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     check_cuda_error( "couldn't clear depth memory", err );
@@ -480,7 +524,7 @@ void TSDFVolume::clear( ) {
     // Now initialise the translations
     dim3 block2( 1, 32, 32 );
     dim3 grid2 ( 1, divUp( m_size.y, block2.y ), divUp( m_size.z, block2.z ) );
-    initialise_translations <<<grid2, block2>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
+    initialise_translations <<< grid2, block2>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     check_cuda_error( "couldn't initialise deformation memory", err );
@@ -507,18 +551,48 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
 
     std::cout << "Integrating depth map size " << width << "x" << height << std::endl;
 
-    // Convert the input parameters to device (CUDA) types
-    Mat44 pose;
-    memcpy( &pose, camera.pose().data(), 16 * sizeof( float ) );
-
+    // Get the list of voxels which fall in the frustum
+    std::cout << " -- Get affected voxels" << std::endl;
     Mat44 inv_pose;
     memcpy( &inv_pose, camera.inverse_pose().data(), 16 * sizeof( float ) );
 
     Mat33 k;
     memcpy( &k, camera.k().data(), 9 * sizeof( float ) );
 
+    int num_voxels = m_size.x * m_size.y * m_size.z;
+
+    int num_included = 0;
+    int * included_indices = nullptr;
+    get_voxels_projecting_to_frustum( num_voxels, m_voxel_translations,
+                                      width, height,
+                                      k, inv_pose,
+                                      num_included, included_indices );
+
+
+
+    // For each of these, update the TSDF
+
+
+    // Convert the input parameters to device (CUDA) types
+    Mat44 pose;
+    memcpy( &pose, camera.pose().data(), 16 * sizeof( float ) );
+
     Mat33 kinv;
     memcpy( &kinv, camera.kinv().data(), 9 * sizeof( float ) );
+
+
+
+
+
+    // Update TSDF for each
+
+
+
+
+
+
+
+
 
     // Copy depth map data to device
     uint16_t * d_depth_map;
@@ -614,21 +688,21 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
         }
     }
 
-    if( success ) {
+    if ( success ) {
         ofstream ofs { file_name, ios::out | ios::binary };
 
         // Write dimesnions
-        std::cout << "  writing "<< sizeof( m_size ) + sizeof( m_physical_size ) <<" bytes of header data" << std::endl;
+        std::cout << "  writing " << sizeof( m_size ) + sizeof( m_physical_size ) << " bytes of header data" << std::endl;
         ofs.write( (char *) &m_size, sizeof( m_size ) );
         ofs.write( (char *)&m_physical_size, sizeof( m_physical_size));
 
-        std::cout << "  writing "<< depth_data_size <<" bytes of depth data" << std::endl;
+        std::cout << "  writing " << depth_data_size << " bytes of depth data" << std::endl;
         ofs.write( (char *)host_voxels, depth_data_size );
 
-        std::cout << "  writing "<< weight_data_size <<" bytes of weight data" << std::endl;
+        std::cout << "  writing " << weight_data_size << " bytes of weight data" << std::endl;
         ofs.write( (char *)host_weights, weight_data_size );
 
-        std::cout << "  writing "<< deformation_data_size <<" bytes of deformation data" << std::endl;
+        std::cout << "  writing " << deformation_data_size << " bytes of deformation data" << std::endl;
         ofs.write( (char *)host_deformation, deformation_data_size );
 
         ofs.close();
