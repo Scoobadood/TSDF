@@ -17,6 +17,8 @@
 #include <cfloat>
 #include <cstdint>
 
+#include <thrust/device_vector.h>
+
 #include "math_constants.h"
 
 
