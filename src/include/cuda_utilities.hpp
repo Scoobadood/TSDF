@@ -149,4 +149,7 @@ int3 world_to_pixel( const Mat44& inv_pose, const Mat33& k, const float3& point 
     return pixel;
 }
 
+__device__
+uint8_t atomicIncUint8( uint8_t* address );
+
 #endif

@@ -28,15 +28,17 @@ uint8_t atomicIncUint8( uint8_t* address ) {
 
         // Now extract the uint8 that I'm interested in
         // Endianess is little so 
-        int byte_index = ((size_t)address & 3);
-        unsigned int and_masks[] = { 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF}
+        unsigned int masks[] = { 0xFF000000, 0x00FF0000, 0x0000FF00, 0x000000FF};
         unsigned int shifts[] = { 24, 16, 8, 0 };
+        int byte_index = 3 - ((size_t)address & 3);
+        unsigned int mask = masks[byte_index];
+        unsigned int shift = shifts[byte_index];
 
-        uint8_t old_uint8 = ( old & masks[ byte_index] ) >> shifts[byte_index];
+        uint8_t old_uint8 = ( old & mask ) >> shift;
         uint8_t new_uint8 = old_uint8 + 1;
-        uint new_int = (new_uint8 << shifts[byte_index]) & and_masks[ byte_index];
+        uint new_int = (new_uint8 << shift) & mask;
 
-        new_ = old & ( ~and_masks[byte_index]);
+        new_ = old & ( ~mask );
         new_ = new_ | new_int;
 
         old = atomicCAS(base_address, assumed, new_);
