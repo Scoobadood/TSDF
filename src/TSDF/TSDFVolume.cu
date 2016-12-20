@@ -603,7 +603,7 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
 
 
     // Call the kernel
-    dim3 block( 512  );
+    dim3 block( 700  );
     dim3 grid ( divUp( num_included, block.x ) );
 
     integrate_kernel <<< grid, block>>>( num_included, d_included_indices, m_voxels, m_weights,  m_voxel_translations, m_truncation_distance, m_max_weight, pose, inv_pose, k, kinv, width, height, d_depth_map);
