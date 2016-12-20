@@ -200,6 +200,8 @@ void launch_get_cube_contribution(	const TSDFVolume * const 	volume,
  * @param num_cubes 		Number of entries to process
  * @param vertex_offstes 	Where in vertices a cube should writre its output
  * @param vertices 			The output data
+ * @param vertex_use_count	The number of times each voxel is used in this mesh
+ * @param mesh_voxel_entries Two entries per mesh vertex, for the voxels that form either end of the edge the vertex lies on
  */
 __global__
 void generate_vertices( const dim3 				grid_size, 				// in
@@ -208,7 +210,10 @@ void generate_vertices( const dim3 				grid_size, 				// in
                         const int * const		cube_indices,			// in (device)
                         const int 				num_cubes,				// in
                         const int * const 		thread_write_offsets,	// in
-                        float3 					* vertices ) {			// out (preallocated device)
+                        float3 					* vertices,				// out (preallocated device)
+                        uint8_t					* voxel_use_count,		// out (preallocated device)
+                        int 					* mesh_voxel_indices	// out (preallocated device)
+                        ) {
 
 	int data_index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -253,18 +258,31 @@ void generate_vertices( const dim3 				grid_size, 				// in
 		vertex[6] = interpolate(  v7, v6, w7, w6 );
 		vertex[7] = interpolate(  v7, v4, w7, w4 );
 
-		vertex[8] = interpolate(  v0, 	v4, w0, w4 );
-		vertex[9] = interpolate(  v1, v5, 	w1, w5 );
-		vertex[10] = interpolate( v2, v6, w2, 	w6 );
+		vertex[8] = interpolate(  v0, v4, w0, w4 );
+		vertex[9] = interpolate(  v1, v5, w1, w5 );
+		vertex[10] = interpolate( v2, v6, w2, w6 );
 		vertex[11] = interpolate( v3, v7, w3, w7 );
 
 		// Extract the vertex offset;
-		int edge_index;
+		int edge_index;		
 		int i = 0;
 		int output_index = thread_write_offsets[ data_index ];
 		int cube_type = calculate_cube_type( voxel_indices, distance_data );
 		while ( (edge_index = TRIANGLE_TABLE[cube_type][i]) != -1 ) {
 			vertices[ output_index ] = vertex[edge_index];
+
+			//	Get the indices of the vertex end points
+			int voxel_index_1 = voxel_indices[ EDGE_VERTICES[edge_index][0] ];
+			int voxel_index_2 = voxel_indices[ EDGE_VERTICES[edge_index][1] ];
+
+			// Store the voxel indices for this mesh vertex
+			mesh_vertex_indices[ output_index * 2 ] = voxel_index_1;
+			mesh_vertex_indices[ output_index * 2 + 1 ] = voxel_index_2;
+
+			// Update the count for number of times used for each voxel index
+			atomic_add( vertex_use_count[ voxel_index_1 ], 1 );
+			atomic_add( vertex_use_count[ voxel_index_2 ], 1 );
+
 			output_index ++;
 			i++;
 		}
@@ -293,6 +311,20 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	cudaError_t err = cudaMalloc( &d_vertices, num_vertices * sizeof( float3 ));
 	check_cuda_error( "Couldn't allocate device memory for vertex storage", err);
 
+	// Allocate voxel use count on device
+	uint8_t * d_voxel_use_count;
+	dim3 volume_size = volume->size();
+	int num_voxels = volume_size.x * volume_size.y * volume_size.z;
+	cudaError_t err = cudaMalloc( &d_voxel_use_count, num_voxels * sizeof( uint8_t ));
+	check_cuda_error( "Couldn't allocate device memory for voxel usage count", err);
+	err = cudaMemset( d_voxel_use_count, num_voxels * sizeof( uint8_t ), 0 );
+	check_cuda_error( "Couldn't zero device memory for voxel usage count", err);
+
+	// Allocate mesh voxel index memory
+	int * d_mesh_voxel_indices;
+	cudaError_t err = cudaMalloc( &d_mesh_voxel_indices, num_vertices * 2 * sizeof( int ));
+	check_cuda_error( "Couldn't allocate device memory for mesh voxel indices count", err);
+
 	// Copy cube indices to device
 	int * d_cube_indices;
 	err = cudaMalloc( &d_cube_indices, num_cubes * sizeof( int ));
@@ -315,7 +347,9 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	                                        d_cube_indices,
 	                                        num_cubes,
 	                                        d_thread_write_offsets,
-	                                        d_vertices );
+	                                        d_vertices,
+	                                        d_voxel_use_count,
+	                                        d_mesh_voxel_indices);
 	cudaDeviceSynchronize();
 	err = cudaGetLastError( );
 	check_cuda_error( "Generate vertices kernel failed", err );
@@ -332,6 +366,13 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	check_cuda_error( "Failed to free cube index memory from device", err );
 	err = cudaFree( d_thread_write_offsets );
 	check_cuda_error( "Failed to free thread write offsets memory from device", err );
+
+	// For now, delete these data stores
+	err = cudaFree( d_voxel_use_count );
+	check_cuda_error( "Failed to free voxel_use_count memory from device", err );
+
+	err = cudaFree( d_mesh_voxel_indices );
+	check_cuda_error( "Failed to free mesh_voxel_indices memory from device", err );
 }
 
 /**
