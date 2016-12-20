@@ -99,7 +99,7 @@ void set_weight( const dim3& size, float * weights, int x, int y, int z, float w
  * *
  * *
  * **************************************************************************************************************/
-__device__
+__global__
 /**
  * Predicate:
  * Tag indices of voxels that project into frustum with true
@@ -120,9 +120,9 @@ void voxel_in_frustrum( const int               num_voxels,
         int3   centre_of_voxel_in_pix = world_to_pixel( voxel_centre, inv_pose, k );
 
         if ( centre_of_voxel_in_pix.x >= 0 && centre_of_voxel_in_pix.x <  width && centre_of_voxel_in_pix.y >= 0 && centre_of_voxel_in_pix.y < height ) {
-            in_frustum = true;
+            in_frustum[voxel_index] = true;
         } else {
-            in frustum = false;
+            in_frustum[voxel_index] = false;
         }
     }
 }
@@ -167,7 +167,7 @@ void scatter_voxel_indices( const bool      * in_frustum,
     }
 }
 
-__global__
+__host__
 void get_voxels_projecting_to_frustum(  const int               num_voxels,
                                         const float3 * const    voxel_centres,
                                         const uint32_t          width,
@@ -176,16 +176,24 @@ void get_voxels_projecting_to_frustum(  const int               num_voxels,
                                         const Mat44             inv_pose,
                                         int&                    num_included,
                                         int*&                   included_indices ) {
-    int * d_in_frustum;
+    bool * d_in_frustum;
 
     cudaError_t err = cudaMalloc( &d_in_frustum, sizeof( bool ) * num_voxels );
     check_cuda_error( "Failed to allocate storage for voxel indices", err );
     bool * h_in_frustum = new bool[ num_voxels];
     if ( !h_in_frustum) exit( -1 );
-    voxel_in_frustrum <<< >>> ( num_voxels, voxel_centres, width, height, k, inv_pose, d_in_frustum );
-    cudaMemcpy( h_in_frustum, d_in_frustum, num_voxels * sizeof( bool ), cudaMemcpyDeviceToHost);
-    cudaFree( d_in_frustum );
+	dim3 block( 1024 );
+	dim3 grid( num_voxels/block.x );
+    voxel_in_frustrum <<< grid, block >>> ( num_voxels, voxel_centres, width, height, k, inv_pose, d_in_frustum );
+	cudaDeviceSynchronize();
+	err= cudaGetLastError( );
+	check_cuda_error("voxel in frustum kernel failed" , err );
+ 
+    err = cudaMemcpy( h_in_frustum, d_in_frustum, num_voxels * sizeof( bool ), cudaMemcpyDeviceToHost);
+    check_cuda_error ( "Failed to copy results back from host" , err );
 
+    err = cudaFree( d_in_frustum );
+	check_cuda_error( "Failed to free voxel in frustum device data", err );
 
     int * scatter_address = new int[num_voxels];
     scan_storage_for_voxel_indices( h_in_frustum, num_voxels, scatter_address, num_included );
@@ -219,24 +227,26 @@ void get_voxels_projecting_to_frustum(  const int               num_voxels,
  * @param depth_map Pointer to array of width*height uint16 types in devcie memory
  */
 __global__
-void integrate_kernel(  float         * distance_data,
-                        float         * weight_data,
-                        float3        * voxel_centres,
-                        const float     trunc_distance,
-                        const float     max_weight,
-                        Mat44           pose,
-                        Mat44           inv_pose,
-                        Mat33           k,
-                        Mat33           kinv,
-                        uint32_t        width,
-                        uint32_t        height,
-                        const uint16_t  * depth_map) {
+void integrate_kernel(  const int 				num_data_items, 
+						const int * const		data_items,
+						float      		 		* distance_data,
+                        float         			* weight_data,
+                        float3      			* voxel_centres,
+                        const float   			trunc_distance,
+                        const float     		max_weight,
+                        Mat44         	 		pose,
+                        Mat44           		inv_pose,
+                        Mat33           		k,
+                        Mat33           		kinv,
+                        uint32_t       		 	width,
+                        uint32_t        		height,
+                        const uint16_t * const 	depth_map) {
 
 
     int data_index = blockDim.x * blockIdx.x + threadIdx.x;
 
     if ( data_index < num_data_items ) {
-        voxel_index = data_items[ data_index ];
+        int voxel_index = data_items[ data_index ];
 
         // Work out where in the image, the centre of this voxel projects
         // This gives us a pixel in the depth map
@@ -547,8 +557,6 @@ __host__
 void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
     assert( depth_map );
 
-    using namespace Eigen;
-
     std::cout << "Integrating depth map size " << width << "x" << height << std::endl;
 
     // Get the list of voxels which fall in the frustum
@@ -568,31 +576,12 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
                                       k, inv_pose,
                                       num_included, included_indices );
 
-
-
     // For each of these, update the TSDF
-
-
-    // Convert the input parameters to device (CUDA) types
     Mat44 pose;
     memcpy( &pose, camera.pose().data(), 16 * sizeof( float ) );
 
     Mat33 kinv;
     memcpy( &kinv, camera.kinv().data(), 9 * sizeof( float ) );
-
-
-
-
-
-    // Update TSDF for each
-
-
-
-
-
-
-
-
 
     // Copy depth map data to device
     uint16_t * d_depth_map;
@@ -603,21 +592,33 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     err = cudaMemcpy( d_depth_map, depth_map, data_size, cudaMemcpyHostToDevice );
     check_cuda_error( "Failed to copy depth map to GPU", err);
 
-    // Call the kernel
-    dim3 block( 1, 20, 20  );
-    dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 
-    integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, m_max_weight, pose, inv_pose, k, kinv, width, height, d_depth_map);
+	// Copy the data items back to device
+	int * d_included_indices;
+	err = cudaMalloc( &d_included_indices, num_included * sizeof( int ) );
+    check_cuda_error( "Couldn't allocate storage for included indices on device", err);
+	err = cudaMemcpy( d_included_indices, included_indices, num_included*sizeof(int), cudaMemcpyHostToDevice );
+    check_cuda_error( "Failed to copy included indices to GPU", err);
+
+
+
+    // Call the kernel
+    dim3 block( 512  );
+    dim3 grid ( divUp( num_included, block.x ) );
+
+    integrate_kernel <<< grid, block>>>( num_included, d_included_indices, m_voxels, m_weights,  m_voxel_translations, m_truncation_distance, m_max_weight, pose, inv_pose, k, kinv, width, height, d_depth_map);
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     check_cuda_error( "Integrate kernel failed", err);
-
 
     // Now delete depth map data from device
     err = cudaFree( d_depth_map );
     check_cuda_error( "Failed to deallocate cuda depth map", err);
 
-    std::cout << "Integration finished" << std::endl;
+    err = cudaFree( d_included_indices );
+    check_cuda_error( "Failed to deallocate included indices map", err);
+
+     std::cout << "Integration finished" << std::endl;
 }
 
 #pragma mark - Import/Export

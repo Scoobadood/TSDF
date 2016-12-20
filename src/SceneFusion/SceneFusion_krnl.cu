@@ -99,6 +99,56 @@ void update_deformation_field(  int    			num_cubes,
 }
 
 
+
+__host__
+/**
+ * Convert a list of unique cube indices to a list of unique voxel indices by:
+ * - replace each cube index with the related 8 voxels
+ * - sort the voxels
+ * - de-dupe by replacing elements whose neighbour is the same as this element with zero
+ */
+void cubes_to_voxels( const int * cube_indices, int num_cubes, int *& voxel_indices, int& num_voxels ) {
+	// Allocate sufficient storage for all voxel indices including dupes
+ 	int * d_voxel_indices;
+	cudaError_t err = cudaMalloc( &d_voxel_indices, num_cubes * 8 * sizeof( int ) );
+	check_cuda_error( "Failed to allocate voxel index memory on device", err );
+	
+	// Push cube indices back to device
+    std::cout << "Copying " << num_cubes << " cube indices to device" << std::endl;
+    int * d_cube_indices;
+    err = cudaMalloc( &d_cube_indices, num_cubes*sizeof(int) );
+    check_cuda_error( "Couldn't allocate storage for cube indices on device", err );
+    err = cudaMemcpy( d_cube_indices, cube_indices, num_cubes * sizeof( int ), cudaMemcpyHostToDevice );
+    check_cuda_error( "Failed to copy cube indices to device memory" , err );
+
+	// invoke kernel
+	dim3 block( 1024 );
+	dim3 grid( divUp( num_cubes, block.x ));
+	expand_cubes<<< grid, block>>>( d_cube_indices, num_cubes, d_voxel_indices );
+	cudaSynchronizeDevices( );
+	err = cudaGetLastError( );
+	cuda_check_error( "Expand cubes failed", err );
+	
+	// Free up cubes
+	err = cudaFree( d_cube_indices );
+	check_cuda_error( "Couldn't free cube data on device", err );
+
+	// Now sort the list of voxels
+	grid.x = divUp( num_cubes * 4, block.x );
+	sort_list<<< grid, block >>>( d_voxel_indices, num_cubes * 8 );
+
+	// De-dupe
+	scan() ;
+
+
+
+	// Tidy up
+	err = cudaFree( d_voxel_indices );
+	cuda_check_error( "Couldn't free voxel data on device", err );
+}
+
+
+
 __host__
 /**
  * 
