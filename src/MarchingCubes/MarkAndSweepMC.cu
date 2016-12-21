@@ -276,12 +276,12 @@ void generate_vertices( const dim3 				grid_size, 				// in
 			int voxel_index_2 = voxel_indices[ EDGE_VERTICES[edge_index][1] ];
 
 			// Store the voxel indices for this mesh vertex
-			mesh_vertex_indices[ output_index * 2 ] = voxel_index_1;
-			mesh_vertex_indices[ output_index * 2 + 1 ] = voxel_index_2;
+			mesh_voxel_indices[ output_index * 2 ] = voxel_index_1;
+			mesh_voxel_indices[ output_index * 2 + 1 ] = voxel_index_2;
 
 			// Update the count for number of times used for each voxel index
-			atomic_add( vertex_use_count[ voxel_index_1 ], 1 );
-			atomic_add( vertex_use_count[ voxel_index_2 ], 1 );
+			atomicIncUint8( &(voxel_use_count[ voxel_index_1 ] ) );
+			atomicIncUint8( &(voxel_use_count[ voxel_index_2 ] ) );
 
 			output_index ++;
 			i++;
@@ -315,14 +315,14 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	uint8_t * d_voxel_use_count;
 	dim3 volume_size = volume->size();
 	int num_voxels = volume_size.x * volume_size.y * volume_size.z;
-	cudaError_t err = cudaMalloc( &d_voxel_use_count, num_voxels * sizeof( uint8_t ));
+	err = cudaMalloc( &d_voxel_use_count, num_voxels * sizeof( uint8_t ));
 	check_cuda_error( "Couldn't allocate device memory for voxel usage count", err);
 	err = cudaMemset( d_voxel_use_count, num_voxels * sizeof( uint8_t ), 0 );
 	check_cuda_error( "Couldn't zero device memory for voxel usage count", err);
 
 	// Allocate mesh voxel index memory
 	int * d_mesh_voxel_indices;
-	cudaError_t err = cudaMalloc( &d_mesh_voxel_indices, num_vertices * 2 * sizeof( int ));
+	err = cudaMalloc( &d_mesh_voxel_indices, num_vertices * 2 * sizeof( int ));
 	check_cuda_error( "Couldn't allocate device memory for mesh voxel indices count", err);
 
 	// Copy cube indices to device
