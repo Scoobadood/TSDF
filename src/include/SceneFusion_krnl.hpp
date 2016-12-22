@@ -5,11 +5,10 @@
 #include "PngWrapper.hpp"
 
 __host__
-void process_frames( 
-	TSDFVolume 		* volume,
-	const Camera 	* camera,
-	uint16_t 		width, 
-	uint16_t 		height, 
-	const uint16_t 	* depth_data,
-	const float 	* scene_flow_data ) ;
+void process_frames(	TSDFVolume *			volume,
+						const Camera * const 	camera,
+						const uint16_t			width,
+						const uint16_t 			height,
+						const uint16_t * const 	h_depth_data,
+						const float3 * const 	h_scene_flow );
 #endif

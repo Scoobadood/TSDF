@@ -21,8 +21,7 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 void extract_surface_ms( const TSDFVolume * const   volume,     // in
                          float3 *&                  vertices,
                          int&                       num_vertices,
-                         int*&                      cube_indices,
-						 int&						num_cubes );
+                         int*&                      voxel_indices);
 
 __device__
 void voxel_indices_for_cube_index( const int cube_index, const int grid_size_x, const int grid_size_y, int voxel_indices[8] );

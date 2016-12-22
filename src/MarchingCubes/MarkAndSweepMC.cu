@@ -304,7 +304,8 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
                                 const int 			* const thread_write_offsets,
                                 int 				num_cubes,
                                 int 				num_vertices,
-                                float3				* vertices ) {
+                                float3				* vertices,
+                                int *&				d_mesh_voxel_indices ) {
 
 	// Allocate device vertex storage
 	float3 * d_vertices;
@@ -321,7 +322,6 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	check_cuda_error( "Couldn't zero device memory for voxel usage count", err);
 
 	// Allocate mesh voxel index memory
-	int * d_mesh_voxel_indices;
 	err = cudaMalloc( &d_mesh_voxel_indices, num_vertices * 2 * sizeof( int ));
 	check_cuda_error( "Couldn't allocate device memory for mesh voxel indices count", err);
 
@@ -370,9 +370,6 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	// For now, delete these data stores
 	err = cudaFree( d_voxel_use_count );
 	check_cuda_error( "Failed to free voxel_use_count memory from device", err );
-
-	err = cudaFree( d_mesh_voxel_indices );
-	check_cuda_error( "Failed to free mesh_voxel_indices memory from device", err );
 }
 
 /**
@@ -384,14 +381,18 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
                          float3 *& 					vertices,
                          int& 						num_vertices,
-                         int*& 						cube_indices,
-						 int&						num_cubes ) {
+                         int*& 						voxel_indices ) {
 	std::cout << "Extracting surface" << std::endl;
 
 	// Each cube is a block of 8 adjacent voxels.
 	dim3 grid_size = volume->size();
 	int max_cubes = (grid_size.x - 1 ) * ( grid_size.y - 1) * ( grid_size.z - 1 );
 
+	/* **************************************************************************************************************
+	 * *                                                                                                            *
+	 * *  Get each cubes contribution to vertices                                                                   *
+	 * *                                                                                                            *
+	 * **************************************************************************************************************/
 
 	// Allocate host storage for number of vertices per cube
 	uint8_t *vertices_per_cube = vertices_per_cube = new uint8_t[ max_cubes ];
@@ -405,22 +406,18 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
 	launch_get_cube_contribution( volume, max_cubes, vertices_per_cube, num_occupied_cubes, num_vertices );
 	std::cout << "-- found " << num_occupied_cubes << " occupied cubes and " << num_vertices << " vertices" << std::endl;
 
-
 	// Sanity check
 	if ( num_occupied_cubes == 0 || num_vertices == 0 ) {
 		std::cout << "Either no occupied cubes or no vertices. Either way a bit sus." << std::endl;
 		exit( -1 );
 	}
 
-	// Allocate storage to hold enough vertices
-	std::cout << "Allocating storage for " << num_vertices << " vertices" << std::endl;
-	vertices = new float3[ num_vertices ];
-	if ( !vertices ) {
-		std::cout << "Couldn't allocate host storage for vertices" << std::endl;
-		delete[] vertices_per_cube;
-		exit( -1 );
-	}
 
+	/* **************************************************************************************************************
+	 * *                                                                                                            *
+	 * *  Compute a prefix sum for offsets of vertex output data                                                    *
+	 * *                                                                                                            *
+	 * **************************************************************************************************************/
 	// Allocate storage for thread write offets
 	std::cout << "Allocating storage for " << num_occupied_cubes << " offsets" << std::endl;
 	int * thread_write_offsets = new int[ num_occupied_cubes ];
@@ -433,7 +430,7 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
 
 	// Allocate storage for cube indices
 	std::cout << "Allocating storage for " << num_occupied_cubes << " cube indices" << std::endl;
-	cube_indices = new int[ num_occupied_cubes ];
+	int * cube_indices = new int[ num_occupied_cubes ];
 	if ( !cube_indices ) {
 		std::cout << "Couldn't allocate host storage for thread write offsets" << std::endl;
 		delete[] thread_write_offsets;
@@ -462,19 +459,29 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
 			output_index ++;
 		}
 	}
+	delete[] vertices_per_cube;
 
+	/* **************************************************************************************************************
+	 * *                                                                                                            *
+	 * *  Get the vertices corresponding to each cube                                                               *
+	 * *                                                                                                            *
+	 * **************************************************************************************************************/
+	// Allocate storage to hold enough vertices
+	std::cout << "Allocating storage for " << num_vertices << " vertices" << std::endl;
+	vertices = new float3[ num_vertices ];
+	if ( !vertices ) {
+		std::cout << "Couldn't allocate host storage for vertices" << std::endl;
+		delete[] vertices_per_cube;
+		exit( -1 );
+	}
 
 	// Finally generate the vertex data
 	std::cout << "Generating vertices" << std::endl;
-	launch_generate_vertices( volume, cube_indices, thread_write_offsets, num_occupied_cubes, num_vertices, vertices);
-
+	launch_generate_vertices( volume, cube_indices, thread_write_offsets, num_occupied_cubes, num_vertices, vertices, voxel_indices);
 
 	// And tidy up
 	delete [] thread_write_offsets;
-	delete [] vertices_per_cube;
-
-	// Caller must delete vertices when done with it
-	num_cubes = num_occupied_cubes;
+	delete [] cube_indices;
 }
 
 
@@ -486,10 +493,9 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
  */
 void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, std::vector<int3>& triangles) {
 	float3 	* f3_vertices;
-	int 	* cube_indices;
+	int 	* voxel_indices;
 	int 	num_vertices;
-	int		num_cubes;
-	extract_surface_ms( volume, f3_vertices, num_vertices, cube_indices, num_cubes );
+	extract_surface_ms( volume, f3_vertices, num_vertices, voxel_indices );
 
 	for ( int i = 0; i < num_vertices; i++ ) {
 		vertices.push_back( f3_vertices[i] );
@@ -500,5 +506,6 @@ void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, 
 
 	// Delete f3 vertices
 	delete[] f3_vertices;
-	delete[] cube_indices;
+	cudaError_t err = cudaFree( voxel_indices );
+	check_cuda_error( "Failed to delete voxel indices from device", err );
 }

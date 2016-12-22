@@ -99,7 +99,7 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 		std::cout << "-- got it" << std::endl;
 
 		// Process the update with the last depth image data and this scene flow.
-		::process_frames( m_volume, m_camera, width, height, m_last_depth_image, residuals.data() );
+		::process_frames( m_volume, m_camera, width, height, m_last_depth_image, (float3 *)residuals.data() );
 
 	} 
 
