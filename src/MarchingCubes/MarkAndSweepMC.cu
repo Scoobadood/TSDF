@@ -304,15 +304,15 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
                                 const int 			* const thread_write_offsets,
                                 int 				num_cubes,
                                 int 				num_vertices,
-                                float3				* vertices,
+                                float3 *&			d_vertices,
                                 int *&				d_mesh_voxel_indices ) {
-
 	// Allocate device vertex storage
-	float3 * d_vertices;
+	std::cout << "   -- allocating storage for " << num_vertices << " vertices on device" << std::endl;
 	cudaError_t err = cudaMalloc( &d_vertices, num_vertices * sizeof( float3 ));
 	check_cuda_error( "Couldn't allocate device memory for vertex storage", err);
 
 	// Allocate voxel use count on device
+	std::cout << "   -- allocating storage for voxel use count on device" << std::endl;
 	uint8_t * d_voxel_use_count;
 	dim3 volume_size = volume->size();
 	int num_voxels = volume_size.x * volume_size.y * volume_size.z;
@@ -322,10 +322,12 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	check_cuda_error( "Couldn't zero device memory for voxel usage count", err);
 
 	// Allocate mesh voxel index memory
+	std::cout << "   -- allocating storage for mesh voxel indices on device" << std::endl;
 	err = cudaMalloc( &d_mesh_voxel_indices, num_vertices * 2 * sizeof( int ));
 	check_cuda_error( "Couldn't allocate device memory for mesh voxel indices count", err);
 
 	// Copy cube indices to device
+	std::cout << "   -- copying cube indices to device" << std::endl;
 	int * d_cube_indices;
 	err = cudaMalloc( &d_cube_indices, num_cubes * sizeof( int ));
 	check_cuda_error( "Couldn't allocate device memory for cube indices", err);
@@ -333,12 +335,14 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	check_cuda_error( "Couldn't copy cube indicesto device", err);
 
 	// Copy vertex offsets to device
+	std::cout << "   -- copying vertex scatter addresses to device" << std::endl;
 	int * d_thread_write_offsets;
 	err = cudaMalloc( &d_thread_write_offsets, num_cubes * sizeof( int ));
 	check_cuda_error( "Couldn't allocate device memory for vertex offsets", err);
 	err = cudaMemcpy( d_thread_write_offsets, thread_write_offsets, num_cubes * sizeof( int ), cudaMemcpyHostToDevice);
 	check_cuda_error( "Couldn't copy vertex offstes to device", err);
 
+	std::cout << "   -- running generation" << std::endl;
 	dim3 block( 1024 );
 	dim3 grid( divUp( num_cubes, block.x ));
 	generate_vertices <<< grid, block >>>(	volume->size(),
@@ -354,20 +358,12 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
 	err = cudaGetLastError( );
 	check_cuda_error( "Generate vertices kernel failed", err );
 
-	// Copy device storage back to host
-	err = cudaMemcpy( vertices, d_vertices, num_vertices * sizeof( float3 ), cudaMemcpyDeviceToHost);
-	char s [ 500];
-	sprintf( s, "copy %d verts from device to host failed", num_vertices );
-	check_cuda_error( s, err );
-
-	err = cudaFree( d_vertices );
-	check_cuda_error( "Failed to free vertex memory from device", err );
 	err = cudaFree( d_cube_indices );
 	check_cuda_error( "Failed to free cube index memory from device", err );
+
 	err = cudaFree( d_thread_write_offsets );
 	check_cuda_error( "Failed to free thread write offsets memory from device", err );
 
-	// For now, delete these data stores
 	err = cudaFree( d_voxel_use_count );
 	check_cuda_error( "Failed to free voxel_use_count memory from device", err );
 }
@@ -379,9 +375,11 @@ void launch_generate_vertices(	const TSDFVolume	* volume,
  * @param num_vertices populated by the method contains the total number of vertices found
  */
 void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
-                         float3 *& 					vertices,
-                         int& 						num_vertices,
-                         int*& 						voxel_indices ) {
+                         float3 *& 					d_vertices,			// out (allocated here)
+                         int& 						num_vertices,		// out 
+                         int*& 						d_voxel_indices ) { // out (allocated here)
+
+
 	std::cout << "Extracting surface" << std::endl;
 
 	// Each cube is a block of 8 adjacent voxels.
@@ -394,6 +392,7 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
 	 * *                                                                                                            *
 	 * **************************************************************************************************************/
 
+	std::cout << "-- get individual cube contribution" << std::endl;
 	// Allocate host storage for number of vertices per cube
 	uint8_t *vertices_per_cube = vertices_per_cube = new uint8_t[ max_cubes ];
 	if ( !vertices_per_cube) {
@@ -419,28 +418,26 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
 	 * *                                                                                                            *
 	 * **************************************************************************************************************/
 	// Allocate storage for thread write offets
-	std::cout << "Allocating storage for " << num_occupied_cubes << " offsets" << std::endl;
+	std::cout << "-- allocating storage for " << num_occupied_cubes << " offsets" << std::endl;
 	int * thread_write_offsets = new int[ num_occupied_cubes ];
 	if ( !thread_write_offsets ) {
 		std::cout << "Couldn't allocate host storage for thread write offsets" << std::endl;
 		delete[] vertices_per_cube;
-		delete[] vertices;
 		exit( -1 );
 	}
 
 	// Allocate storage for cube indices
-	std::cout << "Allocating storage for " << num_occupied_cubes << " cube indices" << std::endl;
+	std::cout << "-- allocating storage for " << num_occupied_cubes << " cube indices" << std::endl;
 	int * cube_indices = new int[ num_occupied_cubes ];
 	if ( !cube_indices ) {
 		std::cout << "Couldn't allocate host storage for thread write offsets" << std::endl;
 		delete[] thread_write_offsets;
 		delete[] vertices_per_cube;
-		delete[] vertices;
 		exit( -1 );
 	}
 
 	// Populate the thread write offstes
-	std::cout << "Populating thread write offsets" << std::endl;
+	std::cout << "-- populating thread write offsets" << std::endl;
 	int current_offset = 0;
 	int output_index = 0;
 	for ( int cube_index = 0; cube_index < max_cubes; cube_index++ ) {
@@ -467,21 +464,15 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
 	 * *                                                                                                            *
 	 * **************************************************************************************************************/
 	// Allocate storage to hold enough vertices
-	std::cout << "Allocating storage for " << num_vertices << " vertices" << std::endl;
-	vertices = new float3[ num_vertices ];
-	if ( !vertices ) {
-		std::cout << "Couldn't allocate host storage for vertices" << std::endl;
-		delete[] vertices_per_cube;
-		exit( -1 );
-	}
-
 	// Finally generate the vertex data
-	std::cout << "Generating vertices" << std::endl;
-	launch_generate_vertices( volume, cube_indices, thread_write_offsets, num_occupied_cubes, num_vertices, vertices, voxel_indices);
+	std::cout << "-- generating vertices" << std::endl;
+	launch_generate_vertices(	volume, cube_indices, thread_write_offsets, num_occupied_cubes, 	// in
+								num_vertices, d_vertices, d_voxel_indices);							// out
 
 	// And tidy up
 	delete [] thread_write_offsets;
 	delete [] cube_indices;
+	std::cout << "-- done" << std::endl;
 }
 
 
@@ -492,20 +483,46 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 	// in
  * @param triangles A vector of Triangles
  */
 void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, std::vector<int3>& triangles) {
-	float3 	* f3_vertices;
-	int 	* voxel_indices;
-	int 	num_vertices;
-	extract_surface_ms( volume, f3_vertices, num_vertices, voxel_indices );
 
+
+	float3 	* d_vertices;
+	int 	* d_voxel_indices;
+	int 	num_vertices;
+	extract_surface_ms( volume, 					// in
+						d_vertices, 				// out
+						num_vertices, 				// out
+						d_voxel_indices );			// out
+
+	// Don't care for these
+	cudaError_t err = cudaFree( d_voxel_indices );
+	check_cuda_error( "Failed to delete voxel indices from device", err );
+
+
+	// Copy vertices back off device
+	float3 * h_vertices = new float3[ num_vertices ];
+	if( ! h_vertices ) {
+		std::cout << " Couldn't allocate storage on host for mesh vertices" << std::endl;
+		exit( -1 );
+	}
+
+	err = cudaMemcpy( h_vertices, d_vertices, num_vertices * sizeof( float3 ), cudaMemcpyDeviceToHost);
+	char s [ 500];
+	sprintf( s, "copy %d verts from device to host failed", num_vertices );
+	check_cuda_error( s, err );
+
+	// Don;t need device vertices now
+	err = cudaFree( d_vertices );
+	check_cuda_error( "Failed to free vertex memory from device", err );
+
+
+	// Convert to vector or vertices and triangles
 	for ( int i = 0; i < num_vertices; i++ ) {
-		vertices.push_back( f3_vertices[i] );
+		vertices.push_back( h_vertices[i] );
 		if ( i % 3 == 0 ) {
 			triangles.push_back( int3{ i, i + 2, i + 1});
 		}
 	}
 
 	// Delete f3 vertices
-	delete[] f3_vertices;
-	cudaError_t err = cudaFree( voxel_indices );
-	check_cuda_error( "Failed to delete voxel indices from device", err );
+	delete[] h_vertices;
 }

@@ -123,7 +123,7 @@ void find_mesh_vertex_correspondences(
 __host__
 void compute_mesh_vertex_scatter_array( const bool * const 	d_correspondence_flag, //	Device correspondence flags
 										const int 			num_mesh_vertices,
-										int * 				d_scatter_addresses,
+										int *& 				d_scatter_addresses,
 										int& 				num_correspondences ) {
 	// First get the data off the device
 	bool * h_correspondence_flag = new bool[ num_mesh_vertices ];
@@ -237,14 +237,14 @@ void process_frames(	TSDFVolume *			volume,
 	//
 	// Extract the mesh from the TSDF
 	//
-	std::cout << "-- Extracting mesh" << std::endl;
+	std::cout << "Processing Frames" << std::endl;
 
 	float3 * 	mesh_vertices;
 	int 		num_mesh_vertices;
 	int * 		d_mesh_vertex_voxel_indices;
 	extract_surface_ms( volume, 		// In
 						mesh_vertices, num_mesh_vertices, d_mesh_vertex_voxel_indices ); // Out
-	std::cout << "  got " << num_mesh_vertices << " mesh vertices" << std::endl;
+	std::cout << "-- got " << num_mesh_vertices << " mesh vertices" << std::endl;
 
 
 
@@ -261,7 +261,7 @@ void process_frames(	TSDFVolume *			volume,
 	cudaError_t err;
 
 	// Push depth map
-	std::cout << "-- Pushing depth map" << std::endl;
+	std::cout << "-- pushing depth map" << std::endl;
 	int num_pixels = width * height;
 	uint16_t * d_depth_data;
 	err = cudaMalloc( &d_depth_data, num_pixels * sizeof( uint16_t ) );
@@ -270,7 +270,7 @@ void process_frames(	TSDFVolume *			volume,
 	check_cuda_error( "Failed to copy depth data to device" , err );
 
 
-	std::cout << "-- Prepping for correspondence calculation" << std::endl;
+	std::cout << "-- prepping for correspondence calculation" << std::endl;
 	bool * d_correspondence_flags;
 	err = cudaMalloc( &d_correspondence_flags, num_mesh_vertices * sizeof( bool ) );
 	check_cuda_error( "Failed to allocate correspondence flags on device", err );
@@ -304,12 +304,12 @@ void process_frames(	TSDFVolume *			volume,
 	int * d_scatter_addresses = nullptr;
 	compute_mesh_vertex_scatter_array(	d_correspondence_flags, num_mesh_vertices, 		// in
 										d_scatter_addresses, num_compacted_entries );	//	out
-	std::cout << "  got " << num_compacted_entries << " correspondences " << std::endl;
+	std::cout << "   -- got " << num_compacted_entries << " correspondences " << std::endl;
 
 	//
 	// Perform compaction of pixel and voxel verts and 
 	//
-	std::cout << "-- Compacting vectors" << std::endl;
+	std::cout << "-- compacting vectors" << std::endl;
 	int * d_compact_pixel_indices;
 	err = cudaMalloc( &d_compact_pixel_indices, num_compacted_entries * sizeof( int ) );
 	check_cuda_error( "Failed to allocate compact pixel indices on device", err );
