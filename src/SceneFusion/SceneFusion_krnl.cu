@@ -12,7 +12,7 @@
 
 
 // Based on voxel size of 50
-const float THRESHOLD = 100.0f;
+const float THRESHOLD = 10.0f;
 const int BLOCK_SIZE = 512;
 
 /* *
@@ -63,17 +63,17 @@ const int BLOCK_SIZE = 512;
 /* ************************************************************************************************************************
  * * Compute mesh vertex correspondences from depth data
  * * Project each mesh vertex into depth image and back into 3D space
- * * Where the reprojected point is 'close neough' to the origina mesh vertex, a correspondence is deemed
+ * * Where the reprojected point is 'close enough' to the origina mesh vertex, a correspondence is deemed
  * * Set a flag in the out put array to indicate this and also store the pixel coordinates
  * * 
  * * Requires:
  * *    	Mesh vertices (float3), num_mesh_verts( int), depth_map (uint16_t *), inv_pose, k, pose, inv_k
- * *	Returns:
+ * * Returns:
  * *		bool flag per mesh vert (true if corresponds else false), mesh pixel coords
  * ************************************************************************************************************************/
 __global__
 void find_mesh_vertex_correspondences( 
-	const float3 * const 	mesh_vertices,		// in device
+	const float3 * const 	d_mesh_vertices,	// in device
 	const int 				num_mesh_vertices,	// in
 	const uint16_t * const 	depth_map,			// in
 	const uint32_t			width,				// in
@@ -83,13 +83,13 @@ void find_mesh_vertex_correspondences(
     const Mat44				pose,				// in
     const Mat44				inv_pose,			// in
     const float     		threshold,			// in
-    bool * 					correspondence_flag,// out (preallocated)
-    int * 					corr_pixel_index	// out (preallocated)
+    bool * 					d_corr_flag,		// out (preallocated)
+    int * 					d_corr_pixel_index	// out (preallocated)
    	) {
 	int mesh_vertex_index = blockDim.x * blockIdx.x + threadIdx.x;
 	if( mesh_vertex_index < num_mesh_vertices ) {
 
-		float3 vertex_coord = mesh_vertices[mesh_vertex_index];
+		float3 vertex_coord = d_mesh_vertices[ mesh_vertex_index ];
 		int3 pixel_coord = world_to_pixel( vertex_coord, inv_pose, k );
 
 		if( pixel_coord.x >= 0 && pixel_coord.x < width && pixel_coord.y >= 0 && pixel_coord.y < height ) {
@@ -101,9 +101,10 @@ void find_mesh_vertex_correspondences(
 
 				float3 delta = f3_sub( reprojected_coords, vertex_coord );
 				float dist = f3_norm( delta );
+
 				if( dist < threshold ) {
-					correspondence_flag[ mesh_vertex_index] = true;
-					corr_pixel_index[ mesh_vertex_index ] = pixel_index;
+					d_corr_flag[ mesh_vertex_index] = true;
+					d_corr_pixel_index[ mesh_vertex_index ] = pixel_index;
 				}
 			}
 		}
@@ -206,22 +207,25 @@ void compact_mesh_data(	const bool * const 	d_correspondence_flags, //	Device co
  * * 	Nothing.
  * ************************************************************************************************************************/
 __global__
-void update_deformation_field(	const int * const 	d_compact_pixel_indices,
-							 	const int * const 	d_compact_voxel_indices,
-								const int 			num_compacted_entries,
-								const float3 * const d_scene_flow,
-								float3 				* d_deformation_field)
+void update_deformation_field(	const int * const 		d_compact_pixel_indices,
+							 	const int * const 		d_compact_mesh_vertex_voxel_indices,
+							 	const uint8_t * const 	d_mesh_vertex_voxel_count,
+								const int 				num_compacted_entries,
+								const float3 * const 	d_scene_flow,
+								float3 					* d_deformation_field)
 {
  	int compact_index = blockIdx.x * blockDim.x + threadIdx.x;
 
  	if( compact_index < num_compacted_entries ) {
  		float3 scene_flow = d_scene_flow[ d_compact_pixel_indices[ compact_index ] ];
 
- 		int voxel_index_1 = d_compact_voxel_indices[ compact_index * 2];
- 		int voxel_index_2 = d_compact_voxel_indices[ compact_index * 2 + 1];
+ 		int voxel_index_1 = d_compact_mesh_vertex_voxel_indices[ compact_index * 2];
+ 		float scale_factor_1 = ( 1.0f / d_mesh_vertex_voxel_count[ voxel_index_1 ] );
+ 		d_deformation_field[ voxel_index_1 ] = f3_add( d_deformation_field[ voxel_index_1 ], f3_mul_scalar( scale_factor_1, scene_flow ) );
 
- 		d_deformation_field[ voxel_index_1 ] = f3_add( d_deformation_field[ voxel_index_1 ], scene_flow );
- 		d_deformation_field[ voxel_index_2 ] = f3_add( d_deformation_field[ voxel_index_2 ], scene_flow );
+ 		int voxel_index_2 = d_compact_mesh_vertex_voxel_indices[ compact_index * 2 + 1];
+ 		float scale_factor_2 = ( 1.0f / d_mesh_vertex_voxel_count[ voxel_index_2 ] );
+ 		d_deformation_field[ voxel_index_2 ] = f3_add( d_deformation_field[ voxel_index_2 ], f3_mul_scalar( scale_factor_2, scene_flow ) );
  	}
 }
 
@@ -239,13 +243,16 @@ void process_frames(	TSDFVolume *			volume,
 	//
 	std::cout << "Processing Frames" << std::endl;
 
-	float3 * 	mesh_vertices;
+	float3 * 	d_mesh_vertices;
 	int 		num_mesh_vertices;
 	int * 		d_mesh_vertex_voxel_indices;
-	extract_surface_ms( volume, 		// In
-						mesh_vertices, num_mesh_vertices, d_mesh_vertex_voxel_indices ); // Out
+	uint8_t *   d_mesh_vertex_voxel_count;
+	extract_surface_ms( volume, 						// in
+						num_mesh_vertices, 				// out
+						d_mesh_vertices,				// out 
+						d_mesh_vertex_voxel_indices,	// out
+						d_mesh_vertex_voxel_count );	// out
 	std::cout << "-- got " << num_mesh_vertices << " mesh vertices" << std::endl;
-
 
 
 	//
@@ -264,29 +271,30 @@ void process_frames(	TSDFVolume *			volume,
 	std::cout << "-- pushing depth map" << std::endl;
 	int num_pixels = width * height;
 	uint16_t * d_depth_data;
-	err = cudaMalloc( &d_depth_data, num_pixels * sizeof( uint16_t ) );
-	check_cuda_error( "Couldn't allocate device memory for depth image", err );
+	cudaSafeAlloc( (void **) &d_depth_data, num_pixels * sizeof( uint16_t ), "d_depth_data" );
 	err = cudaMemcpy( d_depth_data, h_depth_data, num_pixels * sizeof( uint16_t ), cudaMemcpyHostToDevice );
 	check_cuda_error( "Failed to copy depth data to device" , err );
 
 
 	std::cout << "-- prepping for correspondence calculation" << std::endl;
-	bool * d_correspondence_flags;
-	err = cudaMalloc( &d_correspondence_flags, num_mesh_vertices * sizeof( bool ) );
-	check_cuda_error( "Failed to allocate correspondence flags on device", err );
-
-	err = cudaMemset( d_correspondence_flags, 0, num_mesh_vertices * sizeof( bool ) );
+	bool * d_corr_flags;
+	cudaSafeAlloc( (void **) &d_corr_flags, num_mesh_vertices * sizeof( bool ), "d_corr_flags" );
+	err = cudaMemset( d_corr_flags, 0, num_mesh_vertices * sizeof( bool ) );
 	check_cuda_error( "Failed to zero correspondence flags on device", err );
 
 	int  * d_corr_pixel_indices;
-	err = cudaMalloc( &d_corr_pixel_indices, num_mesh_vertices * sizeof( int ) );
-	check_cuda_error( "Failed to allocate correspondence pixel indices on device", err );
+	cudaSafeAlloc( (void **) &d_corr_pixel_indices, num_mesh_vertices * sizeof( int ), "d_corr_pixel_indices" );
 
 	dim3 block( BLOCK_SIZE  );
 	dim3 grid( divUp( num_mesh_vertices, block.x ) );
-	find_mesh_vertex_correspondences<<< grid, block>>> (	mesh_vertices, num_mesh_vertices, d_depth_data, width, height,	// in
-															k, inv_k, pose,	inv_pose, THRESHOLD, 							// in
-															d_correspondence_flags, d_corr_pixel_indices );					// out
+	find_mesh_vertex_correspondences<<< grid, block>>> (
+			d_mesh_vertices,					// in
+			num_mesh_vertices,					// in
+			d_depth_data,						// in
+			width, height,						// in
+			k, inv_k, pose,	inv_pose, THRESHOLD,// in
+			d_corr_flags, 						// out
+			d_corr_pixel_indices );				// out
 	cudaDeviceSynchronize( );
 	err = cudaGetLastError( );
 	check_cuda_error( "Kernel find_mesh_vertex_correspondences failed", err );
@@ -294,16 +302,17 @@ void process_frames(	TSDFVolume *			volume,
 	//
 	// Dispose of depth map now as it's not needed any more
 	//
-	err = cudaFree( d_depth_data );
-	check_cuda_error( "Failed to free depth map from device", err );
+	cudaSafeFree( d_depth_data, "d_depth_data" );
 
 	//
 	// Compute scatter addresses for compaction
 	//
 	int num_compacted_entries = 0;
 	int * d_scatter_addresses = nullptr;
-	compute_mesh_vertex_scatter_array(	d_correspondence_flags, num_mesh_vertices, 		// in
-										d_scatter_addresses, num_compacted_entries );	//	out
+	compute_mesh_vertex_scatter_array(	d_corr_flags, 
+										num_mesh_vertices, 		// in
+										d_scatter_addresses, 
+										num_compacted_entries );	//	out
 	std::cout << "   -- got " << num_compacted_entries << " correspondences " << std::endl;
 
 	//
@@ -311,25 +320,25 @@ void process_frames(	TSDFVolume *			volume,
 	//
 	std::cout << "-- compacting vectors" << std::endl;
 	int * d_compact_pixel_indices;
-	err = cudaMalloc( &d_compact_pixel_indices, num_compacted_entries * sizeof( int ) );
-	check_cuda_error( "Failed to allocate compact pixel indices on device", err );
+	cudaSafeAlloc( (void **) &d_compact_pixel_indices, num_compacted_entries * sizeof( int ) , "d_compact_pixel_indices" );
 
 	int * d_compact_mesh_vertex_voxel_indices;
-	err = cudaMalloc( &d_compact_mesh_vertex_voxel_indices, num_compacted_entries * 2 * sizeof( int ) );
-	check_cuda_error( "Failed to allocate compact mesh vertex voxel indices on device", err );
+	cudaSafeAlloc( (void **) &d_compact_mesh_vertex_voxel_indices, num_compacted_entries * 2 * sizeof( int ), "d_compact_mesh_vertex_voxel_indices" );
 	
-	compact_mesh_data<<< grid, block>>> (	d_correspondence_flags, d_corr_pixel_indices, d_mesh_vertex_voxel_indices,  d_scatter_addresses, num_mesh_vertices,	// in
-											d_compact_pixel_indices, d_compact_mesh_vertex_voxel_indices ); // out
+	compact_mesh_data<<< grid, block>>> (	d_corr_flags, 
+											d_corr_pixel_indices, 
+											d_mesh_vertex_voxel_indices,  
+											d_scatter_addresses, 
+											num_mesh_vertices,	// in
+											d_compact_pixel_indices, 
+											d_compact_mesh_vertex_voxel_indices ); // out
 	cudaDeviceSynchronize( );
 	err = cudaGetLastError( );
 	check_cuda_error( "Kernel compact_mesh_data failed", err );
 
-	err = cudaFree( d_correspondence_flags );
-	check_cuda_error( "Failed to free correspondence flags from device", err );
-	err = cudaFree( d_corr_pixel_indices );
-	check_cuda_error( "Failed to free corr pixel indices from device", err );
-	err = cudaFree( d_mesh_vertex_voxel_indices );
-	check_cuda_error( "Failed to free mesh voxel vertices from device", err );
+	cudaSafeFree( d_corr_flags, "d_corr_flags" );
+	cudaSafeFree( d_corr_pixel_indices, "d_corr_pixel_indices" );
+	cudaSafeFree( d_mesh_vertex_voxel_indices, "d_mesh_vertex_voxel_indices" );
 	std::cout << "  done" << std::endl;
 
 
@@ -349,8 +358,13 @@ void process_frames(	TSDFVolume *			volume,
 	std::cout << "-- Updating deformation field" << std::endl;
 	dim3 grid2( divUp( num_compacted_entries, block.x ) );
 	update_deformation_field<<< grid2, block  >>>(	
-			d_compact_pixel_indices, d_compact_mesh_vertex_voxel_indices, num_compacted_entries,
-			d_scene_flow, (float3 *)volume->translation_data( ) );
+			d_compact_pixel_indices, 
+			d_compact_mesh_vertex_voxel_indices, 
+			d_mesh_vertex_voxel_count, 
+			num_compacted_entries,
+			d_scene_flow, 
+			(float3 *)volume->translation_data( ) );
+
 	cudaDeviceSynchronize( );
 	err = cudaGetLastError( );
 	check_cuda_error( "Kernel update_deformation_field failed", err );
@@ -367,4 +381,7 @@ void process_frames(	TSDFVolume *			volume,
 
 	err = cudaFree( d_compact_mesh_vertex_voxel_indices );
 	check_cuda_error( "Couldn't free compact mesh vertex voxel indices  memory from device", err );
+
+	err = cudaFree( d_mesh_vertex_voxel_count);
+	check_cuda_error( "Couldn't free compact mesh vertex voxel count  memory from device", err );
 }

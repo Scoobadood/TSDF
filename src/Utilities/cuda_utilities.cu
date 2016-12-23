@@ -47,3 +47,13 @@ uint8_t atomicIncUint8( uint8_t* address ) {
 
     return old;
 }
+
+void cudaSafeAlloc( void ** ptr, size_t sz, const std::string& purpose ) {
+    cudaError_t err = cudaMalloc( ptr, sz );
+    check_cuda_error( "Failed to allocate device memory for " + purpose , err);
+}
+
+void cudaSafeFree( void * ptr, const std::string& purpose ) {
+    cudaError_t err = cudaFree( ptr );
+    check_cuda_error( "Failed to free device memory for " + purpose , err);
+}
