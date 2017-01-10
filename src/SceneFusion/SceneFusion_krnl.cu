@@ -99,8 +99,10 @@ void find_mesh_vertex_correspondences(
 			if( depth > 0 ) {
 				float3 reprojected_coords = pixel_to_world( pixel_coord, pose, inv_k, depth );
 
-				float3 delta = f3_sub( reprojected_coords, vertex_coord );
-				float dist = f3_norm( delta );
+				// Compute the dist on depth only - previous method used lateral distance too
+				// float3 delta = f3_sub( reprojected_coords, vertex_coord );
+				//	float dist = f3_norm( delta );
+				float dist = fabs(reprojected_coords.z - vertex_coord.z );
 
 				if( dist < threshold ) {
 					d_corr_flag[ mesh_vertex_index] = true;

@@ -6,18 +6,33 @@
 #include "../include/ply.hpp"
 
 /*
-	This is the Plan B variant
+	This is the Plan A variant
 
 	At time t=1
 	Compute sf_1 ( D_0, D_1, RGB_0. RGB_1)
 
+	Extract the mesh and in the process, also
+		Extract and store the indices of the voxels which form the end points of the 
+		lines on which the mesh vertex falls
 
-	For each (deformed) voxel in grid
-		project voxel (VX, VY, VZ) into depth image giving dx, dy
-		let d_candidate = D(dx,dy) * Kinv * [dx;dy;1]
-		if( |d_candidate - VZ| < threshold ) we can apply scene flow (dx,dy) to
-			(VX, VY, VZ) but weighted by distance from d_candidate
-		end
+	For each mesh vertex, determine if it's visible by:
+		Project mesh vertex into depth map
+		Find corresponding 3D point for the depth at that pixel
+		If the points are 
+			Within some predefined distance [current]
+			Within some predefined depth    ]possibly preferred alternative]
+		Then the original mesh point is visible
+
+	For each visible mesh point determine the scene flow
+		Project the mesh point into the image plane (pixels) 
+		Lookup the associated scene flow at that pixel point
+
+	For each voxel which is adjacent to a voxel mesh
+		Apply the mean translation to that mesh point
+
+	Now project the new depth image into the updated transformed voxel grid
+	
+
 
 */
 
@@ -30,7 +45,7 @@
 SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
-	m_volume = new TSDFVolume(400, 400 , 400, 2000, 2000, 2000);
+	m_volume = new TSDFVolume(255, 255 , 255, 2550, 2550, 2550);
 
 	// And camera (from FREI 1 IR calibration data at TUM)
 	m_camera = Camera::default_depth_camera( );
@@ -118,8 +133,8 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	memcpy( (void *)m_last_depth_image, (void *)depth_image->data(), sizeof( uint16_t) * width * height );
 
 	// Now update the depth map into the TSDF
-	std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
-	m_volume->integrate(  depth_image->data(), width, height, *m_camera );
+	 std::cout << "-- Integrating the new depth image into the TSDF" << std::endl;
+	 m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
 	// This line for DEBUG reasons while testing deformtaion code
 	// if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );

@@ -40,7 +40,7 @@ public:
      */
     static Camera * default_depth_camera( ) {
         // Default kinect settings
-        return new Camera{ 591.1f, 590.1f, 331.0f, 234.6f };
+        return new Camera{ 591.1f, -590.1f, 331.0f, 234.6f };
     }
 
 
