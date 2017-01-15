@@ -2,6 +2,13 @@ SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 NV_ARCH=-gencode arch=compute_52,code=compute_52
+NVCC=/usr/local/cuda/bin/nvcc
+
+# use isystem for eigen as it forces compiler to supress warnings from
+# those files. Eigen generates a lot
+CFLAGS=-c -isystem=/usr/include/eigen3 -ccbin=/usr/bin/gcc -std=c++11 -g
+LDFLAGS=$(NV_ARCH) -lpng
+
 
 vpath %.cpp $(SRC_DIR):\
 	    $(SRC_DIR)/Utilities:\
@@ -23,13 +30,8 @@ vpath %.cu  $(SRC_DIR)/Utilities:\
 
 
 
-NVCC=/usr/local/cuda/bin/nvcc
 
 
-# use isystem for eigen as it forces compiler to supress warnings from
-# those files. Eigen generates a lot
-CFLAGS=-isystem=/usr/include/eigen3 -isystem=/usr/local/include/eigen3 -I=src -I=src/include -c -ccbin=/usr/bin/gcc -std=c++11 -g
-LDFLAGS=$(NV_ARCH) -lpng
 SOURCES =	FileUtilities.cpp Definitions.cpp\
 			Camera.cpp \
 			DepthImage.cpp \
@@ -47,7 +49,8 @@ SOURCES =	FileUtilities.cpp Definitions.cpp\
 #          test_MC_main.cpp
 
 
-CUDA_SOURCES = TSDFVolume.cu MarkAndSweepMC.cu TSDF_utilities.cu cuda_utilities.cu GPURaycaster.cu
+CUDA_SOURCES = TSDFVolume.cu MarkAndSweepMC.cu TSDF_utilities.cu cuda_utilities.cu GPURaycaster.cu cuda_coordinate_transforms.cu
+
 
 # Make a copy wihtou sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)
@@ -55,7 +58,7 @@ _CUDA_OBJECTS=$(CUDA_SOURCES:.cu=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(_OBJECTS)) $(patsubst %,$(OBJ_DIR)/%,$(_CUDA_OBJECTS))
 
 
-EXECUTABLE=bin/test_MC
+EXECUTABLE=$(BIN_DIR)/test_MC
 Debug: all
 
 all: $(SOURCES) $(CUDA_SOURCES) $(EXECUTABLE)
@@ -64,10 +67,10 @@ $(EXECUTABLE) : $(OBJECTS)
 	$(NVCC) $(LDFLAGS) $(OBJECTS) -o $(EXECUTABLE)
 
 $(OBJ_DIR)/%.o : %.cpp
-	$(NVCC) -c $(CFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
+	$(NVCC) $(CFLAGS)                     $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 $(OBJ_DIR)/%.o : %.cu
-	$(NVCC) -c -G -g $(CFLAGS) -lineinfo -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F) 
+	$(NVCC) -G -g $(CFLAGS) -lineinfo -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F) 
 
 clean:
 	rm $(OBJ_DIR)/*.o $(EXECUTABLE)
