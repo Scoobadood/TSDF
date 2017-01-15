@@ -216,7 +216,7 @@ TSDFVolume::~TSDFVolume() {
  * @param size
  * @param physical_size
  */
-TSDFVolume::TSDFVolume( const UInt3& size, const UInt3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL} {
+TSDFVolume::TSDFVolume( const UInt3& size, const Float3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL} {
     if ( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) &&
             ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
         set_size( size.x, size.y, size.z , physical_size.x, physical_size.y, physical_size.z );
@@ -262,6 +262,8 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
     if ( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
 
 
+		cudaSetDevice(0);
+		cudaDeviceReset();
         // Remove existing data
         if ( m_voxels ) {
             cudaFree( m_voxels ) ;
@@ -291,11 +293,20 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
         m_truncation_distance = 1.1f * vs_norm;
 
         // Allocate device storage
+
+size_t mem_tot_0 = 0;
+size_t mem_free_0 = 0;
+cudaMemGetInfo  (&mem_free_0, & mem_tot_0);
+std::cout<<"Free memory before alloc "<<mem_free_0<<std::endl;
+
+
         cudaError_t err;
-        err = cudaMalloc( &m_voxels, volume_x * volume_y * volume_z * sizeof( float ) );
+		size_t voxel_data_size = volume_x * volume_y * volume_z * sizeof( float );
+        err = cudaMalloc( &m_voxels, voxel_data_size );
         if ( err != cudaSuccess ) {
-            throw std::bad_alloc( );
+			check_cuda_error( "Couldn;t allocate space for voxel data for TSDF", err );
         }
+
 
 
         err = cudaMalloc( &m_weights, volume_x * volume_y * volume_z * sizeof( float ) );

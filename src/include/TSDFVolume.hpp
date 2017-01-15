@@ -78,7 +78,7 @@ public:
     * @param physical_size The size ( in mm ) of the space contained in the volume
     */
     TSDFVolume( const UInt3& size = UInt3{64, 64, 64},
-                const UInt3& physical_size = UInt3 { 3000, 3000, 3000} );
+                const Float3& physical_size = Float3 { 3000.0f, 3000.0f, 3000.0f} );
 
 
     /**

@@ -64,10 +64,10 @@ $(EXECUTABLE) : $(OBJECTS)
 	$(NVCC) $(LDFLAGS) $(OBJECTS) -o $(EXECUTABLE)
 
 $(OBJ_DIR)/%.o : %.cpp
-	$(NVCC) $(CFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
+	$(NVCC) -c $(CFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 $(OBJ_DIR)/%.o : %.cu
-	$(NVCC) $(CFLAGS) -lineinfo -G -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
+	$(NVCC) -c -G -g $(CFLAGS) -lineinfo -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F) 
 
 clean:
 	rm $(OBJ_DIR)/*.o $(EXECUTABLE)

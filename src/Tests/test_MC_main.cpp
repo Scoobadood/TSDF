@@ -1,5 +1,5 @@
 #include "../include/TSDFVolume.hpp"
-#include "../include/GPUMarchingCubes.hpp"
+#include "../include/MarkAndSweepMC.hpp"
 #include "../include/ply.hpp"
 
 #include "vector_types.h"
@@ -9,11 +9,11 @@
 
 #include <Eigen/Dense>
 
-TSDFVolume * make_sphere_tsdf( const  uint32_t vx, const  uint32_t vy, const  uint32_t vz, const uint32_t px, const uint32_t py, const uint32_t pz ) {
+TSDFVolume * make_sphere_tsdf( const uint16_t vx, const  uint16_t vy, const uint16_t vz, const float px, const float  py, const float pz ) {
 	using namespace Eigen;
 
 
-	TSDFVolume *volume = new TSDFVolume( TSDFVolume::UInt3{ vx, vy, vz }, TSDFVolume::UInt3{px, py, pz} );
+	TSDFVolume *volume = new TSDFVolume(  vx, vy, vz, px, py, pz );
 
 	// Now make some data
 	float * data = new float[ vx * vy * vz];
@@ -115,7 +115,7 @@ TSDFVolume::Float3 * build_twist_translation_data( TSDFVolume * volume ) {
 int main( int argc, const char * argv[] ) {
 	int retval = 0;
 
-	TSDFVolume *volume = make_sphere_tsdf( 256, 256, 256, 1024, 1024, 1024 );
+	TSDFVolume *volume = make_sphere_tsdf( 400, 400, 400, 2000, 2000, 2000 );
 
 	if ( volume ) {
 		TSDFVolume::Float3 * data = build_twist_translation_data( volume );
