@@ -54,4 +54,10 @@ bool match_file_name( const std::string& prefix, int num_digits, const std::stri
  */
 bool read_last_line( std::string file_name, std::string& text );
 
+/**
+ * Get the users home directory
+ * @return A null terminated string being the home directory or else NULL
+ */
+const char * get_home_directory( );
+
 #endif

@@ -1,5 +1,6 @@
 #include "../include/SceneFusion.hpp"
 #include "../include/SceneFusion_krnl.hpp"
+#include "../include/FileUtilities.hpp"
 #include "../include/MarkAndSweepMC.hpp"
 #include "../include/TSDFVolume.hpp"
 #include "../include/Camera.hpp"
@@ -150,8 +151,14 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
         std::vector<int3> triangles;
         std::vector<float3> verts;
         extract_surface( verts, triangles );
-	    std::cout << "Writing to PLY" << std::endl;
-	    sprintf( out_file_name, "/home/dave/Desktop/mesh_%03d.ply", frames);
+
+        const char * homedir = get_home_directory( );
+        if( homedir ) {
+		    sprintf( out_file_name, "%s/Desktop/mesh_%03d.ply", homedir, frames);
+        } else {
+        	sprintf( out_file_name, "mesh_%03d.ply", frames);
+        }
+	    std::cout << "Writing PLY to " << out_file_name << std::endl;
    	    write_to_ply( out_file_name, verts, triangles);
 	}
 

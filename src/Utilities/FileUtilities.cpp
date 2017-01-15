@@ -6,6 +6,11 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
+// For home dircetory
+#include <unistd.h>
+#include <sys/types.h>
+#include <pwd.h>
+
 
 /**
  * Return true if a string matches the given template
@@ -221,3 +226,15 @@ bool read_last_line( std::string file_name, std::string& text ) {
     return read_ok;
 }
 
+/**
+ * Get the users home directory
+ * @return A null terminated string being the home directory or else NULL
+ */
+const char * get_home_directory( ) {
+    const char *homedir;
+
+    if ((homedir = getenv("HOME")) == NULL) {
+        homedir = getpwuid(getuid())->pw_dir;
+    }
+    return homedir;
+}
