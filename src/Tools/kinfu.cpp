@@ -21,7 +21,7 @@ TSDFVolume * make_tsdf(int num_images, const char * directory ) {
     using namespace Eigen;
 
     // Make volume
-    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 400, 400, 400}, TSDFVolume::Float3{3000.0f, 3000.0f, 3000.0f});
+    TSDFVolume * volume = new TSDFVolume( TSDFVolume::UInt3{ 200, 200, 200}, TSDFVolume::Float3{3000.0f, 3000.0f, 3000.0f});
 //    volume->offset(2000,2000,2000);
     
     // And camera (from FREI 1 IR calibration data at TUM)

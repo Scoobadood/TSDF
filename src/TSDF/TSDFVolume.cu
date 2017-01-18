@@ -48,13 +48,13 @@ float distance( const dim3& size, float *distance_data, int x, int y, int z ) {
 }
 
 /**
+ * Set the distance to the surface at a grid point
  * @param size The size (in voxels) of the volume
  * @param distance_data The depth data for the volume
  * @param x The horizontal voxel coord
  * @param y The vertical voxel coord
  * @param z The depth voxel coord
  * @param distance The distance to set
- * @return The distance to the surface at that voxel
  */
 __device__ __forceinline__
 void set_distance(const  dim3& size, float * distance_data, int x, int y, int z, float distance ) {
@@ -110,7 +110,7 @@ void integrate_kernel(  float         * distance_data,
                         float         * weight_data,
                         dim3            voxel_grid_size, 
                         float3          voxel_space_size,
-                        float3        * voxel_centres,
+                        TSDFVolume::DeformationNode * deformation_nodes,
                         float3          offset, 
                         const float     trunc_distance,
                         const float     max_weight,
@@ -139,8 +139,8 @@ void integrate_kernel(  float         * distance_data,
             // Work out where in the image, the centre of this voxel projects
             // This gives us a pixel in the depth map
 
-            // Convert voxel to world coords of centre
-            float3 centre_of_voxel        = voxel_centres[ voxel_index ];
+            // Convert voxel to world coords of deformed centre
+            float3 centre_of_voxel        = deformation_nodes[ voxel_index ].translation;
 
             // Convert world to pixel coords
             int3   centre_of_voxel_in_pix = world_to_pixel( centre_of_voxel, inv_pose, k );
@@ -195,19 +195,30 @@ void integrate_kernel(  float         * distance_data,
 
 TSDFVolume::~TSDFVolume() {
     std::cout << "Destroying TSDFVolume" << std::endl;
+    deallocate( );
+}
 
+
+/**
+ * Deallocate storage for this TSDF
+ */
+void TSDFVolume::deallocate( ) {
     // Remove existing data
-    if ( m_voxels ) {
-        cudaFree( m_voxels ) ;
-        m_voxels = 0;
+    if ( m_distances ) {
+        cudaFree( m_distances ) ;
+        m_distances = 0;
     }
     if ( m_weights ) {
         cudaFree( m_weights );
         m_weights = 0;
     }
-    if ( m_voxel_translations ) {
-        cudaFree( m_voxel_translations );
-        m_voxel_translations = 0;
+    if ( m_colours ) {
+        cudaFree( m_colours );
+        m_colours = 0;
+    }
+    if ( m_deformation_nodes ) {
+        cudaFree( m_deformation_nodes );
+        m_deformation_nodes = 0;
     }
 }
 
@@ -216,7 +227,7 @@ TSDFVolume::~TSDFVolume() {
  * @param size
  * @param physical_size
  */
-TSDFVolume::TSDFVolume( const UInt3& size, const Float3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL} {
+TSDFVolume::TSDFVolume( const UInt3& size, const Float3& physical_size ) : m_offset { 0.0, 0.0, 0.0 }, m_distances {NULL}, m_weights {NULL}, m_deformation_nodes{NULL}, m_colours{NULL} {
     if ( ( size.x > 0 ) && ( size.y > 0 ) && ( size.z > 0 ) &&
             ( physical_size.x > 0 ) && ( physical_size.y > 0 ) && ( physical_size.z > 0 ) ) {
         set_size( size.x, size.y, size.z , physical_size.x, physical_size.y, physical_size.z );
@@ -235,7 +246,7 @@ TSDFVolume::TSDFVolume( const UInt3& size, const Float3& physical_size ) : m_off
  * @param psize_y Physical size in Y dimension in mm
  * @param psize_z Physical size in Z dimension in mm
  */
-TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z )  : m_offset { 0.0, 0.0, 0.0 }, m_voxels {NULL}, m_weights {NULL}, m_voxel_translations{NULL} {
+TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z )  : m_offset { 0.0, 0.0, 0.0 }, m_distances {NULL}, m_weights {NULL}, m_deformation_nodes{NULL}, m_colours{NULL} {
     if ( ( volume_x > 0 ) && ( volume_y > 0 ) && ( volume_z > 0 ) &&
             ( psize_x > 0 ) && ( psize_y > 0 ) && ( psize_z > 0 ) ) {
 
@@ -257,78 +268,44 @@ TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z,
  */
 __host__
 void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z) {
-    using namespace Eigen;
 
     if ( ( volume_x != 0 && volume_y != 0 && volume_z != 0 ) && ( psize_x != 0 && psize_y != 0 && psize_z != 0 ) ) {
 
-
-		cudaSetDevice(0);
-		cudaDeviceReset();
         // Remove existing data
-        if ( m_voxels ) {
-            cudaFree( m_voxels ) ;
-            m_voxels = 0;
-        }
-        if ( m_weights ) {
-            cudaFree( m_weights );
-            m_weights = 0;
-        }
-        if ( m_voxel_translations ) {
-            cudaFree( m_voxel_translations );
-            m_weights = 0;
-        }
+        deallocate() ;
 
-        m_size = dim3 { volume_x, volume_y, volume_z };
+        m_size          = dim3 { volume_x, volume_y, volume_z };
         m_physical_size = float3 { psize_x, psize_y, psize_z };
 
         // Compute truncation distance - must be at least 2x max voxel size
-        float cx = m_physical_size.x / m_size.x;
-        float cy = m_physical_size.y / m_size.y;
-        float cz = m_physical_size.z / m_size.z;
-
-        m_voxel_size = float3 { cx, cy, cz };
+        m_voxel_size = f3_div_elem( m_physical_size, m_size );
 
         // Set t > diagonal of voxel
-        float vs_norm = sqrt( cx * cx + cy * cy + cz * cz );
-        m_truncation_distance = 1.1f * vs_norm;
+        m_truncation_distance = 1.1f * f3_norm( m_voxel_size );
 
         // Allocate device storage
-
-size_t mem_tot_0 = 0;
-size_t mem_free_0 = 0;
-cudaMemGetInfo  (&mem_free_0, & mem_tot_0);
-std::cout<<"Free memory before alloc "<<mem_free_0<<std::endl;
-
-
         cudaError_t err;
-		size_t voxel_data_size = volume_x * volume_y * volume_z * sizeof( float );
-        err = cudaMalloc( &m_voxels, voxel_data_size );
-        if ( err != cudaSuccess ) {
-			check_cuda_error( "Couldn;t allocate space for voxel data for TSDF", err );
-        }
+		size_t data_size = volume_x * volume_y * volume_z * sizeof( float );
 
+        err = cudaMalloc( &m_distances, data_size );
+		check_cuda_error( "Couldn't allocate space for distance data for TSDF", err );
 
+        err = cudaMalloc( &m_weights, data_size );
+        check_cuda_error( "Couldn't allocate space for weight data for TSDF", err );
 
-        err = cudaMalloc( &m_weights, volume_x * volume_y * volume_z * sizeof( float ) );
-        if ( err != cudaSuccess ) {
-            cudaFree( m_voxels );
-            throw std::bad_alloc( );
-        }
+        err = cudaMalloc( &m_colours,  volume_x * volume_y * volume_z * sizeof( uchar3 ) );
+        check_cuda_error( "Couldn't allocate space for colour data for TSDF", err );
 
-        err = cudaMalloc( &m_voxel_translations, volume_x * volume_y * volume_z * sizeof( float3 ) );
-        if ( err != cudaSuccess ) {
-            cudaFree( m_voxels );
-            cudaFree( m_weights );
-            throw std::bad_alloc( );
-        }
+        err = cudaMalloc( &m_deformation_nodes, volume_x * volume_y * volume_z * sizeof( DeformationNode ) );
+        check_cuda_error( "Couldn't allocate space for deformation nodes for TSDF", err );
 
         clear();
 
         // Max weight for integrating depth images
-        m_max_weight = 60.0f;
+        m_max_weight = 15.0f;
 
     } else {
-        throw std::invalid_argument( "Attempt to set TSDF size to zero" );
+        throw std::invalid_argument( "Attempt to set TSDF size or physical size to zero" );
     }
 }
 
@@ -341,7 +318,7 @@ std::cout<<"Free memory before alloc "<<mem_free_0<<std::endl;
  */
 void TSDFVolume::set_distance_data( const float * distance_data ) {
     size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( float);
-    cudaError_t err = cudaMemcpy( m_voxels, distance_data, data_size, cudaMemcpyHostToDevice );
+    cudaError_t err = cudaMemcpy( m_distances, distance_data, data_size, cudaMemcpyHostToDevice );
     check_cuda_error( "Couldn't set distance data", err );
 }
 
@@ -358,26 +335,26 @@ void TSDFVolume::set_weight_data( const float * weight_data ) {
 
 
 /**
- * Set the translation dat for this space
- * @param data Data on host memory space; Assumed to be vx*vy*vz float3
+ * Set the deformation data for this space
+ * @param data Data in host memory space; Assumed to be vx*vy*vz DeformationNode
  */
-void TSDFVolume::set_translation_data( Float3 *data) {
-    size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( Float3 );
-    cudaError_t err = cudaMemcpy( m_voxel_translations, data, data_size, cudaMemcpyHostToDevice );
-    check_cuda_error( "Couldn't set voxel translations", err );
+void TSDFVolume::set_deformation( DeformationNode *deformation) {
+    size_t data_size = m_size.x * m_size.y * m_size.z * sizeof( DeformationNode );
+    cudaError_t err = cudaMemcpy( m_deformation_nodes, deformation, data_size, cudaMemcpyHostToDevice );
+    check_cuda_error( "Couldn't set deformation", err );
 }
 
 
 /**
- * Reset the defomation grid by setting each transaltion point to the effectve, reglar position
- * in space of that voxel centre.
- * @param translations X x Y x Z array of float3s
+ * Reset the defomation grid by setting each translation point to the effectve, reglar position
+ * in space of that voxel centre and the related rotation to {0,0,0}
+ * @param deformation_nodes X x Y x Z array of DeformationNodes
  * @param grid_size The size of the voxel grid
  * @param voxel_size The size of an individual voxel
  * @param grid_offset The offset of the grid
  */
 __global__
-void initialise_translations( float3 * translations, dim3 grid_size, float3 voxel_size, float3 grid_offset ) {
+void initialise_deformation( TSDFVolume::DeformationNode * deformation, dim3 grid_size, float3 voxel_size, float3 grid_offset ) {
 
     // Extract the voxel Y and Z coordinates we then iterate over X
     int vy = threadIdx.y + blockIdx.y * blockDim.y;
@@ -386,15 +363,18 @@ void initialise_translations( float3 * translations, dim3 grid_size, float3 voxe
     // If this thread is in range
     if ( vy < grid_size.y && vz < grid_size.z ) {
 
-
         // The next (x_size) elements from here are the x coords
         size_t base_voxel_index =  ((grid_size.x * grid_size.y) * vz ) + (grid_size.x * vy);
 
         size_t voxel_index = base_voxel_index;
         for ( int vx = 0; vx < grid_size.x; vx++ ) {
-            translations[voxel_index].x = (( vx + 0.5f ) * voxel_size.x) + grid_offset.x;
-            translations[voxel_index].y = (( vy + 0.5f ) * voxel_size.y) + grid_offset.y;
-            translations[voxel_index].z = (( vz + 0.5f ) * voxel_size.z) + grid_offset.z;
+            deformation[voxel_index].translation.x = (( vx + 0.5f ) * voxel_size.x) + grid_offset.x;
+            deformation[voxel_index].translation.y = (( vy + 0.5f ) * voxel_size.y) + grid_offset.y;
+            deformation[voxel_index].translation.z = (( vz + 0.5f ) * voxel_size.z) + grid_offset.z;
+
+            deformation[voxel_index].rotation.x = 0.0f;
+            deformation[voxel_index].rotation.y = 0.0f;
+            deformation[voxel_index].rotation.z = 0.0f;
 
             voxel_index++;
         }
@@ -414,6 +394,7 @@ void set_memory_to_value( float * pointer, int size, float value ) {
 
 /**
  * Clear the TSDF memory on the device
+ * zeros colour and weight data, sets distance to truncation_distance
  */
 __host__
 void TSDFVolume::clear( ) {
@@ -425,24 +406,30 @@ void TSDFVolume::clear( ) {
 
     cudaError_t err;
 
+    // Clear weights to 0
     set_memory_to_value<<< grid, block >>>( m_weights, data_size, 0.0f );
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
-    check_cuda_error( "couldn't clear weights memory", err );
+    check_cuda_error( "Couldn't clear weight data", err );
 
 
-    set_memory_to_value<<< grid, block >>>( m_voxels, data_size, m_truncation_distance );
+    // Set distance data to truncation distance
+    set_memory_to_value<<< grid, block >>>( m_distances, data_size, m_truncation_distance );
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
-    check_cuda_error( "couldn't clear depth memory", err );
+    check_cuda_error( "Couldn't clear depth data", err );
 
-    // Now initialise the translations
+    // Clear RGB data to black
+    err = cudaMemset( m_colours, data_size * 3, 0  );
+    check_cuda_error( "Couldn't clear colour data", err );
+
+    // Now initialise the deformations
     dim3 block2( 1, 32, 32 );
     dim3 grid2 ( 1, divUp( m_size.y, block2.y ), divUp( m_size.z, block2.z ) );
-    initialise_translations <<<grid2, block2>>>( m_voxel_translations, m_size, m_voxel_size, m_offset );
+    initialise_deformation <<<grid2, block2>>>( m_deformation_nodes, m_size, m_voxel_size, m_offset );
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
-    check_cuda_error( "couldn't initialise deformation memory", err );
+    check_cuda_error( "Couldn't initialise deformation nodes", err );
 }
 
 
@@ -461,8 +448,6 @@ void TSDFVolume::clear( ) {
 __host__
 void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t height, const Camera & camera ) {
     assert( depth_map );
-
-    using namespace Eigen;
 
     std::cout << "Integrating depth map size " << width << "x" << height << std::endl;
 
@@ -492,11 +477,10 @@ void TSDFVolume::integrate( const uint16_t * depth_map, uint32_t width, uint32_t
     dim3 block( 1, 20, 20  );
     dim3 grid ( 1, divUp( m_size.y, block.y ), divUp( m_size.z, block.z ) );
 
-    integrate_kernel <<< grid, block>>>( m_voxels, m_weights, m_size, m_physical_size, m_voxel_translations, m_offset, m_truncation_distance, m_max_weight, pose, inv_pose, k, kinv, width, height, d_depth_map);
+    integrate_kernel <<< grid, block>>>( m_distances, m_weights, m_size, m_physical_size, m_deformation_nodes, m_offset, m_truncation_distance, m_max_weight, pose, inv_pose, k, kinv, width, height, d_depth_map);
     cudaDeviceSynchronize( );
     err = cudaGetLastError();
     check_cuda_error( "Integrate kernel failed", err);
-
 
     // Now delete depth map data from device
     err = cudaFree( d_depth_map );
@@ -517,19 +501,21 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
 
     bool success = true;
 
-    // Copy to local memory
-    float * host_voxels = nullptr;
+    // We need to extract the data from the GPU device into host memory
+    float * host_distances = nullptr;
+    uchar3 * host_colours = nullptr;
     float * host_weights = nullptr;
-    float3 * host_deformation = nullptr;
-
+    DeformationNode * host_deformation = nullptr;
     size_t num_voxels = m_size.x * m_size.y * m_size.z;
+
+
     cudaError_t err;
 
     // Copy distance data from device to host
-    host_voxels = new float[ num_voxels ];
-    size_t depth_data_size = num_voxels * sizeof( float);
-    if ( host_voxels ) {
-        err = cudaMemcpy( host_voxels, m_voxels, depth_data_size, cudaMemcpyDeviceToHost);
+    size_t distance_data_size = num_voxels * sizeof( float);
+    host_distances = new float[ num_voxels ];
+    if ( host_distances ) {
+        err = cudaMemcpy( host_distances, m_distances, distance_data_size, cudaMemcpyDeviceToHost);
         if ( err != cudaSuccess ) {
             success = false;
             std::cout << "Failed to copy voxel data from device memory [" << err << "] " << std::endl;
@@ -540,7 +526,7 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
     }
 
 
-    // Copy distance data from device to host
+    // Copy weight data from device to host
     size_t weight_data_size = num_voxels * sizeof( float);
     if ( success ) {
         host_weights = new float[ num_voxels ];
@@ -556,13 +542,28 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
         }
     }
 
-
-    // Copy distance data from device to host
-    size_t deformation_data_size = num_voxels * sizeof( float3);
+    // Copy colour data from device to host
+    size_t colour_data_size = num_voxels * sizeof( uchar3 );
     if ( success ) {
-        host_deformation = new float3[ num_voxels ];
+        host_colours = new uchar3[ num_voxels ];
+        if ( host_colours) {
+            err = cudaMemcpy( host_colours, m_colours, colour_data_size, cudaMemcpyDeviceToHost);
+            if ( err != cudaSuccess ) {
+                success = false;
+                std::cout << "Failed to copy colour data from device memory [" << err << "] " << std::endl;
+            }
+        } else {
+            success = false;
+            std::cout << "Couldn't allocate host_colours memory to save TSDF" << std::endl;
+        }
+    }
+
+    // Copy deformation data from device to host
+    size_t deformation_data_size = num_voxels * sizeof( DeformationNode );
+    if ( success ) {
+        host_deformation = new DeformationNode[ num_voxels ];
         if ( host_deformation ) {
-            err = cudaMemcpy( host_deformation, m_voxel_translations, deformation_data_size, cudaMemcpyDeviceToHost);
+            err = cudaMemcpy( host_deformation, m_deformation_nodes, deformation_data_size, cudaMemcpyDeviceToHost);
             if ( err != cudaSuccess ) {
                 success = false;
                 std::cout << "Failed to copy deformation data from device memory [" << err << "] " << std::endl;
@@ -573,6 +574,7 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
         }
     }
 
+    // Now it's all local, write to file
     if( success ) {
         ofstream ofs { file_name, ios::out | ios::binary };
 
@@ -581,11 +583,14 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
         ofs.write( (char *) &m_size, sizeof( m_size ) );
         ofs.write( (char *)&m_physical_size, sizeof( m_physical_size));
 
-        std::cout << "  writing "<< depth_data_size <<" bytes of depth data" << std::endl;
-        ofs.write( (char *)host_voxels, depth_data_size );
+        std::cout << "  writing "<< distance_data_size <<" bytes of depth data" << std::endl;
+        ofs.write( (char *)host_distances, distance_data_size );
 
         std::cout << "  writing "<< weight_data_size <<" bytes of weight data" << std::endl;
         ofs.write( (char *)host_weights, weight_data_size );
+
+        std::cout << "  writing "<< colour_data_size <<" bytes of colour data" << std::endl;
+        ofs.write( (char *)host_colours, colour_data_size );
 
         std::cout << "  writing "<< deformation_data_size <<" bytes of deformation data" << std::endl;
         ofs.write( (char *)host_deformation, deformation_data_size );
@@ -596,7 +601,8 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
     }
 
     // Free up memory
-    if ( host_voxels != nullptr ) { delete[] host_voxels; }
+    if ( host_distances != nullptr ) { delete[] host_distances; }
+    if ( host_colours != nullptr ) { delete[] host_colours; }
     if ( host_weights != nullptr ) { delete[] host_weights; }
     if ( host_deformation != nullptr ) { delete[] host_deformation; }
 
@@ -619,12 +625,15 @@ bool TSDFVolume::load_from_file( const std::string & file_name) {
     // Move to device
 
 
-    std::cout << "Invalid method call: load_from_file" << std::endl;
+    std::cout << "Noy yet implemented: load_from_file" << std::endl;
     return false;
 }
 
 
 #pragma mark - Rendering
+/**
+ * Render this TSDF to a raycast image
+ */
 void TSDFVolume::raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const {
     GPURaycaster raycaster( width, height );
 

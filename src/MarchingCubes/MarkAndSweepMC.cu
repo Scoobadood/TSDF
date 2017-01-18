@@ -205,7 +205,7 @@ void launch_get_cube_contribution(	const TSDFVolume * const 	volume,
  */
 __global__
 void generate_vertices( const dim3 				grid_size, 						// in
-                        const float3 * const 	voxel_centres,					// in (device)
+                        const TSDFVolume::DeformationNode * const 	deformation,					// in (device)
                         const float * const 	distance_data,					// in (device)
                         const int * const		cube_indices,					// in (device)
                         const int 				num_cubes,						// in
@@ -237,14 +237,14 @@ void generate_vertices( const dim3 				grid_size, 						// in
 		float w7 = distance_data[ voxel_indices[7] ];
 
 		// Get the vertex coordinates
-		float3 v0 = voxel_centres[ voxel_indices[0] ];
-		float3 v1 = voxel_centres[ voxel_indices[1] ];
-		float3 v2 = voxel_centres[ voxel_indices[2] ];
-		float3 v3 = voxel_centres[ voxel_indices[3] ];
-		float3 v4 = voxel_centres[ voxel_indices[4] ];
-		float3 v5 = voxel_centres[ voxel_indices[5] ];
-		float3 v6 = voxel_centres[ voxel_indices[6] ];
-		float3 v7 = voxel_centres[ voxel_indices[7] ];
+		float3 v0 = deformation[ voxel_indices[0] ].translation;
+		float3 v1 = deformation[ voxel_indices[1] ].translation;
+		float3 v2 = deformation[ voxel_indices[2] ].translation;
+		float3 v3 = deformation[ voxel_indices[3] ].translation;
+		float3 v4 = deformation[ voxel_indices[4] ].translation;
+		float3 v5 = deformation[ voxel_indices[5] ].translation;
+		float3 v6 = deformation[ voxel_indices[6] ].translation;
+		float3 v7 = deformation[ voxel_indices[7] ].translation;
 
 		// Compute the edge intersections (some may not be valid)
 		float3 vertex[12];
@@ -347,7 +347,7 @@ void launch_generate_vertices(	const TSDFVolume	* volume,						// in
 	dim3 block( 1024 );
 	dim3 grid( divUp( num_cubes, block.x ));
 	generate_vertices <<< grid, block >>>(	volume->size(),							// in
-	                                        (float3 *) volume->translation_data(),	// in
+	                                        volume->deformation(),					// in
 	                                        volume->distance_data(),				// in
 	                                        d_cube_indices,							// in
 	                                        num_cubes,								// in

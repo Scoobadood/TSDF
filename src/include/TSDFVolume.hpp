@@ -20,6 +20,11 @@
 
 class TSDFVolume {
 public:
+    struct DeformationNode {
+        float3  translation;
+        float3  rotation;
+    };
+
     struct Float3 {
         float x;
         float y;
@@ -157,32 +162,24 @@ public:
     };
 
     /**
+     * @return pointer to translation data
+     */
+    inline DeformationNode *  deformation() const {
+        return m_deformation_nodes;
+    }
+
+    /**
+     * Set the deformation data for this space
+     * @param data Data in host memory space; Assumed to be vx*vy*vz DeformationNode
+     */
+    void set_deformation( DeformationNode *deformation);
+
+    /**
      * Return pointer to distance data
      * @return Pointer to distance data
      */
     inline const float * distance_data() const {
-        return m_voxels;
-    }
-
-    /**
-     * @return pointer to translation data
-     */
-    inline Float3 *  translation_data() const {
-        return reinterpret_cast<Float3 *> (m_voxel_translations);
-    }
-
-    /**
-     * Set the translation dat for this space
-     * @param data Data on host memory space; Assumed to be vx*vy*vz float3
-     */
-    void set_translation_data( Float3 *data);
-
-    /**
-     * Return pointer to weight data
-     * @return Pointer to weight data
-     */
-    inline const float * weight_data() const {
-        return m_weights;
+        return m_distances;
     }
 
     /**
@@ -191,6 +188,14 @@ public:
      */
     void set_distance_data( const float * distance_data );
 
+
+    /**
+     * Return pointer to weight data
+     * @return Pointer to weight data
+     */
+    inline const float * weight_data() const {
+        return m_weights;
+    }
 
     /**
      * Set the weight data for the TSDF in one call
@@ -227,32 +232,40 @@ public:
 #pragma mark - Rendering
     void raycast( uint16_t width, uint16_t height, const Camera& camera, Eigen::Matrix<float, 3, Eigen::Dynamic>& vertices, Eigen::Matrix<float, 3, Eigen::Dynamic>& normals ) const ;
 
-protected:
-// Size of voxel grid
-    dim3 m_size;
+private:
+    /**
+     * Deallocate storage for this TSDF
+     */
+    void deallocate( );
 
-// Physical size of space represented
-    float3 m_physical_size;
+    // Size of voxel grid
+    dim3                    m_size;
 
-// Offset of physical grid in world coordinates
-    float3 m_offset;
+    // Physical size of space represented in mm
+    float3                  m_physical_size;
 
-// Voxel memory on device
-    float * m_voxels;
+    // Offset of physical grid in world coordinates
+    float3                  m_offset;
 
-//  Voxel weight data on device
-    float * m_weights;
-
-// Size of a voxel
+    // Size of a voxel
     float3 m_voxel_size;
 
-//  Truncation distance
+    //  Truncation distance
     float m_truncation_distance;
 
-// Max weight for a voxel
+    // Max weight for a voxel
     float m_max_weight;
 
-// Storage for per voxel transform on device
-    float3 * m_voxel_translations;
+    // Per grid point data
+    float                   *m_distances;
+
+    // Colour data, RGB as 3xuchar
+    uchar3                  *m_colours;
+
+    //  Confidence weight for distance and colour
+    float                   *m_weights;
+
+    // Deformation field
+    DeformationNode         *m_deformation_nodes;
 };
 #endif /* TSDFVolume_hpp */

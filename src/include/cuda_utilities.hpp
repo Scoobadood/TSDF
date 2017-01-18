@@ -70,6 +70,17 @@ float3 f3_div_elem( const float3& f1, const float3& f2 ) {
 }
 
 /**
+ * Perform per element division of f1 by v2
+ * @param f1 the first float3 (numerators)
+ * @param i2 The second float3 (denominators)
+ * @return f1 ./ f2
+ */
+__device__ __host__ __forceinline__
+float3 f3_div_elem( const float3& f, const dim3& i ) {
+    return make_float3( f.x/i.x, f.y/i.y, f.z/i.z );
+}
+
+/**
  * Normalise a float3
  * @param vec The float3 vector
  */
@@ -85,7 +96,7 @@ void f3_normalise( float3 vec ) {
  * Normalise a float3
  * @param vec The float3 vector
  */
-__device__ __forceinline__
+__device__ __host__ __forceinline__
 float f3_norm( float3 vec ) {
     return sqrt( vec.x*vec.x+vec.y*vec.y+vec.z*vec.z);
 }
