@@ -335,7 +335,7 @@ void process_ray(   const float3        origin,
         //   We transit from +ve to -ve tsdf (intersect)
         //   We transit from -ve to +ve (fail)
 		int count = 0;
-		float step_size = trunc_distance * 0.9;
+		float step_size = trunc_distance * 0.05;
         while ( !done  ) {
             float3 current_point = f3_add( start_point, f3_mul_scalar( t, direction ) );
 
@@ -348,7 +348,7 @@ void process_ray(   const float3        origin,
             if ( tsdf <= 0 ) {
 				// If we stepped past the iso surface, work out when
                 if ( tsdf < 0 ) {
-                    // We just advanced by previous_tsdf so step back
+                    // We just advanced by step_size so step back
                     t = t - step_size;
 
                     // Linearly interpolate the crossing point
@@ -365,18 +365,25 @@ void process_ray(   const float3        origin,
                 // Put into world coordinates
                 intersection_point = f3_add( space_min, current_point );
                 done = true;
-            } else if( previous_tsdf < 0 ) {
-                // Hit backface; prev tsdf was -ve but this is +ve
+            } 
+
+            // tsdf is +ve, if previous tsdf was negative then we hit a backface and we're done
+            else if( previous_tsdf < 0 ) {
                 done = true;
-            } else {
-                // Not crossed ISO surface nor reached backface so step
+            } 
+
+            // previous tsdf was +ve and so is this one. We've not crossed the surface
+            // so keep stepping
+            else {
                 t = t + step_size;
+
+                // Until we step out of the volume
                 if( t >= max_t ) {
                     done = true;
                 }
             }
 
-			// Catch failures - this code shouldn;t be invoked.
+			// Catch failures - this code shouldn';'t be invoked.
 			if( count++ > 4400 ) {
 				printf( "Timed out @(%d,%d) with t:%f tsdf:%f\n",imx, imy, t, tsdf  );
  
@@ -393,155 +400,6 @@ float3 float3_from_eigen_vector( const Eigen::Vector3f & vector ) {
     float3 f { vector[0], vector[1], vector[2]};
     return f;
 }
-
-
-
-/**
- * Walk a ray using Amantides and Wo's method
- * 
- */
-__global__
-void process_ray_2( float3 camera_position, 
-                    Mat33 camera_rotation,
-                    Mat33 kinv,
-                    uint16_t width, uint16_t height,
-                    float3 space_min, float3 space_max
-
-
-                     ) {
-    // Set default value
-    float3 intersection_point { CUDART_NAN_F, CUDART_NAN_F, CUDART_NAN_F};
-
-/*
-
-THIS CODE IS AN ALTERNATIVE RAY WALKER BASED ON AMANTIDES.
-IT'S NOT COMPLETE AND HAS NOT BEEN MADE TO WORK
-
-
-
-    uint16_t pixel_x = threadIdx.x + blockIdx.x * blockDim.x;
-    uint16_t pixel_y = threadIdx.y + blockIdx.y * blockDim.y;
-
-    // Terminate early if the index is out of bounds
-    if ( pixel_x >= width || pixel_y >= height ) {
-        return;
-    }
-
-    size_t pixel_index = pixel_y * width + pixel_x;
-
-    // Compute the ray direction for this pixel in world coordinates
-    // which is R K-1 (x,y,1)T
-    float3 direction      = compute_ray_direction_at_pixel( camera_position, pixel_x, pixel_y, camera_rotation, kinv );
-
-
-    // Compute near and far intersections of the TSDF volume by this ray
-    float near_t, far_t;
-    bool intersects = compute_near_and_far_t( camera_position, direction, space_min, space_max, near_t, far_t );
-
-
-    // Only if the ray intersects space...
-    if( intersects ) {
-
-        // Initialise t
-        float t = near_t;
-
-        // Initialise current point
-        float3 current_point = f3_add( camera_position, f3_mul_scalar( t, direction ) );
-
-        // Get the voxel coordinate of the voxel where this ray enters the TSDF or starts
-        dim3 current_voxel = voxel_for_point( current_point, size );
-
-        // Construct X,Y and Z step size (1 or -1)
-        int3 step {
-		  (int) direction.x / fabs( direction.x ),
-		  (int) direction.y / fabs( direction.y ),
-		  (int) direction.z / fabs( direction.z )
-        };
-
-        // Construct the tmax (value of t that carries the point into the next voxel in each direction )
-        int vx = ( direction.x > 0 ) (current_voxel.x + 1 ) : current_voxel.x;
-        int vy = ( direction.y > 0 ) (current_voxel.y + 1 ) : current_voxel.y;
-        int vz = ( direction.z > 0 ) (current_voxel.z + 1 ) : current_voxel.z;
-
-        float3 tmax {
-            (( vx * voxel_size.x) - current_point.x) / direction.x,
-            (( vy * voxel_size.y) - current_point.y) / direction.y,
-            (( vz * voxel_size.z) - current_point.z) / direction.z
-        };
-
-        // Construct delta_t; the amount of t necessary to traverse a voxel in each direction
-    	float3 delta {
-	       	voxel_size.x / direction.x,
-            voxel_size.y / direction.y,
-            voxel_size.z / direction.z,
-        };
-
-        // Construct terminal conditions for voxel value
-        int3 terminal_voxel {
-            direction.x < 0 ? -1 : size.x,
-            direction.y < 0 ? -1 : size.y,
-            direction.z < 0 ? -1 : size.z
-        };
-
-        // Now iterate until done
-        bool done = false;
-        do {
-            // Store last voxel coordinates
-            int3 last_voxel = current_voxel;
-
-
-            // Step to next voxel we pass through
-            if( tmax.x < tmax.y ) {
-                if( tmax.x < tmax.z ) {
-                    current_voxel.x += step.x;
-                    if( current_voxel.x != terminal_voxel.x ) {
-                        tmax.x += delta_t.x;
-                    } else {
-                        done = true;
-                    }
-                } else {
-                    current_voxel.z += step.z;
-                    if( current_voxel.z != terminal_voxel.z ) {
-                        tmax.z += delta_t.z;
-                    } else {
-                        done = true;
-                    }
-                }
-            } else {
-                if( tmax.y < tmax.z ) {
-                    current_voxel.y += step.y;
-                    if( current_voxel.y != terminal_voxel.y ) {
-                        tmax.y += delta_t.y;
-                    } else {
-                        done = true;
-                    }
-                } else {
-                    current_voxel.z += step.z;
-                    if( current_voxel.z != terminal_voxel.z ) {
-                        tmax.z += delta_t.z;
-                    } else {
-                        done = true;
-                    }
-                }
-            }
-
-            // If we're still in the TSDF
-            if( ! done ) {
-                // If the value of this voxel is -ve then we crossed a boundary
-                size_t voxel_index = ((size.x * size.y) * current_voxel.z) + ((size.y * current_voxel.x) + current_voxel.x);
-                if ( voxel_values[voxel_index] < 0 ) 
-                    // Crossed from +ve to -ve between last point and this.
-                    // 
-                } else {
-                    // Still positive, keep going
-                }
-            }
-        } while( !done );
-
-    }
-*/
-}
-
 
 /**
  * Compute normals to the vertex data provided
