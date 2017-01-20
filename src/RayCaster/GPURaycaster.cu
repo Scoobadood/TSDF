@@ -62,7 +62,7 @@ float trilinearly_interpolate( const float3 point,
 	};
 	float3 adjusted_point = point;
 	if( point.x >= max_values.x ) adjusted_point.x = max_values.x - (voxel_size.x / 10.0f);
-	if( point.y >= max_values.x ) adjusted_point.y = max_values.y - (voxel_size.y / 10.0f);
+	if( point.y >= max_values.y ) adjusted_point.y = max_values.y - (voxel_size.y / 10.0f);
 	if( point.z >= max_values.z ) adjusted_point.z = max_values.z - (voxel_size.z / 10.0f);
 	if( point.x < 0.0f ) adjusted_point.x = 0.0f;
 	if( point.y < 0.0f ) adjusted_point.y = 0.0f;
