@@ -203,6 +203,14 @@ public:
      */
     void set_weight_data( const float * weight_data );
 
+    inline float3 global_rotation( ) const {
+        return m_global_rotation;
+    }
+
+    inline float3 global_translation( ) const {
+        return m_global_translation;
+    }
+
 #pragma mark - Integrate new depth data
     /**
      * Integrate a range map into the TSDF
@@ -267,5 +275,11 @@ private:
 
     // Deformation field
     DeformationNode         *m_deformation_nodes;
+
+    // Global translation
+    float3                  m_global_translation;
+
+    // Global rotation
+    float3                  m_global_rotation;
 };
 #endif /* TSDFVolume_hpp */

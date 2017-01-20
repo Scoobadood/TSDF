@@ -42,22 +42,6 @@ float3 compute_ray_direction_at_pixel( const float3& origin, uint16_t pix_x, uin
 }
 
 /**
- * Determine the voxel in which a point lies
- * @param point The point in voxel space coordinates (0,0,0) -> (max_x, max_y, max_z)
- * @return The voxel in which the point lies.
- */
-__device__
-int3 voxel_for_point( const float3 point, const float3 voxel_size ) {
-    int3 voxel {
-        int(floor( point.x / voxel_size.x )),
-        int(floor( point.y / voxel_size.y )),
-        int(floor( point.z / voxel_size.z ))
-    };
-
-    return voxel;
-}
-
-/**
  * Perform trilinear interpolation of the TSDF value at a given point in volume space
  * @param point The point (0,0,0) -> (max_x, max_y, max_z)
  * @param voxel_grid_size The size of the space in voxels

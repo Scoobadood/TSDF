@@ -26,6 +26,14 @@ extern "C" {
 	 */
 	__device__
 	float tsdf_value_at( uint16_t x, uint16_t y, uint16_t z, const float * const tsdf_values, const dim3 voxel_grid_size );
+
+	/**
+	 * Determine the voxel in which a point lies
+	 * @param point The point in voxel space coordinates (0,0,0) -> (max_x, max_y, max_z)
+	 * @return The voxel in which the point lies.
+	 */
+	__device__
+	int3 voxel_for_point( const float3 point, const float3 voxel_size );
 }
 
 

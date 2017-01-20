@@ -19,7 +19,7 @@
 
 #include "math_constants.h"
 
-
+const float POINT_EPSILON=0.001f;
 
 /**
  * Compute the index into the voxel space for a given x,y,z coordinate
@@ -89,6 +89,195 @@ void set_weight( const dim3& size, float * weights, int x, int y, int z, float w
     weights[ index(size, x, y, z) ] = weight;
 }
 
+/**
+ * Obtain indices and trilinear coefficients for for the gridpoints which surround the given point in space
+ * @param point The point in TSDF coordinate space
+ * @param voxel_grid_size Dimensions of the TSDF
+ * @param voxel_size The physical size of a single voxel
+ * @param indices An array of indices of the voxels surrounding the given point
+ * ordered as (minx, miny, minz), (maxx, miny, minz), (maxx, miny, maxz), (maxx, miny, minz) and then the maxz values
+ * @return true If the values in indices are valid (ie point is in TSDF space)
+ */
+__device__ 
+bool get_trilinear_elements( const float3   point, 
+                             const dim3     voxel_grid_size,
+                             const float3   voxel_size,
+                             int * const    indices,
+                             float * const  coefficients ) {
+    bool is_valid = false;
+
+    // Manage boundary points
+    float3 max_values {
+        voxel_grid_size.x * voxel_size.x,
+        voxel_grid_size.y * voxel_size.y,
+        voxel_grid_size.z * voxel_size.z
+    };
+
+    float3 adjusted_point = point;
+    if( point.x - max_values.x < POINT_EPSILON ) adjusted_point.x = max_values.x - POINT_EPSILON;
+    if( point.y - max_values.y < POINT_EPSILON ) adjusted_point.y = max_values.y - POINT_EPSILON;
+    if( point.z - max_values.z < POINT_EPSILON ) adjusted_point.z = max_values.z - POINT_EPSILON;
+    if( point.x < -POINT_EPSILON ) adjusted_point.x = 0.0f;
+    if( point.y < -POINT_EPSILON ) adjusted_point.y = 0.0f;
+    if( point.z < -POINT_EPSILON ) adjusted_point.z = 0.0f;
+
+    // Get the voxel containing this point
+    int3 voxel = voxel_for_point( adjusted_point, voxel_size );
+
+    // Handle voxel out of bounds
+    if ( voxel.x >= 0 && voxel.y >= 0 && voxel.z >= 0  && voxel.x < voxel_grid_size.x && voxel.y < voxel_grid_size.y && voxel.z < voxel_grid_size.z) {
+
+        // Get the centre of the voxel
+        float3 v_centre = centre_of_voxel_at( voxel.x, voxel.y, voxel.z, voxel_size );
+
+        // Set up the lower bound for trilinear interpolation
+        int3 lower;
+        lower.x = (adjusted_point.x < v_centre.x) ? voxel.x - 1 : voxel.x;
+        lower.y = (adjusted_point.y < v_centre.y) ? voxel.y - 1 : voxel.y;
+        lower.z = (adjusted_point.z < v_centre.z) ? voxel.z - 1 : voxel.z;
+
+        // Handle lower out of bounds
+        lower.x = max( lower.x, 0 );
+        lower.y = max( lower.y, 0 );
+        lower.z = max( lower.z, 0 );
+
+        // Compute u,v,w
+        float3 lower_centre = centre_of_voxel_at( lower.x, lower.y, lower.z, voxel_size );
+        float3 uvw = f3_sub( adjusted_point, lower_centre );
+        uvw = f3_div_elem( uvw, voxel_size );
+        float u = uvw.x;
+        float v = uvw.y;
+        float w = uvw.z;
+
+        // Populate indices
+        int delta_x = 1;
+        int delta_y = voxel_grid_size.x;
+        int delta_z = voxel_grid_size.x * voxel_grid_size.y;
+        indices[0] = lower.x + ( lower.y * voxel_grid_size.x ) + ( lower.z * voxel_grid_size.x * voxel_grid_size.y );
+        indices[1] = indices[0] + delta_x;
+        indices[2] = indices[1] + delta_z;
+        indices[3] = indices[0] + delta_z;
+        indices[4] = indices[0] + delta_y;
+        indices[5] = indices[1] + delta_y;
+        indices[6] = indices[2] + delta_y;
+        indices[7] = indices[3] + delta_y;
+
+        // And coefficients
+        coefficients[0] = (1 - u) * (1 - v) * (1 - w);
+        coefficients[1] =    u  * (1 - v) * (1 - w);
+        coefficients[2] =    u  * (1 - v) *    w ;
+        coefficients[3] = (1 - u) * (1 - v) *    w;
+        coefficients[4] = (1 - u) *    v  * (1 - w);
+        coefficients[5] =    u  *    v  * (1 - w);
+        coefficients[6] = (1 - u) *    v  *    w;
+        coefficients[7] =    u  *    v  *    w;
+    }
+
+    // Voxel is out of bounds and so can't be used.
+    else {
+        printf( "Point outside of voxel space %f, %f, %f\n", point.x, point.y, point.z );
+    }
+    return is_valid;
+}
+
+/**
+ * Apply rotation  to point
+ * @param rotation The rotation expressed as 3 Euler angles
+ * @param point The point to rotate
+ * @return The rotated point
+ */
+__device__
+float3 rotate( const float3 point, const float3 rotation ) {
+    float c1 = cos( rotation.x );
+    float c2 = cos( rotation.y );
+    float c3 = cos( rotation.z );
+    float s1 = sin( rotation.x );
+    float s2 = sin( rotation.y );
+    float s3 = sin( rotation.z );
+
+    float rx = (c2 * c3)          * point.x - (c2 * s3 )        * point.y + s2          * point.z;
+    float ry = (c1*s3 + s1*s2*c3) * point.x + (c1*c3-s1*s2*s3)  * point.y - (s1 * c2 )  * point.z;
+    float rz = (s1*s3 - c1*s2*c3) * point.x + (s1*c3 + c1*s2*s3)* point.y + (c1 * c2 )  * point.z;
+
+    return make_float3( rx, ry, rz );
+}
+
+/**
+ * Apply the TSDF deformation field to a collection of points, deforming them in place
+ * @param global_rotation The global rotation of the space
+ * @param global_translation The global translation of the space
+ * @param deformation_nodes An array of DeformationNodes
+ * @param voxel_grid_size The voxel size of the space
+ * @param voxel_space_size The physical size of the space
+ * @param points The points to be transformed in world coordinates
+ * @param num_points The number of points to be transformed
+ */
+__global__
+void deformation_kernel( const float3                               global_rotation,
+                         const float3                               global_translation,
+                         const TSDFVolume::DeformationNode * const  deformation_nodes,
+                         const dim3                                 voxel_grid_size,
+                         const float3                               voxel_size,
+                         const float3                               voxel_space_size,
+                         const float3                               offset,
+                         const int                                  num_points,
+                         float3 *                                   points) {
+
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if( idx < num_points ) {
+        float3 point = points[idx];
+
+        // Get indices of neighbours
+        point = f3_sub( point, offset );
+
+        int neighbours[8];
+        float coefficients[8];
+        get_trilinear_elements( point, voxel_grid_size, voxel_size, neighbours, coefficients );
+
+        // Compute the deformation at this point
+        float3 deformed_point{ 0.0f, 0.0f, 0.0f };
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[0], deformation_nodes[ neighbours[0] ].translation ) );
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[1], deformation_nodes[ neighbours[1] ].translation ) );
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[2], deformation_nodes[ neighbours[2] ].translation ) );
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[3], deformation_nodes[ neighbours[3] ].translation ) );
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[4], deformation_nodes[ neighbours[4] ].translation ) );
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[5], deformation_nodes[ neighbours[5] ].translation ) );
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[6], deformation_nodes[ neighbours[6] ].translation ) );
+        deformed_point = f3_add( deformed_point, f3_mul_scalar( coefficients[7], deformation_nodes[ neighbours[7] ].translation ) );
+
+        // Apply global rotation
+        deformed_point = rotate( deformed_point, global_rotation );
+
+        // Apply global translation
+        deformed_point = f3_add( deformed_point, global_translation );
+
+        // Set this to output point
+        points[idx] = deformed_point;
+    }
+}
+
+/**
+ *
+ */
+__host__
+void deform_mesh( const TSDFVolume * volume, const int num_points, float3 * points ) {
+    dim3 block( 1024, 1, 1 );
+    dim3 grid ( divUp( num_points, block.x ), 1, 1 );
+
+    deformation_kernel<<<grid, block >>>( volume->global_rotation(),
+                                volume->global_translation(),
+                                volume->deformation(),
+                                volume->size(),
+                                volume->voxel_size(),
+                                volume->physical_size(),
+                                volume->offset(),
+                                num_points,
+                                points );
+    cudaDeviceSynchronize( );
+    cudaError_t err = cudaGetLastError();
+    check_cuda_error( "Deformation kernel failed", err);
+}
 
 /**
  * @param distance_data The voxel values (in devcie memory)
