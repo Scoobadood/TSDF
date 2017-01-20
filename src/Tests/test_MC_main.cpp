@@ -54,7 +54,7 @@ TSDFVolume * make_sphere_tsdf( const uint16_t vx, const  uint16_t vy, const uint
  * @param voxel_size The size of an individual voxel
  * @param grid_offset The offset of the grid
  */
-TSDFVolume::Float3 * build_twist_translation_data( TSDFVolume * volume ) {
+TSDFVolume::DeformationNode * build_twist_translation_data( TSDFVolume * volume ) {
 
 	TSDFVolume::Float3 grid_offset = volume->offset( );
 	TSDFVolume::Float3 voxel_size  = volume->voxel_size();
@@ -70,7 +70,7 @@ TSDFVolume::Float3 * build_twist_translation_data( TSDFVolume * volume ) {
 
 	int data_size =  grid_size.x * grid_size.y * grid_size.z;
 
-	TSDFVolume::Float3 * translations = new TSDFVolume::Float3[ data_size ];
+	TSDFVolume::DeformationNode * deformations = new TSDFVolume::DeformationNode[ data_size ];
 
 	// We want to iterate over the entire voxel space
 	// Each thre	ad should be a Y,Z coordinate with the thread iterating over x
@@ -99,15 +99,18 @@ TSDFVolume::Float3 * build_twist_translation_data( TSDFVolume * volume ) {
 				float rel_x = ( tran.x - centre_of_rotation.x );
 				float rel_y = ( tran.y - centre_of_rotation.y );
 
-				translations[voxel_index].x = ( ( cos_theta * rel_x ) - ( sin_theta * rel_y ) ) + centre_of_rotation.x;
-				translations[voxel_index].y = ( ( sin_theta * rel_x ) + ( cos_theta * rel_y ) ) + centre_of_rotation.y;
-				translations[voxel_index].z = tran.z;
+				deformations[voxel_index].translation.x = ( ( cos_theta * rel_x ) - ( sin_theta * rel_y ) ) + centre_of_rotation.x;
+				deformations[voxel_index].translation.y = ( ( sin_theta * rel_x ) + ( cos_theta * rel_y ) ) + centre_of_rotation.y;
+				deformations[voxel_index].translation.z = tran.z;
+				deformations[voxel_index].rotation.x = 0.0f;
+				deformations[voxel_index].rotation.y = 0.0f;
+				deformations[voxel_index].rotation.z = 0.0f;
 
 				voxel_index++;
 			}
 		}
 	}
-	return translations;
+	return deformations;
 }
 /**
  * Test the Marching Cubes code
@@ -115,15 +118,15 @@ TSDFVolume::Float3 * build_twist_translation_data( TSDFVolume * volume ) {
 int main( int argc, const char * argv[] ) {
 	int retval = 0;
 
-	TSDFVolume *volume = make_sphere_tsdf( 400, 400, 400, 2000, 2000, 2000 );
+	TSDFVolume *volume = make_sphere_tsdf( 200, 200, 200, 2000, 2000, 2000 );
 
 	if ( volume ) {
-		TSDFVolume::Float3 * data = build_twist_translation_data( volume );
+		TSDFVolume::DeformationNode * deformation = build_twist_translation_data( volume );
 
-		if ( data ) {
-			volume->set_translation_data( data);
+		if ( deformation ) {
+			volume->set_deformation( deformation );
 
-			delete [] data;
+			delete [] deformation;
 
 			std::vector<int3> triangles;
 			std::vector<float3> vertices;

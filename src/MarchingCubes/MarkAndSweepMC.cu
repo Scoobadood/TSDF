@@ -1,6 +1,7 @@
 #include "../include/TSDFVolume.hpp"
 #include "../include/cuda_utilities.hpp"
 #include "../include/TSDF_utilities.hpp"
+#include "vector_types.h"
 
 #include "MC_edge_table.cu"
 #include "MC_triangle_table.cu"
@@ -62,12 +63,12 @@ float3 interpolate( float3 v0, float3 v1, float w0, float w1 ) {
 }
 
 __device__
-void voxel_indices_for_cube_index( const int cube_index, const int grid_size_x, const int grid_size_y, int voxel_indices[8] ) {
+void voxel_indices_for_cube_index( const int cube_index, const int grid_size_x, const int grid_size_y, int voxel_indices[8], dim3 voxel_coords[8] ) {
 	int cube_xy_slab_size = ( ( grid_size_x - 1) * (grid_size_y - 1));
 
-	int cube_z = cube_index / cube_xy_slab_size;
-	int cube_y = ( cube_index - (cube_z * cube_xy_slab_size) ) / (grid_size_x - 1);
-	int cube_x = ( cube_index - (cube_z * cube_xy_slab_size) ) % (grid_size_x - 1);
+	unsigned int cube_z = cube_index / cube_xy_slab_size;
+	unsigned int cube_y = ( cube_index - (cube_z * cube_xy_slab_size) ) / (grid_size_x - 1);
+	unsigned int cube_x = ( cube_index - (cube_z * cube_xy_slab_size) ) % (grid_size_x - 1);
 
 	int front_left_bottom_voxel_index = ( cube_z) * ( grid_size_x * grid_size_y) + (cube_y * grid_size_x) + cube_x;
 
@@ -84,6 +85,17 @@ void voxel_indices_for_cube_index( const int cube_index, const int grid_size_x, 
 	voxel_indices[5] = voxel_indices[1] + dy;						// back rght top
 	voxel_indices[6] = voxel_indices[2] + dy;						// frnt rght top
 	voxel_indices[7] = voxel_indices[3] + dy;						// frnt left top
+
+	if( voxel_coords != nullptr ) {
+		voxel_coords[0] = { cube_x    , cube_y    , cube_z + 1};
+		voxel_coords[1] = { cube_x + 1, cube_y    , cube_z + 1};
+		voxel_coords[2] = { cube_x + 1, cube_y    , cube_z    };
+		voxel_coords[3] = { cube_x    , cube_y    , cube_z    };
+		voxel_coords[4] = { cube_x    , cube_y + 1, cube_z + 1};
+		voxel_coords[5] = { cube_x + 1, cube_y + 1, cube_z + 1};
+		voxel_coords[6] = { cube_x + 1, cube_y + 1, cube_z    };
+		voxel_coords[7] = { cube_x    , cube_y + 1, cube_z    };
+	}
 }
 
 /**
@@ -128,7 +140,7 @@ void get_cube_contribution( const dim3 			grid_size, 				//	in
 	if ( cube_index < max_cubes) {
 
 		int voxel_indices[8];
-		voxel_indices_for_cube_index( cube_index, grid_size.x, grid_size.y, voxel_indices);
+		voxel_indices_for_cube_index( cube_index, grid_size.x, grid_size.y, voxel_indices, nullptr);
 
 		int cube_type = calculate_cube_type( voxel_indices, distance_data );
 
@@ -162,7 +174,7 @@ void launch_get_cube_contribution(	const TSDFVolume * const 	volume,
 
 
 	// invoke the kernel
-	dim3 block( 1024 );
+	dim3 block( 512 );
 	dim3 grid( divUp( max_cubes, block.x ) );
 	get_cube_contribution <<< grid, block >>>( grid_size, max_cubes, volume->distance_data(), d_vertices_per_cube );
 	cudaDeviceSynchronize( );
@@ -205,8 +217,9 @@ void launch_get_cube_contribution(	const TSDFVolume * const 	volume,
  */
 __global__
 void generate_vertices( const dim3 				grid_size, 						// in
-                        const TSDFVolume::DeformationNode * const 	deformation,					// in (device)
                         const float * const 	distance_data,					// in (device)
+                        const float3 			offset,							// in
+                        const float3 			voxel_size,
                         const int * const		cube_indices,					// in (device)
                         const int 				num_cubes,						// in
                         const int * const 		thread_write_offsets,			// in
@@ -224,7 +237,8 @@ void generate_vertices( const dim3 				grid_size, 						// in
 
 		// Now get a voxel index for the base corner of the cube
 		int voxel_indices[8];
-		voxel_indices_for_cube_index( cube_index, grid_size.x, grid_size.y, voxel_indices );
+		dim3 voxel_coords[8];
+		voxel_indices_for_cube_index( cube_index, grid_size.x, grid_size.y, voxel_indices, voxel_coords );
 
 		// Get weights of each adjacent vertex
 		float w0 = distance_data[ voxel_indices[0] ];
@@ -237,14 +251,14 @@ void generate_vertices( const dim3 				grid_size, 						// in
 		float w7 = distance_data[ voxel_indices[7] ];
 
 		// Get the vertex coordinates
-		float3 v0 = deformation[ voxel_indices[0] ].translation;
-		float3 v1 = deformation[ voxel_indices[1] ].translation;
-		float3 v2 = deformation[ voxel_indices[2] ].translation;
-		float3 v3 = deformation[ voxel_indices[3] ].translation;
-		float3 v4 = deformation[ voxel_indices[4] ].translation;
-		float3 v5 = deformation[ voxel_indices[5] ].translation;
-		float3 v6 = deformation[ voxel_indices[6] ].translation;
-		float3 v7 = deformation[ voxel_indices[7] ].translation;
+		float3 v0 = centre_of_voxel_at( voxel_coords[0].x, voxel_coords[0].y, voxel_coords[0].z, voxel_size, offset );
+		float3 v1 = centre_of_voxel_at( voxel_coords[1].x, voxel_coords[1].y, voxel_coords[1].z, voxel_size, offset );
+		float3 v2 = centre_of_voxel_at( voxel_coords[2].x, voxel_coords[2].y, voxel_coords[2].z, voxel_size, offset );
+		float3 v3 = centre_of_voxel_at( voxel_coords[3].x, voxel_coords[3].y, voxel_coords[3].z, voxel_size, offset );
+		float3 v4 = centre_of_voxel_at( voxel_coords[4].x, voxel_coords[4].y, voxel_coords[4].z, voxel_size, offset );
+		float3 v5 = centre_of_voxel_at( voxel_coords[5].x, voxel_coords[5].y, voxel_coords[5].z, voxel_size, offset );
+		float3 v6 = centre_of_voxel_at( voxel_coords[6].x, voxel_coords[6].y, voxel_coords[6].z, voxel_size, offset );
+		float3 v7 = centre_of_voxel_at( voxel_coords[7].x, voxel_coords[7].y, voxel_coords[7].z, voxel_size, offset );
 
 		// Compute the edge intersections (some may not be valid)
 		float3 vertex[12];
@@ -344,11 +358,12 @@ void launch_generate_vertices(	const TSDFVolume	* volume,						// in
 	check_cuda_error( "Couldn't copy vertex offstes to device", err);
 
 	std::cout << "   -- running generation" << std::endl;
-	dim3 block( 1024 );
+	dim3 block( 512 );
 	dim3 grid( divUp( num_cubes, block.x ));
 	generate_vertices <<< grid, block >>>(	volume->size(),							// in
-	                                        volume->deformation(),					// in
 	                                        volume->distance_data(),				// in
+	                                        volume->offset(),						// in
+                        					(float3)volume->voxel_size(),
 	                                        d_cube_indices,							// in
 	                                        num_cubes,								// in
 	                                        d_thread_write_offsets,					// in
