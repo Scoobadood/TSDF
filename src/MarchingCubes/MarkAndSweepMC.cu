@@ -506,6 +506,8 @@ void extract_surface_ms( const TSDFVolume * const 	volume, 					// in
 void extract_surface( const TSDFVolume * volume, std::vector<float3>& vertices, std::vector<int3>& triangles) {
 
 
+
+
 	float3 	* d_mesh_vertices;
 	int 	* d_mesh_vertex_voxel_indices;
 	uint8_t	* d_mesh_vertex_voxel_count;

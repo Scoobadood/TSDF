@@ -116,7 +116,7 @@ void find_mesh_vertex_correspondences(
 
 /* ************************************************************************************************************************
  * * Compute scatter addresses for mesh index, pixel index and voxel index data
- * * For all mesh verts 
+ * * For all mesh verts
  * * Work out scatter addresses for pixel coords and mesh vert index
  * * Requires:
  * *	Mesh vert flags, num mesh verts
