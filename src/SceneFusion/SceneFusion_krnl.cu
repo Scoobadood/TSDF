@@ -214,7 +214,7 @@ void update_deformation_field(	const int * const 		d_compact_pixel_indices,
 							 	const uint8_t * const 	d_mesh_vertex_voxel_count,
 								const int 				num_compacted_entries,
 								const float3 * const 	d_scene_flow,
-								float3 					* d_deformation_field)
+								TSDFVolume::DeformationNode * const d_deformation_field)
 {
  	int compact_index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -223,11 +223,11 @@ void update_deformation_field(	const int * const 		d_compact_pixel_indices,
 
  		int voxel_index_1 = d_compact_mesh_vertex_voxel_indices[ compact_index * 2];
  		float scale_factor_1 = ( 1.0f / d_mesh_vertex_voxel_count[ voxel_index_1 ] );
- 		d_deformation_field[ voxel_index_1 ] = f3_add( d_deformation_field[ voxel_index_1 ], f3_mul_scalar( scale_factor_1, scene_flow ) );
+ 		d_deformation_field[ voxel_index_1 ].translation = f3_add( d_deformation_field[ voxel_index_1 ].translation, f3_mul_scalar( scale_factor_1, scene_flow ) );
 
  		int voxel_index_2 = d_compact_mesh_vertex_voxel_indices[ compact_index * 2 + 1];
  		float scale_factor_2 = ( 1.0f / d_mesh_vertex_voxel_count[ voxel_index_2 ] );
- 		d_deformation_field[ voxel_index_2 ] = f3_add( d_deformation_field[ voxel_index_2 ], f3_mul_scalar( scale_factor_2, scene_flow ) );
+ 		d_deformation_field[ voxel_index_2 ].translation = f3_add( d_deformation_field[ voxel_index_2 ].translation, f3_mul_scalar( scale_factor_2, scene_flow ) );
  	}
 }
 
@@ -365,7 +365,7 @@ void process_frames(	TSDFVolume *			volume,
 			d_mesh_vertex_voxel_count, 
 			num_compacted_entries,
 			d_scene_flow, 
-			(float3 *)volume->translation_data( ) );
+			volume->deformation( ) );
 
 	cudaDeviceSynchronize( );
 	err = cudaGetLastError( );
