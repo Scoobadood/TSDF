@@ -245,6 +245,13 @@ void process_frames(	TSDFVolume *			volume,
 	//
 	std::cout << "Processing Frames" << std::endl;
 
+	// Lookup CUDA memory to make sure I'm not leaking it
+	size_t mem_tot = 0;
+	size_t mem_free = 0;
+	cudaMemGetInfo  (&mem_free, & mem_tot);
+	std::cout<<"  Free memory : "<<mem_free<<std::endl;
+
+
 	float3 * 	d_mesh_vertices;
 	int 		num_mesh_vertices;
 	int * 		d_mesh_vertex_voxel_indices;
@@ -306,6 +313,10 @@ void process_frames(	TSDFVolume *			volume,
 	//
 	cudaSafeFree( d_depth_data, "d_depth_data" );
 
+	// And no need for d_mesh_vertices  either now we have compacted
+	cudaSafeFree( d_mesh_vertices, "d_depth_data" );
+
+
 	//
 	// Compute scatter addresses for compaction
 	//
@@ -338,6 +349,7 @@ void process_frames(	TSDFVolume *			volume,
 	err = cudaGetLastError( );
 	check_cuda_error( "Kernel compact_mesh_data failed", err );
 
+	cudaSafeFree( d_scatter_addresses, "d_scatter_addresses");
 	cudaSafeFree( d_corr_flags, "d_corr_flags" );
 	cudaSafeFree( d_corr_pixel_indices, "d_corr_pixel_indices" );
 	cudaSafeFree( d_mesh_vertex_voxel_indices, "d_mesh_vertex_voxel_indices" );
