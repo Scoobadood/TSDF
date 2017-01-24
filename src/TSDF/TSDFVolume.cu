@@ -114,9 +114,9 @@ bool get_trilinear_elements( const float3   point,
     };
 
     float3 adjusted_point = point;
-    if( point.x - max_values.x < POINT_EPSILON ) adjusted_point.x = max_values.x - POINT_EPSILON;
-    if( point.y - max_values.y < POINT_EPSILON ) adjusted_point.y = max_values.y - POINT_EPSILON;
-    if( point.z - max_values.z < POINT_EPSILON ) adjusted_point.z = max_values.z - POINT_EPSILON;
+    if( (point.x > max_values.x) && ( point.x - max_values.x < POINT_EPSILON ) ) adjusted_point.x = max_values.x - POINT_EPSILON;
+    if( (point.y > max_values.y) && ( point.y - max_values.y < POINT_EPSILON ) ) adjusted_point.y = max_values.y - POINT_EPSILON;
+    if( (point.z > max_values.z) && ( point.z - max_values.z < POINT_EPSILON ) ) adjusted_point.z = max_values.z - POINT_EPSILON;
     if( point.x < -POINT_EPSILON ) adjusted_point.x = 0.0f;
     if( point.y < -POINT_EPSILON ) adjusted_point.y = 0.0f;
     if( point.z < -POINT_EPSILON ) adjusted_point.z = 0.0f;
