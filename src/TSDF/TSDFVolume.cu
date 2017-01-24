@@ -260,23 +260,29 @@ void deformation_kernel( const float3                               global_rotat
 /**
  *
  */
-__host__
-void deform_mesh( const TSDFVolume * volume, const int num_points, float3 * points ) {
-    dim3 block( 1024, 1, 1 );
+void TSDFVolume::deform_mesh( const int num_points, float3 * points ) const {
+
+	float3 * d_points;
+	cudaSafeAlloc( (void **) &d_points, num_points * sizeof( float3 ), "d_points" );
+	cudaMemcpy( d_points, points, num_points * sizeof( float3 ), cudaMemcpyHostToDevice );
+
+    dim3 block( 512, 1, 1 );
     dim3 grid ( divUp( num_points, block.x ), 1, 1 );
 
-    deformation_kernel<<<grid, block >>>( volume->global_rotation(),
-                                volume->global_translation(),
-                                volume->deformation(),
-                                volume->size(),
-                                volume->voxel_size(),
-                                volume->physical_size(),
-                                volume->offset(),
+    deformation_kernel<<<grid, block >>>(m_global_rotation, 
+                                m_global_translation,
+                                m_deformation_nodes,
+                                m_size,
+                                m_voxel_size,
+                                m_physical_size,
+                                m_offset,
                                 num_points,
-                                points );
+                                d_points );
     cudaDeviceSynchronize( );
     cudaError_t err = cudaGetLastError();
     check_cuda_error( "Deformation kernel failed", err);
+	cudaMemcpy( points, d_points, num_points * sizeof( float3 ), cudaMemcpyDeviceToHost );
+	cudaSafeFree( d_points, "d_points");
 }
 
 /**

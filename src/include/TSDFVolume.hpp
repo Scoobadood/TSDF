@@ -210,6 +210,11 @@ public:
     inline float3 global_translation( ) const {
         return m_global_translation;
     }
+#pragma mark - Deform a set of points
+    /**
+     * Apply the volume's deformation field t the given set of points, modifying them in place
+     */
+    void deform_mesh( const int num_points, float3 * points ) const;
 
 #pragma mark - Integrate new depth data
     /**

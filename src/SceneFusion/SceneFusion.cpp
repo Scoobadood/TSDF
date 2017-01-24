@@ -154,14 +154,22 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 
         const char * homedir = get_home_directory( );
         if( homedir ) {
-		    sprintf( out_file_name, "%s/Desktop/mesh_%03d.ply", homedir, frames);
+		    sprintf( out_file_name, "%s/Desktop/mesh_%03d_normal.ply", homedir, frames);
         } else {
-        	sprintf( out_file_name, "mesh_%03d.ply", frames);
+        	sprintf( out_file_name, "mesh_%03d_normal.ply", frames);
         }
-	    std::cout << "Writing PLY to " << out_file_name << std::endl;
+        std::cout << "Writing normal PLY to " << out_file_name << std::endl;
+   	write_to_ply( out_file_name, verts, triangles);
+	
+	if( homedir ) {
+		    sprintf( out_file_name, "%s/Desktop/mesh_%03d_warped.ply", homedir, frames);
+        } else {
+        	sprintf( out_file_name, "mesh_%03d_warped.ply", frames);
+        }
+	    std::cout << "Writing warped PLY to " << out_file_name << std::endl;
+	    m_volume->deform_mesh( verts.size(), verts.data() );
    	    write_to_ply( out_file_name, verts, triangles);
 	}
-
 
 
 	std::cout << "------------------------------------------------------------" << std::endl;
