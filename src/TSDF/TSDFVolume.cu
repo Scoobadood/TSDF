@@ -262,26 +262,31 @@ void deformation_kernel( const float3                               global_rotat
  */
 void TSDFVolume::deform_mesh( const int num_points, float3 * points ) const {
 
+    // Copy the point array to the device
 	float3 * d_points;
 	cudaSafeAlloc( (void **) &d_points, num_points * sizeof( float3 ), "d_points" );
-	cudaMemcpy( d_points, points, num_points * sizeof( float3 ), cudaMemcpyHostToDevice );
+	cudaError_t err = cudaMemcpy( d_points, points, num_points * sizeof( float3 ), cudaMemcpyHostToDevice );
+    check_cuda_error( "Failed to copy points to device for deformation", err);
+
 
     dim3 block( 512, 1, 1 );
     dim3 grid ( divUp( num_points, block.x ), 1, 1 );
 
     deformation_kernel<<<grid, block >>>(m_global_rotation, 
-                                m_global_translation,
-                                m_deformation_nodes,
-                                m_size,
-                                m_voxel_size,
-                                m_physical_size,
-                                m_offset,
-                                num_points,
-                                d_points );
+                                         m_global_translation,
+                                         m_deformation_nodes,
+                                         m_size,
+                                         m_voxel_size,
+                                         m_physical_size,
+                                         m_offset,
+                                         num_points,
+                                         d_points );
     cudaDeviceSynchronize( );
-    cudaError_t err = cudaGetLastError();
+    err = cudaGetLastError();
     check_cuda_error( "Deformation kernel failed", err);
-	cudaMemcpy( points, d_points, num_points * sizeof( float3 ), cudaMemcpyDeviceToHost );
+
+	err = cudaMemcpy( points, d_points, num_points * sizeof( float3 ), cudaMemcpyDeviceToHost );
+    check_cuda_error( "Failed to copy points from device after deformation", err);
 	cudaSafeFree( d_points, "d_points");
 }
 
@@ -493,6 +498,9 @@ void TSDFVolume::set_size( uint16_t volume_x, uint16_t volume_y, uint16_t volume
 
         err = cudaMalloc( &m_deformation_nodes, volume_x * volume_y * volume_z * sizeof( DeformationNode ) );
         check_cuda_error( "Couldn't allocate space for deformation nodes for TSDF", err );
+
+        m_global_rotation    = make_float3( 0.0f, 0.0f, 0.0f );
+        m_global_translation = make_float3( 0.0f, 0.0f, 0.0f );
 
         clear();
 
