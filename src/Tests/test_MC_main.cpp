@@ -132,8 +132,13 @@ int main( int argc, const char * argv[] ) {
 			std::vector<float3> vertices;
 			extract_surface( volume, vertices, triangles);
 
-			// Save to PLY file
-			write_to_ply( "/home/dave/Desktop/sphere.ply", vertices, triangles);
+			// Canonical surface should be a sphere
+			write_to_ply( "/home/dave/Desktop/sphere_canon.ply", vertices, triangles);
+
+			// Now deform it
+			volume->deform( vertices.size(), vertices.data());
+			write_to_ply( "/home/dave/Desktop/sphere_banana.ply", vertices, triangles);
+
 		} else {
 			std::cout << "Couldn't build twist data" << std::endl;
 			retval = -1;
