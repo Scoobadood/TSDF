@@ -3,6 +3,8 @@
  */
 
 #include "ICPCUDA/ICPOdometry.h"
+#include <sophus/se3.hpp>
+
 
 const int IMAGE_WIDTH = 640;
 const int IMAGE_HEIGHT = 480;

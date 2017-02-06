@@ -25,7 +25,6 @@ vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:\
 	$(SRC_DIR)/MarchingCubes:\
 	$(SRC_DIR)/RayCaster:\
 	third_party/ICPCUDA:\
-	third_party/ICPCUDA/Cuda:\
 	third_party/ICPCUDA/Cuda/containers
 
 vpath %.cu  $(SRC_DIR)/GPU:\
@@ -33,8 +32,11 @@ vpath %.cu  $(SRC_DIR)/GPU:\
 			$(SRC_DIR)/RayCaster:\
 			$(SRC_DIR)/SceneFusion:\
 			$(SRC_DIR)/TSDF:\
-			$(SRC_DIR)/SceneFlowUpdater\
-			$(SRC_DIR)/Utilities
+			$(SRC_DIR)/SceneFlowUpdater:\
+			$(SRC_DIR)/Utilities:\
+			third_party/ICPCUDA/Cuda:\
+			third_party/ICPCUDA/Cuda/containers
+
 
 SOURCES = FileUtilities.cpp Definitions.cpp\
 		  Camera.cpp \
