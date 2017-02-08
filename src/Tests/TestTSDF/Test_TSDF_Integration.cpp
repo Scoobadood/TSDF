@@ -41,8 +41,6 @@ TEST(  , givenManyImages ) {
     // And camera
     Camera *camera = Camera::default_depth_camera();
 
-    BilateralFilter bf{ 2, 2};
-
     TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/rgbd_dataset_freiburg1_xyz" };
 //    TUMDataLoader data_loader{ "/mnt/hgfs/PhD/Kinect Raw Data/TUM/home_made_sphere" };
     DepthImage *di = nullptr;
