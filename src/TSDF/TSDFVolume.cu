@@ -456,6 +456,201 @@ TSDFVolume::TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z,
     }
 }
 
+
+/**
+ * Load a TSDFVolume from the specified file. The volume must previously have been saved
+ */
+TSDFVolume::TSDFVolume( const std::string& file_name ) {
+    using namespace std;
+    ifstream ifs{ file_name, ios::in | ios::binary };
+
+    bool success = true;
+    std::string specific_error_message = "";
+
+    success = ifs.read( (char *) &m_size, sizeof( m_size ) );
+    if( !success ) {
+        specific_error_message = "Couldn't load file data";
+    } else {
+        std::cout << "Loading TSDF with size " << m_size.x << "x" << m_size.y << "x" << m_size.z << std::endl;
+    }
+
+
+    if( success ) {
+        success = ifs.read( (char *) &m_physical_size, sizeof( m_physical_size));
+        if( success ) {
+            std::cout << "  physical size is " << m_physical_size.x << "x" << m_physical_size.y << "x" << m_physical_size.z << "mm" << std::endl;
+
+            // Compute voxel size
+            m_voxel_size = f3_div_elem( m_physical_size, m_size );
+        } else {
+            specific_error_message = "Couldn't load physical size";
+        }
+    }
+
+
+    // Compute some sizes
+    size_t num_voxels = m_size.x * m_size.y * m_size.z;
+
+    // Load distance data
+    if( success ) {
+        float * host_distances = new float[ num_voxels ];
+        if( host_distances ) {
+            size_t distance_data_size = num_voxels * sizeof( float);
+            cudaError_t err = cudaMalloc( &m_distances, distance_data_size );
+            if( err == cudaSuccess ) {
+                // Read data into host memory, copy to device and free host memory
+                success = ifs.read( ( char * ) host_distances, distance_data_size );
+                if( success ) {
+                    err = cudaMemcpy( m_distances, host_distances, distance_data_size, cudaMemcpyHostToDevice);
+                    if( err == cudaSuccess ) {
+                        std::cout << "  loaded distance data" << std::endl;
+                    } else {
+                        specific_error_message = "Failed to copy distance data to device";
+                        success = false;
+                        cudaFree( m_distances );
+                    }
+                    delete[] host_distances;
+                } else {
+                    specific_error_message = "Failed to read distance data";
+                    success = false;
+                    delete[] host_distances;
+                    cudaFree( m_distances );
+                }
+            } else {
+                specific_error_message = "Failed to allocate device memory for distance data";
+                success = false;
+                delete[] host_distances;
+            }
+        } else {
+            specific_error_message = "Failed to allocate host memory for distance data";
+            success = false;
+        }
+    }
+
+    // Load weight data
+    if( success ) {
+        float * host_weights = new float[ num_voxels ];
+        if( host_weights ) {
+            size_t weight_data_size = num_voxels * sizeof( float);
+            cudaError_t err = cudaMalloc( &m_weights, weight_data_size );
+            if( err == cudaSuccess ) {
+                // Read data into host memory, copy to device and free host memory
+                success = ifs.read( ( char * ) host_weights, weight_data_size );
+                if( success ) {
+                    err = cudaMemcpy( m_weights, host_weights, weight_data_size, cudaMemcpyHostToDevice);
+                    if( err == cudaSuccess ) {
+                        std::cout << "  loaded weight data" << std::endl;
+                    } else {
+                        specific_error_message = "Failed to copy weight data to device";
+                        success = false;
+                        cudaFree( m_weights );
+                    }
+                    delete[] host_weights;
+                } else {
+                    specific_error_message = "Failed to read weight data";
+                    success = false;
+                    delete[] host_weights;
+                    cudaFree( m_weights );
+                }
+            } else {
+                specific_error_message = "Failed to allocate device memory for weight data";
+                success = false;
+                delete[] host_weights;
+            }
+        } else {
+            specific_error_message = "Failed to allocate host memory for weight data";
+            success = false;
+        }
+    }
+
+    // Load colour data
+    if( success ) {
+        uchar3 * host_colours = new uchar3[ num_voxels ];
+        if( host_colours ) {
+            size_t colour_data_size = num_voxels * sizeof( uchar3 );
+            cudaError_t err = cudaMalloc( &m_colours, colour_data_size );
+            if( err == cudaSuccess ) {
+                // Read data into host memory, copy to device and free host memory
+                success = ifs.read( ( char * ) host_colours, colour_data_size );
+                if( success ) {
+                    err = cudaMemcpy( m_colours, host_colours, colour_data_size, cudaMemcpyHostToDevice);
+                    if( err == cudaSuccess ) {
+                        std::cout << "  loaded colour data" << std::endl;
+                    } else {
+                        specific_error_message = "Failed to copy colour data to device";
+                        success = false;
+                        cudaFree( m_colours );
+                    }
+                    delete[] host_colours;
+                } else {
+                    specific_error_message = "Failed to read colour data";
+                    success = false;
+                    delete[] host_colours;
+                    cudaFree( m_colours );
+                }
+            } else {
+                specific_error_message = "Failed to allocate device memory for colour data";
+                success = false;
+                delete[] host_colours;
+            }
+        } else {
+            specific_error_message = "Failed to allocate host memory for colour data";
+            success = false;
+        }
+    }
+
+
+    // Load deformation data
+    if( success ) {
+
+        DeformationNode * host_deformations = new DeformationNode[ num_voxels ];
+        if( host_deformations ) {
+            size_t deformation_data_size = num_voxels * sizeof( DeformationNode );
+            cudaError_t err = cudaMalloc( &m_deformation_nodes, deformation_data_size );
+            if( err == cudaSuccess ) {
+                // Read data into host memory, copy to device and free host memory
+                success = ifs.read( ( char * ) host_deformations, deformation_data_size );
+                if( success ) {
+                    err = cudaMemcpy( m_deformation_nodes, host_deformations, deformation_data_size, cudaMemcpyHostToDevice);
+                    if( err == cudaSuccess ) {
+                        std::cout << "  loaded deformation data" << std::endl;
+                    } else {
+                        specific_error_message = "Failed to copy deformation data to device";
+                        success = false;
+                        cudaFree( m_deformation_nodes );
+                    }
+                    delete[] host_deformations;
+                } else {
+                    specific_error_message = "Failed to read deformation data";
+                    success = false;
+                    delete[] host_deformations;
+                    cudaFree( m_deformation_nodes );
+                }
+            } else {
+                specific_error_message = "Failed to allocate device memory for deformation data";
+                success = false;
+                delete[] host_deformations;
+            }
+        } else {
+            specific_error_message = "Failed to allocate host memory for deformation data";
+            success = false;
+        }
+    }
+
+
+
+    ifs.close();
+
+    if( !success ) {
+        std::string msg = "Failed to load TSDF ";
+        msg += file_name;
+        msg += " " + specific_error_message;
+        throw std::invalid_argument( msg );
+    }
+}
+
+
+
 /**
  * Set the size of the volume. This will delete any existing values and resize the volume, clearing it when done.
  * Volume offset is maintained
@@ -828,7 +1023,7 @@ bool TSDFVolume::load_from_file( const std::string & file_name) {
     // Move to device
 
 
-    std::cout << "Noy yet implemented: load_from_file" << std::endl;
+    std::cout << "Not yet implemented: load_from_file" << std::endl;
     return false;
 }
 

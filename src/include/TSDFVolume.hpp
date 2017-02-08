@@ -98,6 +98,11 @@ public:
     TSDFVolume( uint16_t volume_x, uint16_t volume_y, uint16_t volume_z, float psize_x, float psize_y, float psize_z );
 
     /**
+     * Load a TSDFVolume from the specified file. The volume must previously have been saved
+     */
+    TSDFVolume( const std::string& file_name );
+
+    /**
      * Set the size of the volume. This will delete any existing values and resize the volume, clearing it when done.
      * Volume offset is maintained
      * @param volume_x X dimension in voxels
