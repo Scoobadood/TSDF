@@ -12,6 +12,11 @@ public:
 	DepthImage( std::string file_name );
 
 	/**
+	 * Construct a Depthimage from an array of uint16 data
+ 	 */
+	DepthImage( const uint16_t width, const uint16_t height, const uint16_t * const data );
+
+	/**
 	 * Clean up depth image memory
 	 */
 	~DepthImage( );

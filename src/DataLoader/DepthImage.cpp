@@ -25,6 +25,26 @@ DepthImage::DepthImage( std::string file_name ) {
 	}
 }
 
+/**
+ * Construct a Depthimage from an array of uint16 data
+ */
+DepthImage::DepthImage( const uint16_t width, const uint16_t height, const uint16_t * const data ) {
+	if( width > 0 && height > 0 && data != nullptr ) {
+		size_t data_size = width * height * sizeof( uint16_t ) ;
+		m_data = malloc( data_size );
+		if( m_data ) {
+			m_width = width;
+			m_height = height;
+			memcpy( m_data, data, data_size);
+		} else {
+			throw std::bad_alloc( "Coul;dn't allocate storage for depth image");
+		}
+	} else {
+		throw std::invalid_argument( "width and height must be non-zero and data must not be null");
+	}
+}
+
+
 DepthImage::~DepthImage( ) {
 	std::cout<< "Destroyed depth image" << std::endl;
 	if( m_data ) {
