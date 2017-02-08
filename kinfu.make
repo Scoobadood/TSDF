@@ -61,7 +61,7 @@ $(OBJ_DIR)/%.o : %.cpp
 	$(NVCC) $(CFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 $(OBJ_DIR)/%.o : %.cu
-	$(NVCC) -G -g $(CFLAGS) -lineinfo -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
+	$(NVCC) -G $(CFLAGS) -lineinfo -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 clean:
 	rm $(OBJ_DIR)/*.o $(EXECUTABLE)
