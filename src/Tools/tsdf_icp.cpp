@@ -2,9 +2,11 @@
  * This utility computes the incremental camera pose between the given TSDF and depth images
  */
 
-#include "ICPCUDA/ICPOdometry.h"
+#include "ICP_CUDA/ICPOdometry.h"
 #include <sophus/se3.hpp>
+#include <iostream>
 
+#include "../include/DepthImage.hpp"
 
 const int IMAGE_WIDTH = 640;
 const int IMAGE_HEIGHT = 480;
@@ -35,42 +37,52 @@ bool parse_arguments( int argc, const char * const argv[], t_arguments& argument
 	// FIXME A placeholder for the real thing
 	arguments.update_tsdf =  false;
 	arguments.tsdf_file_name = "tsdf.dat";
-	arguments.depth_file_name = "depth.png";
+	arguments.depth_file_name = "Data/umbrella/depth_00001.png";
 	arguments.num_threads = 224;
 	arguments.num_blocks = 96;
-	std::cout << "Ignoring command line and using ahrd coded arguments" << std::endl;
+	std::cout << "Ignoring command line and using hard coded arguments" << std::endl;
 
 	return true;
 }
 
-int main( int argc, char * artgv[] ) {
+int main( int argc, char * argv[] ) {
 
 	// Parse arguments
-	bool args_ok = parse_arguments( argc, argv );
+	t_arguments arguments;
+	bool args_ok = parse_arguments( argc, argv, arguments );
 	if( !args_ok ) exit(-1);
 
 
-	float distThresh = 0.10f,
+	float distThresh = 0.10f;
     float angleThresh = sinf(20.f * 3.141592654f / 180.0f);
 	ICPOdometry icp ( IMAGE_WIDTH, IMAGE_HEIGHT, K_CENTRE_X, K_CENTRE_Y, K_FOCAL_X, K_FOCAL_Y, distThresh, angleThresh );
 
 
 	// Load the TSDF
 	// Project to a depth image
-	uint16_t * mesh_image = nullptr;
+	DepthImage di1{ arguments.depth_file_name };
+	uint16_t * mesh_image = (uint16_t *)di1.data();;
 
 
 	// Load the Depth image
-	uitn16_t * depth_image = nullptr;
+	DepthImage di2{ "Data/umbrella/depth_00300.png" };
+	uint16_t * depth_image = (uint16_t *)di2.data();
 
 	// Call ICP and get an estimate
 	icp.initICPModel( mesh_image );
 	icp.initICP( depth_image );
 
 	Sophus::SE3d mesh_to_depth_transform;
-	icp.getIncrementalTransformation( mesh_to_depth_transform, threads, blocks);
+	icp.getIncrementalTransformation( mesh_to_depth_transform, arguments.num_threads, arguments.num_blocks);
+
 
 	// Output to stdout
+	Eigen::Matrix4f pose = mesh_to_depth_transform.cast<float>().matrix();
+	Eigen::Vector3f trans = pose.topRightCorner(3, 1);
+    Eigen::Matrix3f rot = pose.topLeftCorner(3, 3);
+
+	std::cout << "trans : " << trans << std::endl;
+	std::cout << "  rot : " << rot << std::endl;
 
 	// Optionally update the TSDF
 

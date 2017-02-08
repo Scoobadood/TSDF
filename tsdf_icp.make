@@ -1,17 +1,19 @@
 SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
+THIRD_PTY = third_party
 
 NV_VERSION=52
 
-GCC_ROOT=/opt/rh/devtoolset-2/root
+#Add the following line for cluster builds
+#GCC_ROOT=/opt/rh/devtoolset-2/root
 
 NV_ARCH=-gencode arch=compute_$(NV_VERSION),code=compute_$(NV_VERSION)
 NVCC=/usr/local/cuda/bin/nvcc
 
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
-CFLAGS=-c -isystem=/usr/include/eigen3 -ccbin=$(GCC_ROOT)/usr/bin/gcc -std=c++11 -g
+CFLAGS=-c -isystem=/usr/include/eigen3 -I$(THIRD_PTY) -ccbin=$(GCC_ROOT)/usr/bin/gcc -std=c++11 -g
 LDFLAGS=$(NV_ARCH) -lpng
 
 
@@ -24,8 +26,8 @@ vpath %.cpp $(SRC_DIR):$(SRC_DIR)/Utilities:\
 	$(SRC_DIR)/TSDF:\
 	$(SRC_DIR)/MarchingCubes:\
 	$(SRC_DIR)/RayCaster:\
-	third_party/ICPCUDA:\
-	third_party/ICPCUDA/Cuda/containers
+	$(THIRD_PTY)/ICP_CUDA:\
+	$(THIRD_PTY)/ICP_CUDA/Cuda/containers
 
 vpath %.cu  $(SRC_DIR)/GPU:\
 			$(SRC_DIR)/MarchingCubes:\
@@ -34,8 +36,8 @@ vpath %.cu  $(SRC_DIR)/GPU:\
 			$(SRC_DIR)/TSDF:\
 			$(SRC_DIR)/SceneFlowUpdater:\
 			$(SRC_DIR)/Utilities:\
-			third_party/ICPCUDA/Cuda:\
-			third_party/ICPCUDA/Cuda/containers
+			$(THIRD_PTY)/ICP_CUDA/Cuda:\
+			$(THIRD_PTY)/ICP_CUDA/Cuda/containers
 
 
 SOURCES = FileUtilities.cpp Definitions.cpp\
@@ -44,6 +46,7 @@ SOURCES = FileUtilities.cpp Definitions.cpp\
           PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp \
           ICPOdometry.cpp device_memory.cpp initialization.cpp \
           ply.cpp \
+          tsdf_icp.cpp
 
 
 CUDA_SOURCES = 	MarkAndSweepMC.cu\
