@@ -54,26 +54,26 @@ float trilinearly_interpolate( const float3 point,
                                const float3 voxel_size,
                                const float *tsdf_values ) {
 
-	// Manage boundary points
-	float3 max_values {
-		voxel_grid_size.x * voxel_size.x,
-		voxel_grid_size.y * voxel_size.y,
-		voxel_grid_size.z * voxel_size.z
-	};
-	float3 adjusted_point = point;
-	if( point.x >= max_values.x ) adjusted_point.x = max_values.x - (voxel_size.x / 10.0f);
-	if( point.y >= max_values.y ) adjusted_point.y = max_values.y - (voxel_size.y / 10.0f);
-	if( point.z >= max_values.z ) adjusted_point.z = max_values.z - (voxel_size.z / 10.0f);
-	if( point.x < 0.0f ) adjusted_point.x = 0.0f;
-	if( point.y < 0.0f ) adjusted_point.y = 0.0f;
-	if( point.z < 0.0f ) adjusted_point.z = 0.0f;
+    // Manage boundary points
+    float3 max_values {
+        voxel_grid_size.x * voxel_size.x,
+        voxel_grid_size.y * voxel_size.y,
+        voxel_grid_size.z * voxel_size.z
+    };
+    float3 adjusted_point = point;
+    if ( point.x >= max_values.x ) adjusted_point.x = max_values.x - (voxel_size.x / 10.0f);
+    if ( point.y >= max_values.y ) adjusted_point.y = max_values.y - (voxel_size.y / 10.0f);
+    if ( point.z >= max_values.z ) adjusted_point.z = max_values.z - (voxel_size.z / 10.0f);
+    if ( point.x < 0.0f ) adjusted_point.x = 0.0f;
+    if ( point.y < 0.0f ) adjusted_point.y = 0.0f;
+    if ( point.z < 0.0f ) adjusted_point.z = 0.0f;
 
     // Get the voxel containing this point
     int3 voxel = voxel_for_point( adjusted_point, voxel_size );
 
     // Handle voxel out of bounds
     if ( voxel.x < 0 || voxel.y < 0 || voxel.z < 0  || voxel.x >= voxel_grid_size.x || voxel.y >= voxel_grid_size.y || voxel.z >= voxel_grid_size.z) {
-		printf( "Point outside of voxel space %f, %f, %f\n", adjusted_point.x, adjusted_point.y, adjusted_point.z );
+        printf( "Point outside of voxel space %f, %f, %f\n", adjusted_point.x, adjusted_point.y, adjusted_point.z );
         return CUDART_NAN_F;
     }
 
@@ -137,9 +137,9 @@ __device__ __forceinline__
 bool can_intersect_in_dimension( float space_min, float space_max, float origin, float direction, float& near_t, float& far_t) {
     bool can_intersect = true;
 
-    if( direction == 0 ) {
+    if ( direction == 0 ) {
         // Not moving in this direction so we must be within  bounds in order to have any intersection at all
-        if( origin < space_min || origin > space_max ) {
+        if ( origin < space_min || origin > space_max ) {
             can_intersect = false;
         }
     } else {
@@ -149,28 +149,28 @@ bool can_intersect_in_dimension( float space_min, float space_max, float origin,
         float distance_to_space_max = ( space_max - origin ) / direction;
 
         // If distance_to_space_min > distance_to_space_max swap (distance_to_space_min, distance_to_space_max) since distance_to_space_min intersection with near plane
-        if( distance_to_space_min > distance_to_space_max ) {
+        if ( distance_to_space_min > distance_to_space_max ) {
             float temp_t = distance_to_space_min;
             distance_to_space_min = distance_to_space_max;
             distance_to_space_max = temp_t;
         }
 
         // if distance_to_space_min > t_near set t_near = distance_to_space_min : We want largest t_near
-        if( distance_to_space_min > near_t ) {
+        if ( distance_to_space_min > near_t ) {
             near_t = distance_to_space_min;
         }
 
         //If distance_to_space_max < t_far set t_far="distance_to_space_max"  want smallest t_far
-        if( distance_to_space_max < far_t ) {
+        if ( distance_to_space_max < far_t ) {
             far_t = distance_to_space_max;
         }
 
         // If Tnear > Tfar box is missed so return false
-        if( near_t > far_t ) {
+        if ( near_t > far_t ) {
             can_intersect =  false;
         } else {
             // If Tfar < 0 box is behind ray return false end
-            if( far_t < 0 ) {
+            if ( far_t < 0 ) {
                 can_intersect = false;
             }
         }
@@ -237,9 +237,9 @@ bool  compute_near_and_far_t( const float3 & origin, const float3 & direction, c
 
         // Consider X
         if ( (can_intersect_in_dimension( space_min.x, space_max.x, origin.x, direction.x, near_t, far_t ) ) &&
-             (can_intersect_in_dimension( space_min.y, space_max.y, origin.y, direction.y, near_t, far_t ) ) &&
-             (can_intersect_in_dimension( space_min.z, space_max.z, origin.z, direction.z, near_t, far_t ) ) ) {
-             intersects = true;
+                (can_intersect_in_dimension( space_min.y, space_max.y, origin.y, direction.y, near_t, far_t ) ) &&
+                (can_intersect_in_dimension( space_min.z, space_max.z, origin.z, direction.z, near_t, far_t ) ) ) {
+            intersects = true;
         }
     }
 
@@ -261,15 +261,15 @@ bool  compute_near_and_far_t( const float3 & origin, const float3 & direction, c
  * @param vertex The 3D world coordinate of the vertex intersected by this ray if it exists or {NaN, NaN, NaN}
  */
 __global__
-void process_ray(   const float3        origin, 
-                    const Mat33         rot, 
-                    const Mat33         kinv, 
-                    uint16_t            max_x, 
+void process_ray(   const float3        origin,
+                    const Mat33         rot,
+                    const Mat33         kinv,
+                    uint16_t            max_x,
                     uint16_t            max_y,
-					const float			trunc_distance,
-                    const float3        space_min, 
+                    const float         trunc_distance,
+                    const float3        space_min,
                     const float3        space_max,
-                    const dim3          voxel_grid_size, 
+                    const dim3          voxel_grid_size,
                     const float3        voxel_size,
                     const float         * tsdf_values,
                     float3              * vertices) {
@@ -299,15 +299,15 @@ void process_ray(   const float3        origin,
     // Only do this if the ray intersects space
     float3 intersection_point { CUDART_NAN_F, CUDART_NAN_F, CUDART_NAN_F};
 
-    if( intersects ) {
+    if ( intersects ) {
         // Compute the start point in grid coords
         float3 start_point = f3_sub( f3_add( origin, f3_mul_scalar( near_t, direction ) ), space_min);
 
         bool done = false;
 
         // Initialise TSDF to trun distance
-		float tsdf = trunc_distance;
-		float previous_tsdf = 0;
+        float tsdf = trunc_distance;
+        float previous_tsdf = 0;
 
 
         // Set up current point to iterate
@@ -318,8 +318,8 @@ void process_ray(   const float3        origin,
         //   We leave the voxel space (fail)
         //   We transit from +ve to -ve tsdf (intersect)
         //   We transit from -ve to +ve (fail)
-		int count = 0;
-		float step_size = trunc_distance * 0.05;
+        int count = 0;
+        float step_size = trunc_distance * 0.05;
         while ( !done  ) {
             float3 current_point = f3_add( start_point, f3_mul_scalar( t, direction ) );
 
@@ -330,7 +330,7 @@ void process_ray(   const float3        origin,
             float tsdf = trilinearly_interpolate( current_point, voxel_grid_size, voxel_size, tsdf_values );
             // If tsdf is negative then we're behind the surface else we're on it
             if ( tsdf <= 0 ) {
-				// If we stepped past the iso surface, work out when
+                // If we stepped past the iso surface, work out when
                 if ( tsdf < 0 ) {
                     // We just advanced by step_size so step back
                     t = t - step_size;
@@ -349,12 +349,12 @@ void process_ray(   const float3        origin,
                 // Put into world coordinates
                 intersection_point = f3_add( space_min, current_point );
                 done = true;
-            } 
+            }
 
             // tsdf is +ve, if previous tsdf was negative then we hit a backface and we're done
-            else if( previous_tsdf < 0 ) {
+            else if ( previous_tsdf < 0 ) {
                 done = true;
-            } 
+            }
 
             // previous tsdf was +ve and so is this one. We've not crossed the surface
             // so keep stepping
@@ -362,17 +362,17 @@ void process_ray(   const float3        origin,
                 t = t + step_size;
 
                 // Until we step out of the volume
-                if( t >= max_t ) {
+                if ( t >= max_t ) {
                     done = true;
                 }
             }
 
-			// Catch failures - this code shouldn';'t be invoked.
-			if( count++ > 4400 ) {
-				printf( "Timed out @(%d,%d) with t:%f tsdf:%f\n",imx, imy, t, tsdf  );
- 
-				done = true;
-			}
+            // Catch failures - this code shouldn';'t be invoked.
+            if ( count++ > 4400 ) {
+                printf( "Timed out @(%d,%d) with t:%f tsdf:%f\n", imx, imy, t, tsdf  );
+
+                done = true;
+            }
         }
     }
     vertices[idx] = intersection_point;
@@ -404,26 +404,26 @@ void compute_normals( uint16_t width, uint16_t height, const float3 * vertices, 
 
     size_t idx = (imy * width + imx);
 
-    if( imy == height - 1 ) {
+    if ( imy == height - 1 ) {
         normals[idx].x = 0;
         normals[idx].y = 0;
         normals[idx].z = 0;
     } else {
-        if( imx == width-1) {
+        if ( imx == width - 1) {
             normals[idx].x = 0;
             normals[idx].y = 0;
             normals[idx].z = 0;
         } else {
-            float3 v2 { vertices[idx+1].x - vertices[idx].x,vertices[idx+1].y - vertices[idx].y,vertices[idx+1].z - vertices[idx].z};
-            float3 v1 { vertices[idx+width].x - vertices[idx].x,vertices[idx+width].y - vertices[idx].y,vertices[idx+width].z - vertices[idx].z};
+            float3 v2 { vertices[idx + 1].x - vertices[idx].x, vertices[idx + 1].y - vertices[idx].y, vertices[idx + 1].z - vertices[idx].z};
+            float3 v1 { vertices[idx + width].x - vertices[idx].x, vertices[idx + width].y - vertices[idx].y, vertices[idx + width].z - vertices[idx].z};
 
-            float nx = v1.y*v2.z - v1.z*v2.y;
-            float ny = v1.z*v2.x - v1.x*v2.z;
-            float nz = v1.x*v2.y - v1.y*v2.x;
-            float l = sqrt( nx*nx+ny*ny+nz*nz);
-            normals[idx].x = nx/l;
-            normals[idx].y = ny/l;
-            normals[idx].z = nz/l;
+            float nx = v1.y * v2.z - v1.z * v2.y;
+            float ny = v1.z * v2.x - v1.x * v2.z;
+            float nz = v1.x * v2.y - v1.y * v2.x;
+            float l = sqrt( nx * nx + ny * ny + nz * nz);
+            normals[idx].x = nx / l;
+            normals[idx].y = ny / l;
+            normals[idx].z = nz / l;
         }
     }
 }
@@ -463,7 +463,7 @@ float3 * get_vertices(  const TSDFVolume&  volume,
 
     // Set up world coords for min and max extremes of the voxel space
     float3 space_min = volume.offset();
-    float3 space_max = volume.offset()+volume.physical_size( );
+    float3 space_max = volume.offset() + volume.physical_size( );
 
 
     cudaError_t err;
@@ -480,7 +480,7 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     // Execute the kernel
     dim3 block( 32, 32 );
     dim3 grid ( divUp( width, block.x ), divUp( height, block.y ) );
-    process_ray<<<grid, block>>>( origin, rot, kinv, width, height, volume.truncation_distance(), space_min, space_max, voxel_grid_size, voxel_size, d_tsdf_values, d_vertices );
+    process_ray <<< grid, block>>>( origin, rot, kinv, width, height, volume.truncation_distance(), space_min, space_max, voxel_grid_size, voxel_size, d_tsdf_values, d_vertices );
     err = cudaDeviceSynchronize( );
     check_cuda_error( "process_ray failed " , err);
 
@@ -500,12 +500,12 @@ float3 * compute_normals( uint16_t width, uint16_t height, float3 * d_vertices )
 
     cudaError_t err;
 
-    err = cudaMalloc( &d_normals,  width*height*sizeof( float3 ) );
+    err = cudaMalloc( &d_normals,  width * height * sizeof( float3 ) );
     check_cuda_error( "Normals alloc failed ", err);
 
     dim3 block( 32, 32 );
     dim3 grid ( divUp( width, block.x ), divUp( height, block.y ) );
-    compute_normals<<<grid, block>>>(width, height, d_vertices, d_normals);
+    compute_normals <<< grid, block>>>(width, height, d_vertices, d_normals);
     check_cuda_error( "compute_normals failed ", err);
 
     return d_normals;
@@ -518,8 +518,8 @@ float3 * compute_normals( uint16_t width, uint16_t height, float3 * d_vertices )
  * @param vertices The vertices discovered
  * @param normals The normals
  */
-void GPURaycaster::raycast( const TSDFVolume & volume, 
-							const Camera & camera,
+void GPURaycaster::raycast( const TSDFVolume & volume,
+                            const Camera & camera,
                             Eigen::Matrix<float, 3, Eigen::Dynamic> & vertices,
                             Eigen::Matrix<float, 3, Eigen::Dynamic> &normals ) const {
     using namespace Eigen;

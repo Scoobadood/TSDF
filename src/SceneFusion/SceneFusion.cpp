@@ -122,7 +122,7 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	// Otherwise, this is the first call and we should allocate storage for the depth image for the next one
 	else {
 		std::cout << "Called for first time" << std::endl;
-		m_last_depth_image = (uint16_t *)malloc( sizeof( uint16_t) * width * height );
+		m_last_depth_image = new uint16_t[ width * height ];
 		if ( !m_last_depth_image) {
 			std::cout << "-- Couldn't create storage for host depth data" << std::endl;
 		}
