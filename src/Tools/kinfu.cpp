@@ -206,6 +206,7 @@ int main( int argc, const char * argv[] ) {
         std::cout << "Couldn't make or load volume" << std::endl;
     }
 
+    volume->save_to_file( "test.tsdf");
 
     // Extract Mesh
     if( volume ) {
