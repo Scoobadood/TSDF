@@ -13,6 +13,7 @@
 
 #include "Raycaster.hpp"
 #include "TSDFVolume.hpp"
+#include "DepthImage.hpp"
 
 
 class GPURaycaster : public Raycaster {
@@ -29,5 +30,13 @@ public:
     virtual void raycast( const TSDFVolume & volume, const Camera & camera,
                           Eigen::Matrix<float, 3, Eigen::Dynamic> & vertices,
                           Eigen::Matrix<float, 3, Eigen::Dynamic> & normals ) const;
+
+    /**
+     * Render a depth image from a TSDF
+     * @param volume The volume to cast
+     * @param camera The camera
+     * @return The DepthImage
+     */
+    DepthImage * render_to_depth_image( const TSDFVolume & volume, const Camera & camera ) const;
 };
 #endif /* GPURaycaster_hpp */
