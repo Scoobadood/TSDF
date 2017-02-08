@@ -26,32 +26,34 @@ NVCC=/usr/local/cuda/bin/nvcc
 
 # use isystem for eigen as it forces compiler to supress warnings from
 # those files. Eigen generates a lot
-CFLAGS=-isystem /usr/include/eigen3 -I src -isystem=/usr/include -c  -ccbin=/usr/bin/gcc -std=c++11 -g
+CC=/usr/bin/gcc
+CFLAGS=-isystem /usr/include/eigen3 -I src -isystem=/usr/include -c -std=c++11 -g
+NVCFLAGS=$(CFLAGS) -G -ccbin=$(CC) 
 LDFLAGS=$(NV_ARCH) -lpng -lgtest
 
-SOURCES = BilateralFilter.cpp Camera.cpp \
-          BlockTSDFLoader.cpp \
+SOURCES = Camera.cpp \
           Definitions.cpp DepthMapUtilities.cpp FileUtilities.cpp PgmUtilities.cpp \
           PngUtilities.cpp PngWrapper.cpp RenderUtilities.cpp \
           DepthImage.cpp TUMDataLoader.cpp ply.cpp \
           TestHelpers.cpp 
 
-CUDA_SOURCES =	TSDFVolume.cu\
-				GPUMarchingCubes.cu\
+CUDA_SOURCES =	TSDFVolume.cu TSDF_utilities.cu\
+				MarkAndSweepMC.cu\
 				GPURaycaster.cu\
-				TSDF_utilities.cu\
-				cuda_utilities.cu
+				cuda_utilities.cu\
+				cuda_coordinate_transforms.cu
 
 # Make a copy without sub directories
 _OBJECTS=$(SOURCES:.cpp=.o)
 _CUDA_OBJECTS=$(CUDA_SOURCES:.cu=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(_OBJECTS)) $(patsubst %,$(OBJ_DIR)/%,$(_CUDA_OBJECTS))
 
-all: Integration Raycasting Camera
+all: Integration Raycasting Camera TSDF_LoadSave
 
 Integration: $(BIN_DIR)/test_integrate
 Raycasting:  $(BIN_DIR)/test_raycast
-Camera:  $(BIN_DIR)/test_camera
+Cam:  $(BIN_DIR)/test_camera
+TSDF_LoadSave:    $(BIN_DIR)/test_tsdf_load_save
 
 	
 $(BIN_DIR)/test_camera: $(OBJECTS) $(OBJ_DIR)/Test_Camera.o
@@ -63,11 +65,14 @@ $(BIN_DIR)/test_integrate: $(OBJECTS) $(OBJ_DIR)/Test_TSDF_Integration.o
 $(BIN_DIR)/test_raycast: $(OBJECTS) $(OBJ_DIR)/Test_TSDF_RayCast.o 
 	$(NVCC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/Test_TSDF_RayCast.o -o $(BIN_DIR)/test_raycast
 
+$(BIN_DIR)/test_tsdf_load_save: $(OBJECTS) $(OBJ_DIR)/Test_TSDF_Load_Save.o
+	$(NVCC) $(LDFLAGS) $(OBJECTS) $(OBJ_DIR)/Test_TSDF_Load_Save.o -o $(BIN_DIR)/test_tsdf_load_save
+
 $(OBJ_DIR)/%.o : %.cpp
-	$(NVCC) $(CFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
+	$(NVCC) $(NVCFLAGS) $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 $(OBJ_DIR)/%.o : %.cu
-	$(NVCC) -c -G -g $(CFLAGS) -lineinfo -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
+	$(NVCC) -c -g $(NVCFLAGS) -lineinfo -dc $< $(NV_ARCH) -o $(OBJ_DIR)/$(@F)
 
 clean:
 	rm $(OBJ_DIR)/*.o $(EXECUTABLE)
