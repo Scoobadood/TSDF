@@ -487,6 +487,20 @@ TSDFVolume::TSDFVolume( const std::string& file_name ) {
         }
     }
 
+    // Load other header stats
+    if( success ) {
+        success = ifs.read( (char *)&m_offset, sizeof( m_offset));
+        success = success && ifs.read( (char *)&m_truncation_distance, sizeof( m_truncation_distance));
+        success = success &&ifs.read( (char *)&m_max_weight, sizeof( m_max_weight));
+        success = success &&ifs.read( (char *)&m_global_translation, sizeof( m_global_translation));
+        success = success &&ifs.read( (char *)&m_global_rotation, sizeof( m_global_rotation));
+        if( success ) {
+            std::cout << "  read header data" << std::endl;
+        } else {
+            specific_error_message = "Couldn't load header data";
+        }
+    }
+
 
     // Compute some sizes
     size_t num_voxels = m_size.x * m_size.y * m_size.z;
@@ -980,6 +994,11 @@ bool TSDFVolume::save_to_file( const std::string & file_name) const {
         std::cout << "  writing "<< sizeof( m_size ) + sizeof( m_physical_size ) <<" bytes of header data" << std::endl;
         ofs.write( (char *) &m_size, sizeof( m_size ) );
         ofs.write( (char *)&m_physical_size, sizeof( m_physical_size));
+        ofs.write( (char *)&m_offset, sizeof( m_offset));
+        ofs.write( (char *)&m_truncation_distance, sizeof( m_truncation_distance));
+        ofs.write( (char *)&m_max_weight, sizeof( m_max_weight));
+        ofs.write( (char *)&m_global_translation, sizeof( m_global_translation));
+        ofs.write( (char *)&m_global_rotation, sizeof( m_global_rotation));
 
         std::cout << "  writing "<< distance_data_size <<" bytes of depth data" << std::endl;
         ofs.write( (char *)host_distances, distance_data_size );
