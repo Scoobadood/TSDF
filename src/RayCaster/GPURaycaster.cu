@@ -547,3 +547,55 @@ void GPURaycaster::raycast( const TSDFVolume & volume,
     check_cuda_error( "Normals Memcpy failed ", err);
     cudaFree( d_normals );
 }
+
+/**
+ * Render a depth image from a TSDF
+ * @param volume The volume to cast
+ * @param camera The camera
+ * @return The DepthImage
+ */
+DepthImage * GPURaycaster::render_to_depth_image( const TSDFVolume & volume, const Camera & camera ) const {
+    using namespace Eigen;
+
+    std::cout << "Rendering depth map" << std::endl;
+
+    DepthImage * d = nullptr;
+
+    // Compute vertices on device
+    float3 * d_vertices = get_vertices( volume, camera, m_width, m_height );
+
+    std::cout << "  got vertices on device" << std::endl;
+    // Copy device vertices ionto host
+    float3 * h_vertices = new float3[m_width * m_height];
+    if ( h_vertices ) {
+        cudaMemcpy( h_vertices, d_vertices, m_width * m_height * sizeof( float3), cudaMemcpyDeviceToHost);
+
+
+        // Stash just the Z coords to a depth map
+        uint16_t * depth_data = new uint16_t[ m_width * m_height ];
+        if ( depth_data ) {
+
+            // Convert to and return a DepthImage
+            for ( int i = 0; i < m_width * m_height; i++ ) {
+                float3 world_point = h_vertices[i];
+                Eigen::Vector3f cam_point = camera.world_to_camera( Eigen::Vector3f{ world_point.x, world_point.y, world_point.z } );
+                depth_data[i] = (uint16_t)roundf(cam_point.z());
+            }
+
+            std::cout << "  making depthimage" << std::endl;
+            d = new DepthImage( m_width, m_height, depth_data);
+            delete[] depth_data;
+        } else {
+            std::cout << "Couldn't allocate depth data storage" << std::endl;
+        }
+
+        delete[] h_vertices;
+
+    } else {
+        std::cout << "Couldn't allocate host memory for vertices" << std::endl;
+    }
+
+    cudaFree( d_vertices );
+    std::cout << "  done" << std::endl;
+    return d;
+}
