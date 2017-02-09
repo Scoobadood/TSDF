@@ -138,8 +138,16 @@ void SceneFusion::process_frames( const DepthImage * depth_image, const PngWrapp
 	 m_volume->integrate(  depth_image->data(), width, height, *m_camera );
 
 	// This line for DEBUG reasons while testing deformtaion code
-	// if ( frames == 0  ) m_volume->integrate(  depth_image->data(), width, height, *m_camera );
-
+	if ( frames == 0  ) {
+		char out_file_name[1000];
+        const char * homedir = get_home_directory( );
+        if( homedir ) {
+            sprintf( out_file_name, "%s/Desktop/frame_%03d.tsdf", homedir, frames);
+		} else {
+			sprintf( out_file_name, "frame_%03d.tsdf", frames);
+		}
+		m_volume->save_to_file(out_file_name );
+	}
 
 
 	// Dump output periodically
