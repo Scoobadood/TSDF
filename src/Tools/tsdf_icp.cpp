@@ -12,10 +12,10 @@
 
 const int IMAGE_WIDTH = 640;
 const int IMAGE_HEIGHT = 480;
-const float K_CENTRE_X = 319.5;
-const float K_CENTRE_Y = 239.5;
-const float K_FOCAL_X =  528;
-const float K_FOCAL_Y =  528;
+const float K_CENTRE_X = 331.0f;
+const float K_CENTRE_Y = 234.6f;
+const float K_FOCAL_X =  591.1f;
+const float K_FOCAL_Y =  590.1f;
 
 typedef struct {
 	bool			update_tsdf;
