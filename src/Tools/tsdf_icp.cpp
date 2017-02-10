@@ -25,7 +25,14 @@ typedef struct {
 	std::string		depth_file_name;
 } t_arguments;
 
-
+void usage( ) {
+	std::cout <<  
+    "-u      : If present update the TSDF, else don't"	<< std::endl << 
+	"-d <depth_file_name> : The name of the depth file to use" << std::endl <<
+	"-v <colume_file_name> : The name of the volme (TSDF) file to use"<< std::endl <<
+	"-b <num_blocks> : The number of blocks to use for updates [96]" << std::endl <<
+	"-t <num threads>:	The number of threads o use." << std::endl;
+}
 /**
  * Extract the TSDF file name, depth file name and other arguments
  * Args are expected to be in the following format
@@ -36,15 +43,73 @@ typedef struct {
  */
 bool parse_arguments( int argc, const char * const argv[], t_arguments& arguments ) {
 
-	// FIXME A placeholder for the real thing
-	arguments.update_tsdf =  false;
-	arguments.tsdf_file_name = "test.tsdf";
-	arguments.depth_file_name = "Data/umbrella/depth_00001.png";
-	arguments.num_threads = 224;
-	arguments.num_blocks = 96;
-	std::cout << "Ignoring command line and using hard coded arguments" << std::endl;
+	arguments.tsdf_file_name ="";
+	arguments.depth_file_name = "";
+    arguments.update_tsdf =  false;
+    arguments.num_threads = 224;
+    arguments.num_blocks = 96;
+	int arg_index = 1;
+	while( arg_index < argc ) {
+		if( argv[arg_index][0] == '-' && argv[arg_index][2] == 0  ) {
+			char c = argv[arg_index][1];
+			switch( c ) {
+				case 'v':
+					if( arg_index < argc - 1 ) {
+						arguments.tsdf_file_name = argv[++arg_index];
+					} else {
+						usage();
+						return false;
+					}
+					break;
 
-	return true;
+				case 'd':
+					if( arg_index < argc - 1 ) {
+						arguments.depth_file_name = argv[++arg_index];
+					} else {
+						usage();
+						return false;
+					}
+					break;
+
+				case 'u':
+					arguments.update_tsdf = true;
+					break;
+
+				case 'b':
+					if( arg_index < argc - 1 ) {
+						arguments.num_blocks = atoi( argv[++arg_index] );
+					} else {
+						usage();
+						return false;
+					}
+					break;
+	
+				case 't':
+					if( arg_index < argc - 1 ) {
+						arguments.num_threads = atoi( argv[ ++arg_index] );	
+					} else {
+						usage();
+						return false;
+					}
+					break;
+
+				default:
+					usage();
+					return false;
+			}
+		} else {
+			usage( );
+			return false;
+		}
+		arg_index++;
+	}
+
+	if( arguments.num_threads <= 0 || arguments.num_blocks <= 0 || arguments.tsdf_file_name == ""|| arguments.depth_file_name == "") {
+		usage();
+		return false;
+	} else {
+		return true;
+	}
 }
 
 int main( int argc, char * argv[] ) {
