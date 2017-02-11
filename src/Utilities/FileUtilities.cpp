@@ -238,3 +238,23 @@ const char * get_home_directory( ) {
     }
     return homedir;
 }
+
+/**
+ * Get the path to a file on the desktop
+ * @return A string string
+ */
+const std::string path_to_file_on_desktop( const std::string& file_name ) {
+    const char *homedir = get_home_directory( );
+
+    int length = strlen( homedir ) + strlen( "Desktop") + strlen( file_name );
+    length += 3;
+
+    char *path = new char[ length ];
+    sprintf( path, "%s/Desktop/%s", homedir, file_name );
+
+    std::string path_string{ path };
+    delete[] path;
+
+    return path_string;
+}
+

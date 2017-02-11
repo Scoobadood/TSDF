@@ -21,7 +21,7 @@ int main(int argc, const char * argv[]) {
     
     std::cout << "Loading voxel grid..." << std::endl;
     
-    volume.load_from_file( "/Users/Dave/Desktop/TSDF_32.txt" );
+    volume.load_from_file( path_to_file_on_desktop( argv[1] ) );
     
     std::cout << "Read file. Rendering." << std::endl;
     
@@ -41,8 +41,8 @@ int main(int argc, const char * argv[]) {
 
     Raycaster r{ 640, 480};
     r.raycast(volume, cam, vertices, normals);
-    save_normals_as_colour_png("/Users/Dave/Desktop/nnn.png", width, height, normals);
-    save_rendered_scene_as_png("/Users/Dave/Desktop/vvv.png", width, height, vertices, normals, cam, light_source);
+    save_normals_as_colour_png(path_to_file_on_desktop( "nnn.png" ), width, height, normals);
+    save_rendered_scene_as_png(path_to_file_on_desktop( "vvv.png" ), width, height, vertices, normals, cam, light_source);
 
     return 0;
 }

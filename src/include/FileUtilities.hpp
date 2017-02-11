@@ -60,4 +60,10 @@ bool read_last_line( std::string file_name, std::string& text );
  */
 const char * get_home_directory( );
 
+/**
+ * Get the path to a file on the desktop
+ * @return A null terminated string
+ */
+const std::string path_to_file_on_desktop( const std::string& file_name );
+
 #endif
