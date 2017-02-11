@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <pwd.h>
-
+#include <string.h>
 
 /**
  * Return true if a string matches the given template
@@ -246,11 +246,11 @@ const char * get_home_directory( ) {
 const std::string path_to_file_on_desktop( const std::string& file_name ) {
     const char *homedir = get_home_directory( );
 
-    int length = strlen( homedir ) + strlen( "Desktop") + strlen( file_name );
+    int length = strlen( homedir ) + strlen( "Desktop") + strlen( file_name.c_str() );
     length += 3;
 
     char *path = new char[ length ];
-    sprintf( path, "%s/Desktop/%s", homedir, file_name );
+    sprintf( path, "%s/Desktop/%s", homedir, file_name.c_str() );
 
     std::string path_string{ path };
     delete[] path;
