@@ -135,6 +135,35 @@ int main( int argc, char * argv[] ) {
 
 	Camera * camera = Camera::default_depth_camera();
 
+	// Get the current global transform and rotation and invert for camera pose
+	float3 grot = volume->global_rotation();
+	float3 gtran= volume->global_translation();	// This is a set of rotations Z Y X
+
+	// Compute the rotation matrix
+	Eigen::Matrix4f pose;
+	pose(0,0) = (c2 * c3);
+	pose(0,1) = - (c2 * s3 );
+	pose(0,2) = s2;
+	pose(0,3) = gtran.x;
+
+	pose(1,0) = (c1*s3 + s1*s2*c3);
+	pose(1,1) = (c1*c3-s1*s2*s3);
+	pose(1,2) = - (s1 * c2 );
+	pose(1,3) = gtran.y;
+
+	pose(2,0) = (s1*s3 - c1*s2*c3);
+	pose(2,1) = (s1*c3 + c1*s2*s3);
+	pose(2,2) = (c1 * c2 );
+	pose(2,3) = gtran.z;
+
+	pose(3,0) = 0;
+	pose(3,1) = 0;
+	pose(3,2) = 0;
+	pose(3,3) = 1;
+
+	// Now invert this to get a camera pose
+	camera->set_pose( pose.inverse() );
+
 	DepthImage * di2 = raycaster->render_to_depth_image( volume, *camera );
 	uint16_t * depth_image = (uint16_t *)di2->data();
 

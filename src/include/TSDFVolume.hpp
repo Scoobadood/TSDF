@@ -208,13 +208,23 @@ public:
      */
     void set_weight_data( const float * weight_data );
 
+
+    /**
+     * @return the global rotation of the TSDF deformation 
+     * as a vector of 3 Euler angles (X then Y then Z - also Tait-Bryan angles)
+     */
     inline float3 global_rotation( ) const {
         return m_global_rotation;
     }
 
+    /**
+     * @return the global translation of the TSDF deformation 
+     */
     inline float3 global_translation( ) const {
         return m_global_translation;
     }
+
+
 #pragma mark - Deform a set of points
     /**
      * Apply the volume's deformation field t the given set of points, modifying them in place
