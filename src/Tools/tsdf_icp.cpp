@@ -136,11 +136,17 @@ int main( int argc, char * argv[] ) {
 	Camera * camera = Camera::default_depth_camera();
 
 	// Get the current global transform and rotation and invert for camera pose
-	float3 grot = volume->global_rotation();
-	float3 gtran= volume->global_translation();	// This is a set of rotations Z Y X
+	float3 grot = volume.global_rotation();
+	float3 gtran= volume.global_translation();	// This is a set of rotations Z Y X
 
 	// Compute the rotation matrix
 	Eigen::Matrix4f pose;
+	float c1 = cos( grot.x );
+	float c2 = cos( grot.y );
+	float c3 = cos( grot.z );
+	float s1 = sin( grot.x );
+	float s2 = sin( grot.y );
+	float s3 = sin( grot.z ); 
 	pose(0,0) = (c2 * c3);
 	pose(0,1) = - (c2 * s3 );
 	pose(0,2) = s2;
