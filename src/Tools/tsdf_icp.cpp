@@ -185,7 +185,7 @@ int main( int argc, char * argv[] ) {
 	delete di2;
 
 	// Output to stdout
-	Eigen::Matrix4f pose = mesh_to_depth_transform.cast<float>().matrix();
+	pose = mesh_to_depth_transform.cast<float>().matrix();
 	Eigen::Vector3f trans = pose.topRightCorner(3, 1);
     Eigen::Matrix3f rot = pose.topLeftCorner(3, 3);
 
