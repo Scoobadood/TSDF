@@ -69,19 +69,15 @@ TSDFVolume * make_tsdf(int num_images, const char * directory ) {
  * Load the TSDF
  */
 TSDFVolume * load_tsdf( const std::string& file_name) {
-    TSDFVolume * volume = nullptr;
+    TSDFVolume * volume = new TSDFVolume( file_name );
 
-    BlockTSDFLoader loader;
-    if ( loader.load_from_file( file_name ) ) {
-        volume = loader.to_tsdf();
+
         if ( volume ) {
             std::cout << "Loaded volume " << volume->size().x << "x" << volume->size().y << "x" << volume->size().z << "  (" << volume->physical_size().x << "mm x " << volume->physical_size().y << "mm x " << volume->physical_size().z << "mm)"  << std::endl;
         } else {
             std::cout << "Couldn't load volume"  << std::endl;
         }
-    } else {
-        std::cout << "Failed to read TSDF" << std::endl;
-    }
+        g_campose << 1, 0, 0, 0,      0, 1, 0, 0,     0, 0, 1, 0,   0, 0, 0, 1;
     return volume;
 }
 
@@ -205,8 +201,6 @@ int main( int argc, const char * argv[] ) {
     } else {
         std::cout << "Couldn't make or load volume" << std::endl;
     }
-
-    volume->save_to_file( "test.tsdf");
 
     // Extract Mesh
     if( volume ) {
