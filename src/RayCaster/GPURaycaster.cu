@@ -20,7 +20,8 @@
  * @param rot the camera pose rotation matrix
  * @param kinv THe camera intrinsics inverse matrix
  * @return The unit direction vector for the ray in world coordinate space
- */__device__
+ */
+__device__
 float3 compute_ray_direction_at_pixel( const float3& origin, uint16_t pix_x, uint16_t pix_y, const Mat33& rot, const Mat33& kinv ) {
 
     // Get point at depth 1mm. This is the direction vector in cam coords
@@ -469,7 +470,7 @@ float3 * get_vertices(  const TSDFVolume&  volume,
 
     cudaError_t err;
 
-    // Allocate storage on device for TSDF data
+    // Get reference to TSDF distance data
     const float * d_tsdf_values = volume.distance_data();
 
     // Allocate storage for vertices on device

@@ -137,10 +137,10 @@ float3 pixel_to_camera( const int3 pixel, const Mat33 & inv_k, float depth ) {
 		inv_k.m31 * pixel.x + inv_k.m32 * pixel.y + inv_k.m33
 	};
 
-	// TODO
-	// The actual calc here should be to scale the cam coords so tat Z == depth
-	// There's an implicit assumption here that the Z coord is 1 which may not be true
-	float3 cam_coords = f3_mul_scalar( depth, image_plane_coords);
+	// The actual calc here scales the cam coords so that Z == depth
+	// Usually, image_plane_coords.z==1 though this is not guaranteed
+	float scale_factor = depth / image_plane_coords.z;
+	float3 cam_coords = f3_mul_scalar( scale_factor, image_plane_coords);
 
 	return cam_coords;
 }

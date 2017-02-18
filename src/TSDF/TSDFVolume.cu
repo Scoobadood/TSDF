@@ -291,7 +291,7 @@ void TSDFVolume::deform_mesh( const int num_points, float3 * points ) const {
 }
 
 /**
- * @param distance_data The voxel values (in devcie memory)
+ * @param distance_data The voxel values (in device memory)
  * @param weight_data The weight values (in device memory)
  * @param voxel_grid_size The voxel size of the space
  * @param voxel_space_size The physical size of the space
