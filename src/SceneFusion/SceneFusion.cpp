@@ -47,13 +47,14 @@ SceneFusion::SceneFusion( SceneFlowAlgorithm * sfa, RGBDDevice * rgbd_device ) {
 
 	// Construct the TSDFVolume
 	m_volume = new TSDFVolume(255, 255 , 255, 2550, 2550, 2550);
+	m_volume->offset( -1275, -1275, 0 );
 
 	// And camera (from FREI 1 IR calibration data at TUM)
 	m_camera = Camera::default_depth_camera( );
 
 	// Pose the camera
-	m_camera->move_to( 1000, 1000, 0 );
-	m_camera->look_at( 1000, 1000, 1000 );
+//	m_camera->move_to( 1000, 1000, 0 );
+//	m_camera->look_at( 1000, 1000, 1000 );
 
 
 	m_last_depth_image = nullptr;
