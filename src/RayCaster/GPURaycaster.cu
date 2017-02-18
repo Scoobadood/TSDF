@@ -341,12 +341,8 @@ void process_ray(   const float3        origin,
                     t = t + (previous_tsdf / (previous_tsdf - tsdf )) * step_size;
                 }
 
-                // Cmpute the point of intersection
-                current_point = {
-                    start_point.x + t * direction.x,
-                    start_point.y + t * direction.y,
-                    start_point.z + t * direction.z
-                };
+                // Compute the point of intersection
+                current_point = f3_add( start_point, f3_mul_scalar( t, direction ) );
 
                 // Put into world coordinates
                 intersection_point = f3_add( space_min, current_point );
