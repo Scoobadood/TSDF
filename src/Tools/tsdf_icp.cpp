@@ -168,7 +168,8 @@ int main( int argc, char * argv[] ) {
 	pose(3,3) = 1;
 
 	// Now invert this to get a camera pose
-	camera->set_pose( pose.inverse() );
+	pose = pose.inverse().eval();
+	camera->set_pose( pose );
 
 	DepthImage * di2 = raycaster->render_to_depth_image( volume, *camera );
 	uint16_t * depth_image = (uint16_t *)di2->data();
