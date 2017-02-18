@@ -340,7 +340,7 @@ void integrate_kernel(  float         * distance_data,
             // This gives us a pixel in the depth map
 
             // Convert voxel to world coords of deformed centre
-            float3 centre_of_voxel        = deformation_nodes[ voxel_index ].translation;
+            float3 centre_of_voxel        = f3_add( offset, deformation_nodes[ voxel_index ].translation);
 
             // Convert world to pixel coords
             int3   centre_of_voxel_in_pix = world_to_pixel( centre_of_voxel, inv_pose, k );
