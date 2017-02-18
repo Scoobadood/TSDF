@@ -5,6 +5,7 @@
 #include "../include/GPURaycaster.hpp"
 #include "../include/cuda_utilities.hpp"
 #include "../include/TSDF_utilities.hpp"
+#include "../include/PngUtilities.hpp"
 
 #include <Eigen/Core>
 
@@ -584,6 +585,13 @@ DepthImage * GPURaycaster::render_to_depth_image( const TSDFVolume & volume, con
 
             std::cout << "  making depthimage" << std::endl;
             d = new DepthImage( m_width, m_height, depth_data);
+
+            // DEBUG
+            // TODO: Remove me
+            std::cout << "  saving mesh depth image: REMOVE ME" << std::endl;
+            save_png_to_file( "/home/dave/Desktop/mesh_depth_file.png", 640, 480, depth_data );
+
+
             delete[] depth_data;
         } else {
             std::cout << "Couldn't allocate depth data storage" << std::endl;
