@@ -11,11 +11,10 @@
 #include "../../include/TSDFVolume.hpp"
 #include "../../include/Camera.hpp"
 #include "../../include/PngUtilities.hpp"
-#include "../../include/BilateralFilter.hpp"
 #include "../../include/RenderUtilities.hpp"
 #include "../../include/DepthImage.hpp"
+#include "../../include/MarkAndSweepMC.hpp"
 #include "../../include/TUMDataLoader.hpp"
-#include "../../include/GPUMarchingCubes.hpp"
 #include "../../include/ply.hpp"
 
 #include "TestHelpers.hpp"

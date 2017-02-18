@@ -48,7 +48,7 @@ _OBJECTS=$(SOURCES:.cpp=.o)
 _CUDA_OBJECTS=$(CUDA_SOURCES:.cu=.o)
 OBJECTS = $(patsubst %,$(OBJ_DIR)/%,$(_OBJECTS)) $(patsubst %,$(OBJ_DIR)/%,$(_CUDA_OBJECTS))
 
-all: Integration Raycasting Camera TSDF_LoadSave
+all: Integration Raycasting Cam TSDF_LoadSave
 
 Integration: $(BIN_DIR)/test_integrate
 Raycasting:  $(BIN_DIR)/test_raycast

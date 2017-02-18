@@ -1,7 +1,6 @@
 #include "../include/SceneFusion.hpp"
 #include "../include/MockKinect.hpp"
 #include "../include/PDSFMockSceneFlowAlgorithm.hpp"
-#include "../include/GPUMarchingCubes.hpp"
 #include "../include/ply.hpp"
 
 int main( int argc, const char * argv[] ) {
