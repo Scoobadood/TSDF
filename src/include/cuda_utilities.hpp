@@ -165,6 +165,7 @@ uint8_t atomicIncUint8( uint8_t* address );
 
 void cudaSafeAlloc( void ** ptr, size_t sz, const std::string& purpose );
 void cudaSafeFree( void * ptr, const std::string& purpose );
-
+void cudaSafeCopyToHost( void * const host_ptr, void * const device_ptr, const size_t num_bytes, const std::string& purpose );
+void cudaSafeCopyToDevice( void * const host_ptr, void * const device_ptr, const size_t num_bytes, const std::string& purpose );
 
 #endif

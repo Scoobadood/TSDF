@@ -57,3 +57,13 @@ void cudaSafeFree( void * ptr, const std::string& purpose ) {
     cudaError_t err = cudaFree( ptr );
     check_cuda_error( "Failed to free device memory for " + purpose , err);
 }
+
+void cudaSafeCopyToHost( void * const host_ptr, void * const device_ptr, const size_t num_bytes, const std::string& purpose) {
+    cudaError_t err = cudaMemcpy( host_ptr, device_ptr, num_bytes, cudaMemcpyDeviceToHost );
+    check_cuda_error( "Failed to copy data to host for " + purpose, err );
+}
+
+void cudaSafeCopyToDevice( void * const host_ptr, void * const device_ptr, const size_t num_bytes, const std::string& purpose ) {
+    cudaError_t err = cudaMemcpy( device_ptr, host_ptr, num_bytes, cudaMemcpyHostToDevice );
+    check_cuda_error( "Failed to copy data to device for " + purpose, err );
+}
