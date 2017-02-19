@@ -30,14 +30,10 @@ void test_uint8_histo( ) {
 	uint8_t * d_source_data;
 	uint8_t * d_histo;
 
-	cudaError_t err = cudaMalloc( &d_source_data, num_entries * sizeof( uint8_t ) );
-	check_cuda_error( "Couldn't allocate source data", err );
+	cudaSafeAlloc( (void **) &d_source_data, num_entries * sizeof( uint8_t ), "d_source_data" );
+	cudaSafeCopyToDevice( (void *) h_source_data, d_source_data, num_entries * sizeof( uint8_t ), "d_source_data");
 
-	cudaMemcpy( d_source_data, h_source_data, num_entries * sizeof( uint8_t ), cudaMemcpyHostToDevice );
-	check_cuda_error( "Couldn't load source data", err );
-
-	cudaMalloc( &d_histo, 256 );
-	check_cuda_error( "Couldn't allocate histo data", err );
+	cudaSafeAlloc( (void **) &d_histo, 256, "d_histo" );
 
 	cudaMemset( d_histo, 0, 256 * sizeof( uint8_t) );
 	check_cuda_error( "Couldn't clear histo data", err );
@@ -45,19 +41,15 @@ void test_uint8_histo( ) {
 	dim3 block( 100 );
 	dim3 grid( divUp( num_entries, block.x));
 	do_histo<<< grid, block >>>( num_entries, d_source_data, d_histo );
-	cudaDeviceSynchronize();
-	err = cudaGetLastError( );
+	err = cudaDeviceSynchronize();
 	check_cuda_error( "Kernel failed", err );
 
-	err= cudaFree( d_source_data );
+	cudaSafeFree( d_source_data, "d_source_data" );
 	check_cuda_error( "Couldn't free source data", err );
 
 	uint8_t * h_histo = (uint8_t *) new uint8_t[256];
-	err = cudaMemcpy( (void *) h_histo, d_histo, 256 * sizeof( uint8_t), cudaMemcpyDeviceToHost);
-	check_cuda_error( "Couldn't copy to histo to host", err );
-
-	cudaFree( d_histo );
-	check_cuda_error( "Couldn't free device histo data", err );
+	cudaSafeCopyToHost( (void *) h_histo, (void *) d_histo, 256 * sizeof( uint8_t), "h_histo");
+	cudaSafeFree( d_histo, "d_histo" );
 
 	for( int i=0; i<256; i++ ) {
 		std::cout << "bin " << i << ":   " << (int)h_histo[i] << std::endl;

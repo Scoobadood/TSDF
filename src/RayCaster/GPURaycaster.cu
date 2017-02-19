@@ -472,8 +472,7 @@ float3 * get_vertices(  const TSDFVolume&  volume,
     // Allocate storage for vertices on device
     size_t data_size = width * height * sizeof( float3 );
     float3 * d_vertices;
-    err = cudaMalloc( &d_vertices, data_size );
-    check_cuda_error( "Vertices alloc failed ", err);
+    cudaSafeAlloc( (void **) &d_vertices, data_size, "d_vertices" );
 
     // Execute the kernel
     dim3 block( 32, 32 );
@@ -496,14 +495,14 @@ float3 * get_vertices(  const TSDFVolume&  volume,
 float3 * compute_normals( uint16_t width, uint16_t height, float3 * d_vertices ) {
     float3 * d_normals;
 
-    cudaError_t err;
 
-    err = cudaMalloc( &d_normals,  width * height * sizeof( float3 ) );
-    check_cuda_error( "Normals alloc failed ", err);
+    cudaSafeAlloc( (void **) &d_normals,  width * height * sizeof( float3 ), "d_normals" );
 
     dim3 block( 32, 32 );
     dim3 grid ( divUp( width, block.x ), divUp( height, block.y ) );
     compute_normals <<< grid, block>>>(width, height, d_vertices, d_normals);
+
+    cudaError_t err = cudaDeviceSynchronize( );
     check_cuda_error( "compute_normals failed ", err);
 
     return d_normals;
@@ -530,20 +529,16 @@ void GPURaycaster::raycast( const TSDFVolume & volume,
 
 
     // Copy vertex data back
-    cudaError_t err;
-
     vertices.resize( 3, m_width * m_height);
     float  *h_vertices = vertices.data();
-    err = cudaMemcpy( h_vertices, d_vertices, m_width * m_height * 3 * sizeof( float ), cudaMemcpyDeviceToHost);
-    check_cuda_error( "Vertices Memcpy failed ", err);
-    cudaFree( d_vertices );
+    cudaSafeCopyToHost( (void *) h_vertices, (void * ) d_vertices, m_width * m_height * 3 * sizeof( float ), "h_vertices");
+    cudaSafeFree( d_vertices, "d_vertices" );
 
     // Copy normal data back
     normals.resize( 3, m_width * m_height );
     float  *h_normals = normals.data();
-    err = cudaMemcpy( h_normals, d_normals, m_width * m_height * 3 * sizeof( float ), cudaMemcpyDeviceToHost);
-    check_cuda_error( "Normals Memcpy failed ", err);
-    cudaFree( d_normals );
+    cudaSafeCopyToHost( (void *) h_normals, (void *) d_normals, m_width * m_height * 3 * sizeof( float ), "h_normals");
+    cudaSafeFree( d_normals, "d_normals" );
 }
 
 /**
@@ -566,7 +561,7 @@ DepthImage * GPURaycaster::render_to_depth_image( const TSDFVolume & volume, con
     // Copy device vertices ionto host
     float3 * h_vertices = new float3[m_width * m_height];
     if ( h_vertices ) {
-        cudaMemcpy( h_vertices, d_vertices, m_width * m_height * sizeof( float3), cudaMemcpyDeviceToHost);
+        cudaSafeCopyToHost( (void *) h_vertices, (void *) d_vertices, m_width * m_height * sizeof( float3), "h_vertices");
 
 
         // Stash just the Z coords to a depth map
@@ -600,7 +595,7 @@ DepthImage * GPURaycaster::render_to_depth_image( const TSDFVolume & volume, con
         std::cout << "Couldn't allocate host memory for vertices" << std::endl;
     }
 
-    cudaFree( d_vertices );
+    cudaSafeFree( d_vertices, "d_vertices" );
     std::cout << "  done" << std::endl;
     return d;
 }
