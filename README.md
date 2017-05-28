@@ -9,6 +9,17 @@ It also includes an early version of a Kinect Fusion implementation to reconstru
 
 Finally there are a couple of 'useful' tools that I've built along the way to inspect intermediate results.
 
+## Samples
+Here are a couple of sample outputs from the code
+
+Rendered scene
+![Rendered scene](/images/scene.png)
+
+![Normals](/images/normals.png)
+
+![Mesh](/images/mesh.ply)
+
+
 # Using It
 
 ## Dependencies
@@ -64,4 +75,5 @@ The file may contain comments that have to start with ”#”.
 
 # References
 [ 1] Curless, B. & Levoy, M. 1996, 'A volumetric method for building complex models from range images'.
+
 [ 2] Sturm, J., Engelhard, N., Endres, F., Burgard, W. & Cremers, D. 2012, 'A benchmark for the evaluation of RGB-D SLAM systems', IEEE, pp. 573–80.
