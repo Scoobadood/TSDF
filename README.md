@@ -12,10 +12,15 @@ Finally there are a couple of 'useful' tools that I've built along the way to in
 ## Samples
 Here are a couple of sample outputs from the code
 
-Rendered scene
+__Rendered scene__
+
 ![Rendered scene](/images/scene.png)
 
+__Normals__
+
 ![Normals](/images/normals.png)
+
+__Rendered Mesh__
 
 ![Mesh](/images/mesh.ply)
 
