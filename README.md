@@ -22,7 +22,7 @@ __Normals__
 
 __Rendered Mesh__
 
-![Mesh](/images/mesh.ply)
+![Mesh](/images/mesh.png)
 
 
 # Using It
